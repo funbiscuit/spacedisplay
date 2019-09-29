@@ -1,9 +1,16 @@
 
+#include <QPainter>
+#include <QPixmap>
+#include <QImage>
+#include <QGraphicsEffect>
+
 #include "resources.h"
 #include "resource_builder/resources.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <QtWidgets/QGraphicsScene>
+#include <QtWidgets/QGraphicsObject>
 
 #define NANOSVG_IMPLEMENTATION
 #include "nanosvg.h"
@@ -30,24 +37,40 @@ Icon* Resources::get_vector_icon(ResourceBuilder::ResourceId id, int width)
             return &(it2->second);
     }
 
-    auto* pixels = get_vector_image(id, width);
+    char* pixels = nullptr;//get_vector_image(id, width);
 
     if(pixels == nullptr)
         return nullptr;
 
-    if(it1 != iconsMap.end())
-    {
-        auto it2 = it1->second.insert(std::pair<int, Icon>(width, Icon(pixels, width, width))).first;
-        return &(it2->second);
-    }
-
-    it1 = iconsMap.insert(std::pair<ResourceBuilder::ResourceId, std::unordered_map<int, Icon>>(id, std::unordered_map<int, Icon>())).first;
-
-    auto it2 = it1->second.insert(std::pair<int, Icon>(width, Icon(pixels, width, width))).first;
-    return &(it2->second);
+//    if(it1 != iconsMap.end())
+//    {
+//        auto it2 = it1->second.insert(std::pair<int, Icon>(width, Icon(pixels, width, width))).first;
+//        return &(it2->second);
+//    }
+//
+//    it1 = iconsMap.insert(std::pair<ResourceBuilder::ResourceId, std::unordered_map<int, Icon>>(id, std::unordered_map<int, Icon>())).first;
+//
+//    auto it2 = it1->second.insert(std::pair<int, Icon>(width, Icon(pixels, width, width))).first;
+//    return &(it2->second);
 }
 
-uint8_t* Resources::get_vector_image(ResourceBuilder::ResourceId id, int width)
+QImage Resources::tint(const QImage& src, QColor color, qreal strength){
+    if(src.isNull()) return QImage();
+    QGraphicsScene scene;
+    QGraphicsPixmapItem item;
+    item.setPixmap(QPixmap::fromImage(src));
+    QGraphicsColorizeEffect effect;
+    effect.setColor(color);
+    effect.setStrength(strength);
+    item.setGraphicsEffect(&effect);
+    scene.addItem(&item);
+    QImage res(src);
+    QPainter ptr(&res);
+    scene.render(&ptr, QRectF(), src.rect() );
+    return res;
+}
+
+QPixmap Resources::get_vector_pixmap(ResourceBuilder::ResourceId id, int width, const QColor& color, qreal strength)
 {
     auto data=ResourceBuilder::get_resource_data(id);
     auto size=ResourceBuilder::get_resource_size(id);
@@ -62,7 +85,7 @@ uint8_t* Resources::get_vector_image(ResourceBuilder::ResourceId id, int width)
     svgImage = nsvgParse(data_cp, "px", 96.0f);
     delete[](data_cp);
     if (svgImage == nullptr) {
-        return nullptr;
+        return QPixmap(0,0);
     }
     float w0 = svgImage->width;
     float scale = float(width)/w0;
@@ -77,7 +100,12 @@ uint8_t* Resources::get_vector_image(ResourceBuilder::ResourceId id, int width)
 
     nsvgDeleteRasterizer(rast);
     nsvgDelete(svgImage);
-    return img;
+    QImage myImage(img, width, height, width*4, QImage::Format_RGBA8888);
+    QPixmap myPixmap = QPixmap::fromImage(tint(myImage, color, strength));
+
+    delete[](img);
+
+    return myPixmap;
 }
 
 //std::vector<GLFWimage> Resources::get_app_icons()
