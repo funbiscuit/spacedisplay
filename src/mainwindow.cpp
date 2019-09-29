@@ -40,6 +40,7 @@ bool operator!(MainWindow::ActionMask mask)
 MainWindow::MainWindow()
         : spaceWidget(new SpaceView)
 {
+    setMinimumSize(800, 600);
     scanner = std::make_unique<SpaceScanner>();
 
     setCentralWidget(spaceWidget);

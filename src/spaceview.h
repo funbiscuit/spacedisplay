@@ -83,6 +83,8 @@ protected:
     const int MIN_DEPTH =1;
     const int MAX_DEPTH =9;
 
+    QPixmap bgIcon;
+
     int mouseX=-1;
     int mouseY=-1;
 

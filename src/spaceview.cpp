@@ -1,17 +1,25 @@
 
 #include <QtWidgets>
 #include <vector>
-#include <qmath.h>
 #include <iostream>
 #include "spaceview.h"
 #include "mainwindow.h"
 #include "spacescanner.h"
 #include "fileentrypopup.h"
+#include "resources.h"
+#include "resource_builder/resources.h"
 
 SpaceView::SpaceView() : QWidget()
 {
     setMouseTracking(true);
     entryPopup = std::make_unique<FileEntryPopup>(this);
+
+
+    auto& r = Resources::get();
+    bgIcon = r.get_vector_pixmap(
+            ResourceBuilder::RES___ICONS_SVG_APPICON_BW_SVG,
+            256);
+
 }
 
 void SpaceView::paintEvent(QPaintEvent *event)
@@ -30,23 +38,10 @@ void SpaceView::paintEvent(QPaintEvent *event)
         drawView(painter, root, currentDepth, true);
         Utils::toc();
     } else {
-//        auto& r =Resources::get();
-//        auto pos = ImGui::GetContentRegionAvail();
-//        auto icon = r.get_vector_icon(ResourceBuilder::RES___ICONS_SVG_APPICON_BW_SVG, 256);
-//        auto uv0 = icon->uv0;
-//        auto uv1 = icon->uv1;
-//        auto size = ImVec2((float)icon->width, (float)icon->height);
-//        auto texId = (ImTextureID)(intptr_t)icon->textureId;
-//
-//        auto tint = ImVec4(1.f,1.f,1.f,0.3f);
-//
-//        pos.x-=size.x;
-//        pos.y-=size.y;
-//        pos.x*=0.5f;
-//        pos.y*=0.5f;
-//
-//        ImGui::SetCursorPos(pos);
-        //ImGui::Image(texId, size, uv0, uv1, tint);
+        int x0=(width-bgIcon.width())/2;
+        int y0=(height-bgIcon.height())/2;
+        painter.drawPixmap(x0,y0, bgIcon);
+        painter.fillRect(0, 0, width, height, QColor::fromRgbF(1.0,1.0,1.0,0.6));
     }
 }
 

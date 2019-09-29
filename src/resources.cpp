@@ -69,6 +69,10 @@ QImage Resources::tint(const QImage& src, QColor color, qreal strength){
     scene.render(&ptr, QRectF(), src.rect() );
     return res;
 }
+QPixmap Resources::get_vector_pixmap(ResourceBuilder::ResourceId id, int width)
+{
+    return get_vector_pixmap(id,width,QColor(Qt::white),0.0);
+}
 
 QPixmap Resources::get_vector_pixmap(ResourceBuilder::ResourceId id, int width, const QColor& color, qreal strength)
 {
