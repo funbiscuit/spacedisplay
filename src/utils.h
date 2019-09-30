@@ -8,9 +8,13 @@
 
 namespace Utils
 {
-    struct Rect{
+    struct RectF{
         float x,y;
         float w,h;
+    };
+    struct RectI{
+        int x,y;
+        int w,h;
     };
 
 

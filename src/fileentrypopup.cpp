@@ -21,12 +21,15 @@ FileEntryPopup::FileEntryPopup(QWidget* _parent) : parent(_parent)
     connect(showInFMAct.get(), &QAction::triggered, this, &FileEntryPopup::onShow);
 
     deleteDirAct = std::make_unique<QAction>("Delete (recursively)", parent);
+    deleteDirAct->setEnabled(false);
     connect(deleteDirAct.get(), &QAction::triggered, this, &FileEntryPopup::onDeleteDir);
 
     deleteFileAct = std::make_unique<QAction>("Delete", parent);
+    deleteFileAct->setEnabled(false);
     connect(deleteFileAct.get(), &QAction::triggered, this, &FileEntryPopup::onDeleteFile);
 
     propertiesAct = std::make_unique<QAction>("Properties", parent);
+    propertiesAct->setEnabled(false);
     connect(propertiesAct.get(), &QAction::triggered, this, &FileEntryPopup::onProperties);
 
 }
@@ -35,9 +38,9 @@ void FileEntryPopup::updateActions(SpaceScanner* scanner)
 {
     if(scanner)
     {
-        rescanAct->setEnabled(scanner->can_refresh());
+//        rescanAct->setEnabled(scanner->can_refresh());
         //todo maybe allow to delete while scanning
-        deleteDirAct->setEnabled(scanner->can_refresh());
+//        deleteDirAct->setEnabled(scanner->can_refresh());
     }
 }
 

@@ -9,7 +9,7 @@
 #include "fileentryshared.h"
 
 const int MAX_CHILD_COUNT=100;
-const float MIN_CHILD_PIXEL_AREA=50.f;
+const int MIN_CHILD_PIXEL_AREA=50;
 
 FileEntryShared::FileEntryShared(FileEntry::EntryType type):
         id(0), size(0), name(""), entryType(type), isHovered(false), drawArea{} {
@@ -186,17 +186,17 @@ void FileEntryShared::unhover()
         parent->unhover();
 }
 
-void FileEntryShared::allocate_children(Utils::Rect rect, float titleHeight)
+void FileEntryShared::allocate_children(Utils::RectI rect, int titleHeight)
 {
-    if(children.empty() || rect.h<0 || rect.w<0)
+    if(children.empty() || rect.h<titleHeight || rect.w<1)
         return;
     
     drawArea=rect;
     
-    rect.y+=titleHeight+2.f;
-    rect.h-=titleHeight+2.f+2.f;
-    rect.x+=2.f;
-    rect.w-=4.f;
+    rect.y+=titleHeight+2;
+    rect.h-=titleHeight+2+2;
+    rect.x+=2;
+    rect.w-=4;
     
     
     allocate_children2(0, children.size()-1, children, rect);
@@ -218,9 +218,9 @@ const char* FileEntryShared::get_name() {
     }
 }
 
-void FileEntryShared::allocate_children2(size_t start, size_t end, std::vector<FileEntrySharedPtr> &bin, Utils::Rect &rect)
+void FileEntryShared::allocate_children2(size_t start, size_t end, std::vector<FileEntrySharedPtr> &bin, Utils::RectI &rect)
 {
-    if(rect.h<=0.f || rect.w<=0.f)
+    if(rect.h<1 || rect.w<1)
         return;
     if(end-start<0)
         return;
@@ -236,7 +236,7 @@ void FileEntryShared::allocate_children2(size_t start, size_t end, std::vector<F
         totalSize+=bin[i]->size;
     }
 
-    float availableArea = rect.h * rect.w;
+    int availableArea = rect.h * rect.w;
     auto minPart = MIN_CHILD_PIXEL_AREA / availableArea;
     auto minSize = int64_t(totalSize*minPart);
     totalSize=0;
@@ -285,21 +285,21 @@ void FileEntryShared::allocate_children2(size_t start, size_t end, std::vector<F
         sum2=1;
     }
     
-    float a1=float(sum1)/float(sum1+sum2);
+    //float a1=float(sum1)/float(sum1+sum2);
     
     
     bool divX=rect.w>=rect.h;
     
-    float rX=std::round(rect.x);
-    float rY=std::round(rect.y);
-    float rW=std::round(rect.w);
-    float rH=std::round(rect.h);
-    float midW1=std::round(a1*rect.w);
-    float midH1=std::round(a1*rect.h);
+    int rX=rect.x;
+    int rY=rect.y;
+    int64_t rW=rect.w;
+    int64_t rH=rect.h;
+    int midW1= static_cast<int>((rW*sum1)/(sum1+sum2));
+    int midH1= static_cast<int>((rH*sum1)/(sum1+sum2));
     
     if(divX)
     {
-        Utils::Rect rect2{};
+        Utils::RectI rect2{};
         rect2.x=rX;
         rect2.y=rY;
         rect2.w=midW1;
@@ -310,8 +310,8 @@ void FileEntryShared::allocate_children2(size_t start, size_t end, std::vector<F
         else
             set_child_rect(bin[start], rect2);
 
-        rect2.x=rX+midW1-1;
-        rect2.w=rW-midW1+1;
+        rect2.x=rX+midW1;
+        rect2.w=static_cast<int>(rW-midW1);
         if((end-bin1last)>1)
             allocate_children2(bin1last+1, end, bin, rect2);
         else
@@ -319,7 +319,7 @@ void FileEntryShared::allocate_children2(size_t start, size_t end, std::vector<F
     }
     else
     {
-        Utils::Rect rect2{};
+        Utils::RectI rect2{};
         rect2.x=rX;
         rect2.y=rY;
         rect2.w=rW;
@@ -330,8 +330,8 @@ void FileEntryShared::allocate_children2(size_t start, size_t end, std::vector<F
         else
             set_child_rect(bin[start], rect2);
 
-        rect2.y=rY+midH1-1;
-        rect2.h=rH-midH1+1;
+        rect2.y=rY+midH1;
+        rect2.h=static_cast<int>(rH-midH1);
         if((end-bin1last)>1)
             allocate_children2(bin1last+1, end, bin, rect2);
         else
@@ -339,14 +339,14 @@ void FileEntryShared::allocate_children2(size_t start, size_t end, std::vector<F
     }
 }
 
-void FileEntryShared::set_child_rect(const FileEntrySharedPtr& child, Utils::Rect &rect)
+void FileEntryShared::set_child_rect(const FileEntrySharedPtr& child, Utils::RectI &rect)
 {
     child->drawArea=rect;
     
-    if(child->drawArea.w<1.f || child->drawArea.h<1.f)
+    if(child->drawArea.w<1 || child->drawArea.h<1)
     {
-        child->drawArea.w=0.f;
-        child->drawArea.h=0.f;
+        child->drawArea.w=0;
+        child->drawArea.h=0;
     }
 }
 

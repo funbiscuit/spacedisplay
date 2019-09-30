@@ -66,13 +66,12 @@ void SpaceView::drawView(QPainter& painter, const FileEntrySharedPtr &file, int 
 
 bool SpaceView::drawViewBg(QPainter& painter, const FileEntrySharedPtr &file, bool fillDir)
 {
-    Utils::Rect rect=file->get_draw_area();
+    auto rect=file->get_draw_area();
 
-    if(rect.w<5.f || rect.h<5.f)
+    if(rect.w<5 || rect.h<5)
         return false;
 
-    //TODO should use integers from the start
-    QRect qr {int(rect.x), int(rect.y), int(rect.w), int(rect.h)};
+    QRect qr {rect.x, rect.y, rect.w, rect.h};
 
     int rgbF[3];//for fill
     int rgbS[3];//for stroke
@@ -300,16 +299,16 @@ void SpaceView::allocateEntries()
 {
     auto sz = size();
 
-    Utils::Rect rect{};
-    float padding=0.f;
-    rect.x=std::round(padding);
-    rect.y=std::round(padding);
-    rect.w=std::round(sz.width()-2*padding);
-    rect.h=std::round(sz.height()-2*padding);
+    Utils::RectI rect{};
+    int padding=0;
+    rect.x=padding;
+    rect.y=padding;
+    rect.w=sz.width()-2*padding;
+    rect.h=sz.height()-2*padding;
 
     if(scanner!=nullptr)
     {
-        float fullArea=rect.w*rect.h;
+        auto fullArea=float(rect.w*rect.h);
         float minArea=7.f*7.f;//minimum area of displayed object
 
         if(hoveredEntry)
@@ -337,14 +336,14 @@ void SpaceView::allocateEntries()
 
 void SpaceView::drawViewTitle(QPainter& painter, const FileEntrySharedPtr &file)
 {
-    Utils::Rect rect=file->get_draw_area();
+    Utils::RectI rect=file->get_draw_area();
     if(rect.w < textHeight || rect.h < textHeight)
         return;
 
     auto title = file->get_title();
 
-    QRect rt{textHeight / 2 + int(rect.x), int(rect.y),
-             int(rect.w) - textHeight, (textHeight * 3) / 2};
+    QRect rt{textHeight / 2 + rect.x, rect.y,
+             rect.w - textHeight, (textHeight * 3) / 2};
 
     int rgb[3];
     hex_to_rgbi(0x3b3b3b,rgb);
@@ -358,7 +357,7 @@ void SpaceView::drawViewTitle(QPainter& painter, const FileEntrySharedPtr &file)
 
 void SpaceView::drawViewText(QPainter &painter, const FileEntrySharedPtr &file)
 {
-    Utils::Rect rect=file->get_draw_area();
+    auto rect=file->get_draw_area();
     if(rect.w < textHeight || rect.h < textHeight)
         return;
     //Strategy:
@@ -387,8 +386,8 @@ void SpaceView::drawViewText(QPainter &painter, const FileEntrySharedPtr &file)
     else if(lineHeight*2 > rect.h) //show only name
         showSize = false;
 
-    QRect rt{2+int(rect.x), 2+int(rect.y),
-             int(rect.w)-4, int(rect.h)-4};
+    QRect rt{2+rect.x, 2+rect.y,
+             rect.w-4, rect.h-4};
     int rgb[3];
     hex_to_rgbi(0x3b3b3b,rgb);
 
@@ -398,10 +397,10 @@ void SpaceView::drawViewText(QPainter &painter, const FileEntrySharedPtr &file)
 
     if(showSize)
     {
-        QRect rt_top{2+int(rect.x), 2+int(rect.y),
-                     int(rect.w)-4, rt.height()/2};
-        QRect rt_bot{2+int(rect.x), rt_top.y()+rt_top.height(),
-                     int(rect.w)-4, rt.height()/2};
+        QRect rt_top{2+rect.x, 2+rect.y,
+                     rect.w-4, rt.height()/2};
+        QRect rt_bot{2+rect.x, rt_top.y()+rt_top.height(),
+                     rect.w-4, rt.height()/2};
         align = Qt::AlignBottom;
         if(nameSize.width() <= rt.width())
             align = Qt::AlignBottom | Qt::AlignHCenter;
@@ -428,7 +427,7 @@ void SpaceView::drawViewText2(QPainter &painter, const FileEntrySharedPtr &file)
     //TODO implement caching correctly
     static std::unordered_map<uint64_t, QPixmap> cache;
 
-    Utils::Rect rect=file->get_draw_area();
+    auto rect=file->get_draw_area();
     if(rect.w < textHeight || rect.h < textHeight)
         return;
 
@@ -457,8 +456,8 @@ void SpaceView::drawViewText2(QPainter &painter, const FileEntrySharedPtr &file)
     else if(lineHeight*2 > rect.h) //show only name
         showSize = false;
 
-    QRect rt{2+int(rect.x), 2+int(rect.y),
-             int(rect.w)-4, int(rect.h)-4};
+    QRect rt{2+rect.x, 2+rect.y,
+             rect.w-4, rect.h-4};
 
     auto it = cache.find(file->get_id());
     if(it!=cache.end())
@@ -485,9 +484,9 @@ void SpaceView::drawViewText2(QPainter &painter, const FileEntrySharedPtr &file)
     if(showSize)
     {
         QRect rt_top{2, 2,
-                     int(rect.w)-4, rt.height()/2};
+                     rect.w-4, rt.height()/2};
         QRect rt_bot{2, rt_top.y()+rt_top.height(),
-                     int(rect.w)-4, rt.height()/2};
+                     rect.w-4, rt.height()/2};
         align = Qt::AlignBottom;
         if(nameSize.width() <= rt.width())
             align = Qt::AlignBottom | Qt::AlignHCenter;
@@ -501,7 +500,7 @@ void SpaceView::drawViewText2(QPainter &painter, const FileEntrySharedPtr &file)
     else
     {
         QRect rt2{2, 2,
-                  int(rect.w)-4, int(rect.h)-4};
+                  rect.w-4, rect.h-4};
         align = Qt::AlignVCenter;
         if(nameSize.width() <= rt.width())
             align = Qt::AlignCenter;

@@ -44,7 +44,7 @@ public:
         return entryType;
     }
 
-    Utils::Rect get_draw_area()
+    Utils::RectI get_draw_area()
     {
         return drawArea;
     }
@@ -70,7 +70,7 @@ public:
 
     bool isHovered;
     bool isParentHovered;
-    void allocate_children(Utils::Rect rect, float titleHeight);
+    void allocate_children(Utils::RectI rect, int titleHeight);
     void unhover();
 
 private:
@@ -87,14 +87,14 @@ private:
     void reconstruct_from(const FileEntry& entry, int nestLevel, int64_t minSize, uint16_t flags);
     void init_from(const FileEntry& entry);
 
-    void allocate_children2(size_t start, size_t end, std::vector<FileEntrySharedPtr> &bin, Utils::Rect &rect);
-    void set_child_rect(const FileEntrySharedPtr& child, Utils::Rect &rect);
+    void allocate_children2(size_t start, size_t end, std::vector<FileEntrySharedPtr> &bin, Utils::RectI &rect);
+    void set_child_rect(const FileEntrySharedPtr& child, Utils::RectI &rect);
 
     void set_parent_hovered(bool hovered);
     void set_hovered(bool hovered);
 
 
-    Utils::Rect drawArea;
+    Utils::RectI drawArea;
 
     FileEntryShared* parent;
     std::vector<FileEntrySharedPtr> children;
