@@ -457,13 +457,13 @@ void MainWindow::wheelEvent(QWheelEvent *event)
     {
         if(event->delta()>0 && spaceWidget->canIncreaseDetail())
         {
-            spaceWidget->increaseDetail();
+            moreDetail();
             event->accept();
             return;
         }
         else if(event->delta()<0 && spaceWidget->canDecreaseDetail())
         {
-            spaceWidget->decreaseDetail();
+            lessDetail();
             event->accept();
             return;
         }
