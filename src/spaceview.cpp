@@ -12,7 +12,7 @@
 SpaceView::SpaceView() : QWidget()
 {
     setMouseTracking(true);
-    entryPopup = std::make_unique<FileEntryPopup>(this);
+    entryPopup = Utils::make_unique<FileEntryPopup>(this);
 
 
     auto& r = Resources::get();

@@ -2,11 +2,11 @@
 #define SPACEDISPLAY_FILEENTRYPOPUP_H
 
 #include <QObject>
+#include <QAction>
 #include <memory>
 #include <string>
 
 QT_BEGIN_NAMESPACE
-class QAction;
 class QWidget;
 QT_END_NAMESPACE
 

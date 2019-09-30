@@ -9,26 +9,25 @@
 
 FileEntryPopup::FileEntryPopup(QWidget* _parent) : parent(_parent)
 {
-
-    rescanAct = std::make_unique<QAction>("Rescan folder", parent);
+    rescanAct = Utils::make_unique<QAction>("Rescan folder", parent);
     rescanAct->setEnabled(false);
     connect(rescanAct.get(), &QAction::triggered, this, &FileEntryPopup::onRescan);
 
-    openInFMAct = std::make_unique<QAction>("Open in File Manager", parent);
+    openInFMAct = Utils::make_unique<QAction>("Open in File Manager", parent);
     connect(openInFMAct.get(), &QAction::triggered, this, &FileEntryPopup::onOpen);
 
-    showInFMAct = std::make_unique<QAction>("Show in File Manager", parent);
+    showInFMAct = Utils::make_unique<QAction>("Show in File Manager", parent);
     connect(showInFMAct.get(), &QAction::triggered, this, &FileEntryPopup::onShow);
 
-    deleteDirAct = std::make_unique<QAction>("Delete (recursively)", parent);
+    deleteDirAct = Utils::make_unique<QAction>("Delete (recursively)", parent);
     deleteDirAct->setEnabled(false);
     connect(deleteDirAct.get(), &QAction::triggered, this, &FileEntryPopup::onDeleteDir);
 
-    deleteFileAct = std::make_unique<QAction>("Delete", parent);
+    deleteFileAct = Utils::make_unique<QAction>("Delete", parent);
     deleteFileAct->setEnabled(false);
     connect(deleteFileAct.get(), &QAction::triggered, this, &FileEntryPopup::onDeleteFile);
 
-    propertiesAct = std::make_unique<QAction>("Properties", parent);
+    propertiesAct = Utils::make_unique<QAction>("Properties", parent);
     propertiesAct->setEnabled(false);
     connect(propertiesAct.get(), &QAction::triggered, this, &FileEntryPopup::onProperties);
 

@@ -28,6 +28,11 @@ namespace Utils
     std::string get_parent_path(std::string path);
     std::string format_size(int64_t size);
 
+    //todo we don't need anything from C++14, just make_unique, so use this simple version with C++11
+    template<typename T, typename... Args>
+    std::unique_ptr<T> make_unique(Args&&... args) {
+        return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+    }
 }
 
 void hex_to_rgb(int hex_color, float (&rgb)[3]);

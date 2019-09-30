@@ -41,7 +41,7 @@ MainWindow::MainWindow()
         : spaceWidget(new SpaceView)
 {
     setMinimumSize(800, 600);
-    scanner = std::make_unique<SpaceScanner>();
+    scanner = Utils::make_unique<SpaceScanner>();
 
     setCentralWidget(spaceWidget);
 
@@ -344,50 +344,50 @@ void MainWindow::createActions()
             ResourceBuilder::RES___ICONS_SVG_SPACE_UNKNOWN_SVG,
             64, btnColor));
 
-    newAct = std::make_unique<QAction>(newIcon, "&New Scan", this);
+    newAct = Utils::make_unique<QAction>(newIcon, "&New Scan", this);
     newAct->setShortcuts(QKeySequence::New);
     newAct->setStatusTip("Start a new scan");
     connect(newAct.get(), &QAction::triggered, this, &MainWindow::newScan);
 
-    backAct = std::make_unique<QAction>(backIcon,"Go &Back", this);
+    backAct = Utils::make_unique<QAction>(backIcon,"Go &Back", this);
     backAct->setShortcuts(QKeySequence::Back);
     backAct->setStatusTip("Go to previous view");
     connect(backAct.get(), &QAction::triggered, this, &MainWindow::goBack);
 
-    forwardAct = std::make_unique<QAction>(forwardIcon,"Go &Forward", this);
+    forwardAct = Utils::make_unique<QAction>(forwardIcon,"Go &Forward", this);
     forwardAct->setShortcuts(QKeySequence::Forward);
     forwardAct->setStatusTip("Go to next view");
     connect(forwardAct.get(), &QAction::triggered, this, &MainWindow::goForward);
 
-    upAct = std::make_unique<QAction>(upIcon,"Go &Up", this);
+    upAct = Utils::make_unique<QAction>(upIcon,"Go &Up", this);
     upAct->setStatusTip("Go to parent view");
     connect(upAct.get(), &QAction::triggered, this, &MainWindow::goUp);
 
-    homeAct = std::make_unique<QAction>(homeIcon,"Go &Home", this);
+    homeAct = Utils::make_unique<QAction>(homeIcon,"Go &Home", this);
     homeAct->setStatusTip("Go to home (root) view");
     connect(homeAct.get(), &QAction::triggered, this, &MainWindow::goHome);
 
-    rescanAct = std::make_unique<QAction>(rescanIcon, "&Rescan", this);
+    rescanAct = Utils::make_unique<QAction>(rescanIcon, "&Rescan", this);
     rescanAct->setShortcuts(QKeySequence::Refresh);
     rescanAct->setStatusTip("Rescan current view");
     connect(rescanAct.get(), &QAction::triggered, this, &MainWindow::refreshView);
 
-    lessDetailAct = std::make_unique<QAction>(lessIcon, "Less details", this);
+    lessDetailAct = Utils::make_unique<QAction>(lessIcon, "Less details", this);
     lessDetailAct->setShortcuts(QKeySequence::ZoomOut);
     lessDetailAct->setStatusTip("Show less details");
     connect(lessDetailAct.get(), &QAction::triggered, this, &MainWindow::lessDetail);
 
-    moreDetailAct = std::make_unique<QAction>(moreIcon, "More details", this);
+    moreDetailAct = Utils::make_unique<QAction>(moreIcon, "More details", this);
     moreDetailAct->setShortcuts(QKeySequence::ZoomIn);
     moreDetailAct->setStatusTip("Show more details");
     connect(moreDetailAct.get(), &QAction::triggered, this, &MainWindow::moreDetail);
 
-    toggleFreeAct = std::make_unique<QAction>(freeIcon, "Free space", this);
+    toggleFreeAct = Utils::make_unique<QAction>(freeIcon, "Free space", this);
     toggleFreeAct->setStatusTip("Show/Hide free space");
     toggleFreeAct->setCheckable(true);
     connect(toggleFreeAct.get(), &QAction::triggered, this, &MainWindow::toggleFree);
 
-    toggleUnknownAct = std::make_unique<QAction>(unknownIcon, "Unknown space", this);
+    toggleUnknownAct = Utils::make_unique<QAction>(unknownIcon, "Unknown space", this);
     toggleUnknownAct->setStatusTip("Show/Hide unknown/unscanned space");
     toggleUnknownAct->setCheckable(true);
     connect(toggleUnknownAct.get(), &QAction::triggered, this, &MainWindow::toggleUnknown);
