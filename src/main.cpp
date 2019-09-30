@@ -2,6 +2,8 @@
 #include <QApplication>
 
 #include "mainwindow.h"
+#include "resources.h"
+#include "resource_builder/resources.h"
 
 int main(int argc, char *argv[])
 {
@@ -15,6 +17,16 @@ int main(int argc, char *argv[])
 //    parser.addVersionOption();
 //    parser.addPositionalArgument("file", "The file to open.");
 //    parser.process(app);
+
+
+    auto& r = Resources::get();
+
+    QIcon appIcon(r.get_vector_pixmap(ResourceBuilder::RES___ICONS_SVG_APPICON_SVG,16));
+    //add other sizes
+    for(int sz=32;sz<=256;sz*=2)
+        appIcon.addPixmap(r.get_vector_pixmap(ResourceBuilder::RES___ICONS_SVG_APPICON_SVG,sz));
+
+    QApplication::setWindowIcon(appIcon);
 
     MainWindow mainWin;
     mainWin.show();

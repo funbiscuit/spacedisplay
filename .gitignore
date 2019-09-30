@@ -2,3 +2,4 @@
 cmake-build-*
 res/build
 bin
+bind

@@ -1,7 +1,5 @@
 
 #include <QPainter>
-#include <QPixmap>
-#include <QImage>
 #include <QGraphicsEffect>
 
 #include "resources.h"
@@ -11,6 +9,7 @@
 #include <stb_image.h>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsObject>
+#include <iostream>
 
 #define NANOSVG_IMPLEMENTATION
 #include "nanosvg.h"
@@ -23,38 +22,7 @@ Resources& Resources::get()
     return instance;
 }
 
-void Resources::init()
-{
-}
-
-Icon* Resources::get_vector_icon(ResourceBuilder::ResourceId id, int width)
-{
-    auto it1 = iconsMap.find(id);
-    if(it1 != iconsMap.end())
-    {
-        auto it2 = it1->second.find(width);
-        if(it2!= it1->second.end())
-            return &(it2->second);
-    }
-
-    char* pixels = nullptr;//get_vector_image(id, width);
-
-    if(pixels == nullptr)
-        return nullptr;
-
-//    if(it1 != iconsMap.end())
-//    {
-//        auto it2 = it1->second.insert(std::pair<int, Icon>(width, Icon(pixels, width, width))).first;
-//        return &(it2->second);
-//    }
-//
-//    it1 = iconsMap.insert(std::pair<ResourceBuilder::ResourceId, std::unordered_map<int, Icon>>(id, std::unordered_map<int, Icon>())).first;
-//
-//    auto it2 = it1->second.insert(std::pair<int, Icon>(width, Icon(pixels, width, width))).first;
-//    return &(it2->second);
-}
-
-QImage Resources::tint(const QImage& src, QColor color, qreal strength){
+QImage Resources::tint(const QImage& src, const QColor& color, qreal strength){
     if(src.isNull()) return QImage();
     QGraphicsScene scene;
     QGraphicsPixmapItem item;
@@ -69,6 +37,7 @@ QImage Resources::tint(const QImage& src, QColor color, qreal strength){
     scene.render(&ptr, QRectF(), src.rect() );
     return res;
 }
+
 QPixmap Resources::get_vector_pixmap(ResourceBuilder::ResourceId id, int width)
 {
     return get_vector_pixmap(id,width,QColor(Qt::white),0.0);
@@ -111,17 +80,3 @@ QPixmap Resources::get_vector_pixmap(ResourceBuilder::ResourceId id, int width, 
 
     return myPixmap;
 }
-
-//std::vector<GLFWimage> Resources::get_app_icons()
-//{
-//    std::vector<GLFWimage> images;
-//    for(int w0=16;w0<=256;w0*=2)
-//    {
-//        images.emplace_back();
-//        images.back().pixels = get_vector_image(ResourceBuilder::RES___ICONS_SVG_APPICON_SVG, w0);
-//        images.back().width = w0;
-//        images.back().height = w0;
-//    }
-//
-//    return images;
-//}
