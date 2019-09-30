@@ -125,7 +125,7 @@ void FileEntry::clear_entry(FileEntryPool* pool)
     size -= childrenSize;
 
     if(firstChild)
-        pool->async_destroy_children(firstChild);
+        pool->cache_children(firstChild);
 
     firstChild = nullptr;
 }

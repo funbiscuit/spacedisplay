@@ -3,6 +3,7 @@
 #include <iostream>
 #include <chrono>
 #include "fileentrypool.h"
+#include "utils.h"
 
 FileEntryPool::FileEntryPool()
 {
@@ -51,6 +52,7 @@ FileEntry* FileEntryPool::create_entry(uint64_t id, const char *name, FileEntry:
 
 void FileEntryPool::destroy_entries()
 {
+    Utils::tic();
     entriesCache.clear();
     charsCache.clear();
     //charPool->purge_memory();
@@ -58,25 +60,19 @@ void FileEntryPool::destroy_entries()
     delete(charPool);
     entryPool=new boost::object_pool<FileEntry>();
     charPool=new boost::pool<>(sizeof(char));
+    Utils::toc("Destroyed entries");
 }
 
-static int64_t files=0;
-
-void FileEntryPool::async_destroy_children(FileEntry* firstChild)
+void FileEntryPool::cache_children(FileEntry* firstChild)
 {
-    using namespace std::chrono;
-    auto start   = high_resolution_clock::now();
-    files=0;
-    destroy_children(firstChild);
-
-    auto stop   = high_resolution_clock::now();
-
-    auto mseconds = duration_cast<milliseconds>(stop - start).count();
-
-    std::cout << "Spent " << mseconds<<"ms, moving " <<files<< " child entries to cache\n";
+    Utils::tic();
+    int64_t before=entriesCache.size();
+    _cache_children(firstChild);
+    std::cout << "Moved " <<entriesCache.size()-before<< " child entries to cache\n";
+    Utils::toc("Spent for moving");
 }
 
-void FileEntryPool::destroy_children(FileEntry* firstChild)
+void FileEntryPool::_cache_children(FileEntry* firstChild)
 {
     while(firstChild != nullptr)
     {
@@ -84,10 +80,7 @@ void FileEntryPool::destroy_children(FileEntry* firstChild)
         auto next = firstChild->get_next();
 
         if(ch)
-        {
-            destroy_children(firstChild->get_first_child());
-        }
-        ++files;
+            _cache_children(firstChild->get_first_child());
 
         //we don't really destroy anything since it will take a lot of time even for few thousands entries
         //instead we're moving all entries and their names to cache. next time we need to construct entry,
