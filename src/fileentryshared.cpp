@@ -339,6 +339,72 @@ void FileEntryShared::allocate_children2(size_t start, size_t end, std::vector<F
     }
 }
 
+QPixmap FileEntryShared::getNamePixmap(QPainter &painter)
+{
+    createPixmapCache(painter);
+    return  cachedNamePix;
+}
+
+QPixmap FileEntryShared::getSizePixmap(QPainter &painter)
+{
+    createPixmapCache(painter);
+    return  cachedSizePix;
+}
+
+QPixmap FileEntryShared::getTitlePixmap(QPainter &painter)
+{
+    createPixmapCache(painter);
+    return  cachedTitlePix;
+}
+
+void FileEntryShared::createPixmapCache(QPainter &painter)
+{
+    std::string textName = get_name();
+    std::string textSize = format_size();
+
+    int rgb[3];
+    hex_to_rgbi(0x3b3b3b,rgb);
+
+    bool titleValid = true;
+
+    if(cachedName != textName)
+    {
+        titleValid = false;
+        QSize sz = painter.fontMetrics().size(0, textName.c_str());
+        if(cachedNamePix.size() != sz)
+            cachedNamePix = QPixmap(sz);
+        cachedNamePix.fill(Qt::transparent);
+        QPainter painter_pix(&cachedNamePix);
+        painter_pix.setPen(QColor(rgb[0],rgb[1],rgb[2]));
+        painter_pix.drawText(QRect(QPoint(0,0), sz), 0, textName.c_str());
+        cachedName = textName;
+    }
+
+    if(cachedSize != textSize)
+    {
+        titleValid = false;
+        QSize sz = painter.fontMetrics().size(0, textSize.c_str());
+        if(cachedSizePix.size() != sz)
+            cachedSizePix = QPixmap(sz);
+        cachedSizePix.fill(Qt::transparent);
+        QPainter painter_pix(&cachedSizePix);
+        painter_pix.setPen(QColor(rgb[0],rgb[1],rgb[2]));
+        painter_pix.drawText(QRect(QPoint(0,0), sz), 0, textSize.c_str());
+        cachedSize = textSize;
+    }
+    if(!titleValid)
+    {
+        auto title = get_title();
+        QSize sz = painter.fontMetrics().size(0, title.c_str());
+        if(cachedTitlePix.size() != sz)
+            cachedTitlePix = QPixmap(sz);
+        cachedTitlePix.fill(Qt::transparent);
+        QPainter painter_pix(&cachedTitlePix);
+        painter_pix.setPen(QColor(rgb[0],rgb[1],rgb[2]));
+        painter_pix.drawText(QRect(QPoint(0,0),sz), 0, title.c_str());
+    }
+}
+
 void FileEntryShared::set_child_rect(const FileEntrySharedPtr& child, Utils::RectI &rect)
 {
     child->drawArea=rect;

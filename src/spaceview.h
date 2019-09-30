@@ -120,7 +120,6 @@ protected:
     void drawView(QPainter& painter, const FileEntrySharedPtr &file, int nestLevel, bool forceFill);
     void drawViewTitle(QPainter& painter, const FileEntrySharedPtr &file);
     void drawViewText(QPainter& painter, const FileEntrySharedPtr &file);
-    void drawViewText2(QPainter& painter, const FileEntrySharedPtr &file);
     bool drawViewBg(QPainter& painter, const FileEntrySharedPtr &file, bool fillDir);
 
 };

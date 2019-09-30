@@ -2,6 +2,8 @@
 #ifndef SPACEDISPLAY_FILEENTRYSHARED_H
 #define SPACEDISPLAY_FILEENTRYSHARED_H
 
+#include <QPainter>
+#include <QPixmap>
 #include <memory>
 #include <vector>
 #include <string>
@@ -68,6 +70,10 @@ public:
         return id;
     }
 
+    QPixmap getNamePixmap(QPainter &painter);
+    QPixmap getSizePixmap(QPainter &painter);
+    QPixmap getTitlePixmap(QPainter &painter);
+
     bool isHovered;
     bool isParentHovered;
     void allocate_children(Utils::RectI rect, int titleHeight);
@@ -93,6 +99,13 @@ private:
     void set_parent_hovered(bool hovered);
     void set_hovered(bool hovered);
 
+    void createPixmapCache(QPainter &painter);
+
+    QPixmap cachedNamePix;
+    std::string cachedName;
+    QPixmap cachedSizePix;
+    std::string cachedSize;
+    QPixmap cachedTitlePix;
 
     Utils::RectI drawArea;
 

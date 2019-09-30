@@ -340,18 +340,14 @@ void SpaceView::drawViewTitle(QPainter& painter, const FileEntrySharedPtr &file)
     if(rect.w < textHeight || rect.h < textHeight)
         return;
 
-    auto title = file->get_title();
+    auto titlePix = file->getTitlePixmap(painter);
 
     QRect rt{textHeight / 2 + rect.x, rect.y,
              rect.w - textHeight, (textHeight * 3) / 2};
+    int dy = (rt.height() - titlePix.height())/2;
 
-    int rgb[3];
-    hex_to_rgbi(0x3b3b3b,rgb);
-
-//    return;
-    painter.setPen(QColor(rgb[0],rgb[1],rgb[2]));
     painter.setClipRect(rt);
-    painter.drawText(rt, Qt::AlignVCenter, title.c_str());
+    painter.drawPixmap(rt.x(), rect.y+dy, titlePix);
     painter.setClipping(false);
 }
 
@@ -366,19 +362,10 @@ void SpaceView::drawViewText(QPainter &painter, const FileEntrySharedPtr &file)
     //if even name doesn't fit - display nothing
     //if width not enough - don't center text, just start it from the left border
 
-    std::string textNameOnly = file->get_name();
-    std::string textSizeOnly = file->format_size();
-
-    std::string textFull = string_format("%s\n%s", textNameOnly.c_str(), textSizeOnly.c_str());
-
-    int align = Qt::AlignCenter;
-
-//    return;
-    QSize nameSize = painter.fontMetrics().size(0, textNameOnly.c_str());
-    QSize sizeSize = painter.fontMetrics().size(0, textSizeOnly.c_str());
+    auto namePix = file->getNamePixmap(painter);
+    auto sizePix = file->getSizePixmap(painter);
 
     int lineHeight = painter.fontMetrics().height();
-//    return;
     bool showSize = true;
 
     if(lineHeight > rect.h) //we can't show anything
@@ -394,125 +381,27 @@ void SpaceView::drawViewText(QPainter &painter, const FileEntrySharedPtr &file)
     painter.setClipRect(rt);
     painter.setPen(QColor(rgb[0],rgb[1],rgb[2]));
 
+    int dx1=2;
+    if(namePix.width()<=rt.width())
+        dx1 = (rt.width() - namePix.width())/2;
 
     if(showSize)
     {
-        QRect rt_top{2+rect.x, 2+rect.y,
-                     rect.w-4, rt.height()/2};
-        QRect rt_bot{2+rect.x, rt_top.y()+rt_top.height(),
-                     rect.w-4, rt.height()/2};
-        align = Qt::AlignBottom;
-        if(nameSize.width() <= rt.width())
-            align = Qt::AlignBottom | Qt::AlignHCenter;
-        painter.drawText(rt_top, align, textNameOnly.c_str());
+        int dy2 = rt.height()/2;
+        int dy1 = dy2 - namePix.height();
+        painter.drawPixmap(rect.x+dx1,rect.y+dy1,namePix);
 
-        align = Qt::AlignTop;
-        if(sizeSize.width() <= rt.width())
-            align = Qt::AlignTop | Qt::AlignHCenter;
-        painter.drawText(rt_bot, align, textSizeOnly.c_str());
+        int dx2=2;
+        if(sizePix.width()<=rt.width())
+            dx2 = (rt.width() - sizePix.width())/2;
+        painter.drawPixmap(rect.x+dx2,rect.y+dy2,sizePix);
     }
     else
     {
-        align = Qt::AlignVCenter;
-        if(nameSize.width() <= rt.width())
-            align = Qt::AlignCenter;
-        painter.drawText(rt, align, textNameOnly.c_str());
+        int dy1 = (rt.height() - namePix.height())/2;
+        painter.drawPixmap(rect.x+dx1,rect.y+dy1,namePix);
     }
     painter.setClipping(false);
-}
-
-void SpaceView::drawViewText2(QPainter &painter, const FileEntrySharedPtr &file)
-{
-    //this function uses caching
-    //TODO implement caching correctly
-    static std::unordered_map<uint64_t, QPixmap> cache;
-
-    auto rect=file->get_draw_area();
-    if(rect.w < textHeight || rect.h < textHeight)
-        return;
-
-
-    //Strategy:
-    //if enough space: display both name and size centered
-    //if height not enough - display only name
-    //if even name doesn't fit - display nothing
-    //if width not enough - don't center text, just start it from the left border
-
-    std::string textNameOnly = file->get_name();
-    std::string textSizeOnly = file->format_size();
-
-    std::string textFull = string_format("%s\n%s", textNameOnly.c_str(), textSizeOnly.c_str());
-
-    int align = Qt::AlignCenter;
-
-//    return;
-
-    int lineHeight = painter.fontMetrics().height();
-//    return;
-    bool showSize = true;
-
-    if(lineHeight > rect.h) //we can't show anything
-        return;
-    else if(lineHeight*2 > rect.h) //show only name
-        showSize = false;
-
-    QRect rt{2+rect.x, 2+rect.y,
-             rect.w-4, rect.h-4};
-
-    auto it = cache.find(file->get_id());
-    if(it!=cache.end())
-    {
-        painter.drawPixmap(rt.x(), rt.y(), it->second);
-//        std::cout << "use cache\n";
-        return;
-    }
-    std::cout << "not use cache\n";
-
-    QSize nameSize = painter.fontMetrics().size(0, textNameOnly.c_str());
-    QSize sizeSize = painter.fontMetrics().size(0, textSizeOnly.c_str());
-
-    int rgb[3];
-    hex_to_rgbi(0x3b3b3b,rgb);
-
-    QSize sz{int(rect.w), int(rect.h)};
-
-    QPixmap pix(sz);
-    pix.fill(Qt::transparent);
-    QPainter painter_pix(&pix);
-    painter_pix.setPen(QColor(rgb[0],rgb[1],rgb[2]));
-
-    if(showSize)
-    {
-        QRect rt_top{2, 2,
-                     rect.w-4, rt.height()/2};
-        QRect rt_bot{2, rt_top.y()+rt_top.height(),
-                     rect.w-4, rt.height()/2};
-        align = Qt::AlignBottom;
-        if(nameSize.width() <= rt.width())
-            align = Qt::AlignBottom | Qt::AlignHCenter;
-        painter_pix.drawText(rt_top, align, textNameOnly.c_str());
-
-        align = Qt::AlignTop;
-        if(sizeSize.width() <= rt.width())
-            align = Qt::AlignTop | Qt::AlignHCenter;
-        painter_pix.drawText(rt_bot, align, textSizeOnly.c_str());
-    }
-    else
-    {
-        QRect rt2{2, 2,
-                  rect.w-4, rect.h-4};
-        align = Qt::AlignVCenter;
-        if(nameSize.width() <= rt.width())
-            align = Qt::AlignCenter;
-        painter_pix.drawText(rt2, align, textNameOnly.c_str());
-    }
-
-    cache.emplace(file->get_id(), pix);
-//    cache.insert(std::p)
-    painter.drawPixmap(rt.x(), rt.y(), pix);
-//    painter.drawPixmap(0, 0, pix);
-
-//    painter.setClipping(false);
 }
 
 void SpaceView::leaveEvent(QEvent *event)
