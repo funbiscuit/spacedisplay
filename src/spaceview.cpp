@@ -133,11 +133,21 @@ void SpaceView::mouseReleaseEvent(QMouseEvent *event)
                 auto hovered = getHoveredEntry();
                 if(hovered)
                 {
+                    std::string entryPath;
+                    if(currentPath.length()>0)
+                    {
+                        if(currentPath.back()!='/' && currentPath.back()!='\\')
+                            currentPath.append("/");
+                        entryPath = currentPath + hovered->get_path(false);
+                    }
+                    else
+                        entryPath = hovered->get_path();
+
                     entryPopup->updateActions(scanner);
                     if(hovered->is_dir())
-                        entryPopup->popupDir(hovered->get_path());
+                        entryPopup->popupDir(entryPath);
                     else
-                        entryPopup->popupFile(hovered->get_path());
+                        entryPopup->popupFile(entryPath);
                 }
             } else
             {
