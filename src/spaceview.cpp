@@ -34,9 +34,9 @@ void SpaceView::paintEvent(QPaintEvent *event)
 
         textHeight = fm.height();
         painter.fillRect(0, 0, width, height, Qt::lightGray);
-        Utils::tic();
+//        Utils::tic();
         drawView(painter, root, currentDepth, true);
-        Utils::toc();
+//        Utils::toc();
     } else {
         int x0=(width-bgIcon.width())/2;
         int y0=(height-bgIcon.height())/2;

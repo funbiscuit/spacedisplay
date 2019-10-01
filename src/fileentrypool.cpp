@@ -1,15 +1,11 @@
 
 #include <cstring>
 #include <iostream>
-#include <chrono>
 #include "fileentrypool.h"
 #include "utils.h"
 
 FileEntryPool::FileEntryPool()
 {
-    entryPool=new boost::object_pool<FileEntry>();
-    charPool=new boost::pool<>(sizeof(char));
-
 }
 
 FileEntry* FileEntryPool::create_entry(uint64_t id, const char *name, FileEntry::EntryType entryType)
@@ -19,10 +15,10 @@ FileEntry* FileEntryPool::create_entry(uint64_t id, const char *name, FileEntry:
 
     if(entriesCache.empty())
     {
-        auto chars=(char*)charPool->ordered_malloc(nameLen+1);
+        auto chars=new char[nameLen+1];
         memcpy(chars, name, (nameLen+1)*sizeof(char));
 
-        t = entryPool->construct(id, chars, entryType);
+        t = new FileEntry(id, chars, entryType);
     }
     else
     {
@@ -39,7 +35,7 @@ FileEntry* FileEntryPool::create_entry(uint64_t id, const char *name, FileEntry:
         }
         else
         {
-            chars=(char*)charPool->ordered_malloc(nameLen+1);
+            chars=new char[nameLen+1];
         }
         memcpy(chars, name, (nameLen+1)*sizeof(char));
 
@@ -50,42 +46,81 @@ FileEntry* FileEntryPool::create_entry(uint64_t id, const char *name, FileEntry:
     return t;
 }
 
-void FileEntryPool::destroy_entries()
-{
-    Utils::tic();
-    entriesCache.clear();
-    charsCache.clear();
-    //charPool->purge_memory();
-    delete(entryPool);
-    delete(charPool);
-    entryPool=new boost::object_pool<FileEntry>();
-    charPool=new boost::pool<>(sizeof(char));
-    Utils::toc("Destroyed entries");
-}
-
 void FileEntryPool::cache_children(FileEntry* firstChild)
 {
     Utils::tic();
-    int64_t before=entriesCache.size();
-    _cache_children(firstChild);
-    std::cout << "Moved " <<entriesCache.size()-before<< " child entries to cache\n";
-    Utils::toc("Spent for moving");
+    auto count = _cache_children(firstChild);
+    std::cout << "Moved " <<count<< " child entries to cache\n";
+    Utils::toc("Spent for caching");
 }
 
-void FileEntryPool::_cache_children(FileEntry* firstChild)
+void FileEntryPool::delete_children(FileEntry* firstChild)
 {
+    //don't delete, use caching
+    //TODO delete may be okay on exit
+
+    Utils::tic();
+    auto count = _delete_children(firstChild);
+    std::cout << "Deleted " <<count<< " child entries\n";
+    Utils::toc("Spent for deleting");
+}
+
+void FileEntryPool::cleanup_cache()
+{
+    //don't delete, use caching
+    //TODO delete may be okay on exit
+
+    Utils::tic();
+    for(auto& entry : entriesCache)
+        delete(entry);
+    entriesCache.clear();
+
+    for(auto& it : charsCache)
+        for(auto& chars : it.second)
+            delete[](chars);
+
+    charsCache.clear();
+
+    Utils::toc("Spent for deleting cache");
+}
+
+uint64_t FileEntryPool::_delete_children(FileEntry* firstChild)
+{
+    uint64_t count = 0;
     while(firstChild != nullptr)
     {
         auto ch = firstChild->get_first_child();
         auto next = firstChild->get_next();
 
         if(ch)
-            _cache_children(firstChild->get_first_child());
+            count += _delete_children(firstChild->get_first_child());
+
+        ++count;
+        auto name = firstChild->name;
+        delete(firstChild);
+        delete[](name);
+
+        firstChild = next;
+    }
+    return count;
+}
+
+uint64_t FileEntryPool::_cache_children(FileEntry* firstChild)
+{
+    uint64_t count = 0;
+    while(firstChild != nullptr)
+    {
+        auto ch = firstChild->get_first_child();
+        auto next = firstChild->get_next();
+
+        if(ch)
+            count += _cache_children(firstChild->get_first_child());
 
         //we don't really destroy anything since it will take a lot of time even for few thousands entries
         //instead we're moving all entries and their names to cache. next time we need to construct entry,
         //we will first look in cache to see if we have any entry and name of suitable length
         //so memory is not leaked, we are reusing it later
+        ++count;
         entriesCache.push_back(firstChild);
         auto name = firstChild->name;
         auto t = charsCache.find(strlen(name));
@@ -100,4 +135,5 @@ void FileEntryPool::_cache_children(FileEntry* firstChild)
 
         firstChild = next;
     }
+    return count;
 }

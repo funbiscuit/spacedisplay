@@ -10,18 +10,6 @@ set(RES_GEN_COMMAND ${PYTHON_EXECUTABLE}
         )
 execute_process(COMMAND ${RES_GEN_COMMAND})
 
-
-#when compiling with msvc set boost include directory manually
-#in my case I just use boost installed to mingw64 since I use only headers
-#and don't care about compiled libraries
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    #TODO replace with something else
-    set(Boost_INCLUDE_DIRS "C:\\msys64\\mingw64\\include")
-else()
-    find_package (Boost REQUIRED)
-endif()
-
-include_directories(${Boost_INCLUDE_DIRS})
 find_package (Threads REQUIRED)
 
 if( WIN32 )

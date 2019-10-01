@@ -39,9 +39,9 @@ std::vector<std::string> SpaceScanner::get_available_roots()
 void SpaceScanner::reset_database()
 {
     mtx.lock();
-    rootFile= nullptr;
     fileCount=0;
-    entryPool.destroy_entries();
+    entryPool.cache_children(rootFile);
+    rootFile= nullptr;
     mtx.unlock();
 }
 
