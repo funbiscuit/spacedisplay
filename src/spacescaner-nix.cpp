@@ -4,7 +4,6 @@
 #include "fileentry.h"
 #include "utils.h"
 
-#include <sys/inotify.h>
 #include <regex>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -18,11 +17,7 @@
 
 namespace SpaceScannerPrv
 {
-    int inotifyFd;
     std::vector<std::string> partitions;
-
-    int watchedDirs = 0;
-    std::unordered_map<int, FileEntry*> inotifyWdMap;
 }
 
 
@@ -37,109 +32,11 @@ void SpaceScanner::init_platform()
     partitions.emplace_back("vfat");
     partitions.emplace_back("ntfs");
     partitions.emplace_back("fuseblk");
-
-    inotifyFd = inotify_init1(IN_NONBLOCK);
-    if (inotifyFd == -1)
-    {
-        std::cerr << "Failed to initialize inotify!\n";
-        return;
-    }
 }
 
 void SpaceScanner::cleanup_platform()
 {
 }
-
-
-/* Display information from inotify_event structure */
-static void displayInotifyEvent(struct inotify_event *i)
-{
-    if (i->mask & IN_IGNORED)
-        return;
-
-    using namespace SpaceScannerPrv;
-
-    auto search = inotifyWdMap.find(i->wd);
-    std::string path;
-    if(search != inotifyWdMap.end())
-    {
-        auto entry = (FileEntry*)search->second;
-        entry->get_path(path);
-        printf("    path =%s; ", path.c_str());
-    }
-    else
-        printf("    wd =%2d; ", i->wd);
-    if (i->cookie > 0)
-        printf("cookie =%4d; ", i->cookie);
-
-    printf("mask = ");
-    if (i->mask & IN_ACCESS)        printf("IN_ACCESS ");
-    if (i->mask & IN_ATTRIB)        printf("IN_ATTRIB ");
-    if (i->mask & IN_CLOSE_NOWRITE) printf("IN_CLOSE_NOWRITE ");
-    if (i->mask & IN_CLOSE_WRITE)   printf("IN_CLOSE_WRITE ");
-    if (i->mask & IN_CREATE)        printf("IN_CREATE ");
-    if (i->mask & IN_DELETE)        printf("IN_DELETE ");
-    if (i->mask & IN_DELETE_SELF)   printf("IN_DELETE_SELF ");
-    if (i->mask & IN_ISDIR)         printf("IN_ISDIR ");
-    if (i->mask & IN_MODIFY)        printf("IN_MODIFY ");
-    if (i->mask & IN_MOVE_SELF)     printf("IN_MOVE_SELF ");
-    if (i->mask & IN_MOVED_FROM)    printf("IN_MOVED_FROM ");
-    if (i->mask & IN_MOVED_TO)      printf("IN_MOVED_TO ");
-    if (i->mask & IN_OPEN)          printf("IN_OPEN ");
-    if (i->mask & IN_Q_OVERFLOW)    printf("IN_Q_OVERFLOW ");
-    if (i->mask & IN_UNMOUNT)       printf("IN_UNMOUNT ");
-    printf("\n");
-
-    if (i->len > 0)
-        printf("        name = %s\n", i->name);
-}
-
-
-int inotify_watch_dir(const char* dir_path)
-{
-    int wd;
-
-    const auto EVENTS = (IN_MODIFY | IN_MOVED_FROM	| IN_MOVED_TO \
-                        | IN_CREATE | IN_DELETE	| IN_DELETE_SELF | IN_MOVE_SELF);
-
-    wd = inotify_add_watch(SpaceScannerPrv::inotifyFd, dir_path, EVENTS);
-    if (wd == -1)
-    {
-        std::cerr << "Failed to add inotify watch to " << dir_path<< "\n";
-        return -1;
-    }
-
-    return wd;
-}
-
-
-void inotify_check_events()
-{
-    const size_t BUF_LEN = (10 * (sizeof(struct inotify_event) + NAME_MAX + 1));
-
-    char buf[BUF_LEN] __attribute__ ((aligned(8)));
-    ssize_t numRead;
-    char *p;
-    struct inotify_event *event;
-
-    for (;;)
-    {
-        numRead = read(SpaceScannerPrv::inotifyFd, buf, BUF_LEN);
-        if (numRead <= 0)
-        {
-            break;
-        }
-
-        /* Process all of the events in buffer returned by read() */
-        for (p = buf; p < buf + numRead; ) {
-            event = (struct inotify_event *) p;
-            displayInotifyEvent(event);
-
-            p += sizeof(struct inotify_event) + event->len;
-        }
-    }
-}
-
 
 void SpaceScanner::read_available_drives()
 {
@@ -246,25 +143,7 @@ FileEntry* SpaceScanner::create_root_entry(const char* path)
 
 void SpaceScanner::on_before_new_scan()
 {
-    using namespace SpaceScannerPrv;
-    for(auto it = inotifyWdMap.begin(); it != inotifyWdMap.end(); ++it)
-        inotify_rm_watch(inotifyFd, it->first);
 
-    watchedDirs = 0;
-    inotifyWdMap.clear();
-}
-
-void SpaceScanner::watch_file_changes()
-{
-    while(true)
-    {
-        inotify_check_events();
-
-        if(scannerStatus==STOPPING)
-            break;
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
 }
 
 void SpaceScanner::scan_dir_prv(FileEntry *parent)
@@ -283,11 +162,9 @@ void SpaceScanner::scan_dir_prv(FileEntry *parent)
         return;
     }
 
-    int wd = inotify_watch_dir(path.c_str());
     struct stat file_stat{};
     int status;
 
-    inotify_check_events();
     while((dp = readdir(dirp)) != nullptr)
     {
         if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)
@@ -331,18 +208,8 @@ void SpaceScanner::scan_dir_prv(FileEntry *parent)
 //            std::cout <<"dir: "<<isDir<<", "<<path_buf<<", "<< dp->d_name<<", "<<file_stat.st_size<<"\n";
         }
 
-        if(scannerStatus!=SCANNING)
+        if(scannerStatus!=ScannerStatus::SCANNING)
             break;
-    }
-
-    //TODO set up some internal limit (changed from settings) for amount of descriptors
-    // and only if we're at limit - remove existing watch from the smallest directory
-    //don't watch small directories
-    if(parent->get_size()<1024*1024*100)
-        inotify_rm_watch(SpaceScannerPrv::inotifyFd, wd);
-    else if(wd!=-1){
-        SpaceScannerPrv::inotifyWdMap[wd]=parent;
-        ++SpaceScannerPrv::watchedDirs;
     }
 
     hasPendingChanges = true;

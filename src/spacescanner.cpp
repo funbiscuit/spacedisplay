@@ -8,7 +8,7 @@
 #include <chrono>
 #include <thread>
 
-SpaceScanner::SpaceScanner(): scannerStatus(IDLE), rootFile(nullptr)
+SpaceScanner::SpaceScanner(): scannerStatus(ScannerStatus::IDLE), rootFile(nullptr)
 {
     init_platform();
 }
@@ -75,28 +75,19 @@ void SpaceScanner::async_scan()
 
     std::cout << "Time taken: " << mseconds<<"ms, "<<fileCount<<" file(s) scanned\n";
 
-    if(scannerStatus != STOPPING)
-    {
-        scannerStatus=WATCHING;
-        hasPendingChanges = true;
-        watch_file_changes();
-    }
-
-    scannerStatus=IDLE;
+    scannerStatus=ScannerStatus::IDLE;
     hasPendingChanges = true;
 }
 bool SpaceScanner::can_refresh()
 {
-    return rootFile!= nullptr && (!is_running() || is_watching());
+    return rootFile!= nullptr && !is_running();
 }
+
 bool SpaceScanner::is_running()
 {
-    return scannerStatus!=IDLE;
+    return scannerStatus!=ScannerStatus::IDLE;
 }
-bool SpaceScanner::is_watching()
-{
-    return scannerStatus==WATCHING;
-}
+
 bool SpaceScanner::is_loaded()
 {
     return rootFile!= nullptr;
@@ -192,7 +183,7 @@ void SpaceScanner::update_root_file(FileEntrySharedPtr& root, float minSizeRatio
 float SpaceScanner::get_scan_progress()
 {
     mtx.lock();
-    if(scannerStatus==SCANNING && (totalSpace-freeSpace)>0)
+    if(scannerStatus==ScannerStatus::SCANNING && (totalSpace-freeSpace)>0)
     {
         if(rootFile!=nullptr)
         {
@@ -209,22 +200,22 @@ float SpaceScanner::get_scan_progress()
 
 void SpaceScanner::stop_scan()
 {
-    if(scannerStatus==SCANNING || scannerStatus==WATCHING)
-        scannerStatus=STOPPING;
+    if(scannerStatus!=ScannerStatus::STOPPING && scannerStatus!=ScannerStatus::IDLE)
+        scannerStatus=ScannerStatus::STOPPING;
 }
 
 void SpaceScanner::scan_dir(const std::string &path)
 {
     //do nothing if scan is already in progress
-    if(scannerStatus!=IDLE)
+    if(scannerStatus!=ScannerStatus::IDLE)
         return;
 
-    scannerStatus=SCANNING;
+    scannerStatus=ScannerStatus::SCANNING;
 
     auto parent=create_root_entry(path.c_str());
     if(!parent)
     {
-        scannerStatus=IDLE;
+        scannerStatus=ScannerStatus::IDLE;
         std::cout<<"Can't open "<<path.c_str()<<"\n";
         return;
     }
@@ -265,7 +256,7 @@ void SpaceScanner::scan_dir(const std::string &path)
 void SpaceScanner::rescan_dir(const std::string &path)
 {
     //do nothing if scan is already in progress
-    if(scannerStatus!=WATCHING && scannerStatus!=IDLE)
+    if(scannerStatus!=ScannerStatus::IDLE)
         return;
 
     rescanPathQueue.push(path);
@@ -273,7 +264,7 @@ void SpaceScanner::rescan_dir(const std::string &path)
     if(rootFile)
         rootFile->update_free_space(freeSpace);
 
-    scannerStatus=SCANNING;
+    scannerStatus=ScannerStatus::SCANNING;
     std::cout<<"Start rescan thread\n";
     std::thread t(&SpaceScanner::async_rescan, this);
     t.detach();
@@ -321,7 +312,7 @@ void SpaceScanner::async_rescan()
             {
                 rootRescan=true;
                 //for rescanning of root just start a new scan
-                scannerStatus = IDLE;
+                scannerStatus = ScannerStatus::IDLE;
                 scan_dir(path);
             }
         }
@@ -336,7 +327,7 @@ void SpaceScanner::async_rescan()
 
         std::cout << "Time taken: " << mseconds<<"ms, "<<fileCount<<" file(s) scanned\n";
 
-        scannerStatus=IDLE;
+        scannerStatus=ScannerStatus::IDLE;
     }
     hasPendingChanges = true;
 }

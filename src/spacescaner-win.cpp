@@ -13,135 +13,9 @@
 #include <thread>
 #include <winbase.h>
 
-enum FileAction {
-    ADDED=1,
-    REMOVED=-1,
-    MODIFIED=3,
-    OLD_NAME=-6,
-    NEW_NAME=6
-};
-
-struct FileInfo {
-    FileAction Action;
-    std::string FileName;
-};
-
 void SpaceScanner::on_before_new_scan()
 {
 
-}
-
-void SpaceScanner::watch_file_changes()
-{
-    //TODO
-}
-
-void ReadDirChanges(const std::string &path)
-{
-    auto wname=str2wstr(path);
-    auto handle=CreateFileW(
-            wname.c_str(),
-            FILE_LIST_DIRECTORY,
-            FILE_SHARE_READ | FILE_SHARE_WRITE| FILE_SHARE_DELETE,
-            nullptr,
-            OPEN_EXISTING,
-            FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, //for async use
-            nullptr
-    );
-
-    std::cout<<"Start monitoring changes\n";
-    int bufSize=1024*32;
-    auto buffer=new DWORD[bufSize];
-    while(true)
-    {
-        DWORD bytesReturned=0;
-
-        auto found=ReadDirectoryChangesW(
-                handle,
-                buffer,
-                bufSize,
-                true,
-                FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE,
-                &bytesReturned,
-                nullptr,
-                nullptr
-        );
-        int m=bytesReturned % sizeof(DWORD);
-        if(m>0)
-            bytesReturned+=m;
-
-
-        int dwords=bytesReturned/sizeof(DWORD);
-
-        if(found && dwords>3)
-        {
-            DWORD next=buffer[0]/sizeof(DWORD);//offset to next
-//            std::cout<<"Bytes returned watch: "<<bytesReturned<<"\n";
-            int current=0;//position to dword (NOT BYTE!)
-
-            while(next>=0)
-            {
-                FileInfo fileInfo={};
-                next=buffer[current]/sizeof(DWORD);//offset to next this should be dword aligned
-
-                switch (buffer[current+1])
-                {
-                    case FILE_ACTION_ADDED:
-                        fileInfo.Action=ADDED;
-                        break;
-                    case FILE_ACTION_REMOVED:
-                        fileInfo.Action=REMOVED;
-                        break;
-                    case FILE_ACTION_MODIFIED:
-                        fileInfo.Action=MODIFIED;
-                        break;
-                    case FILE_ACTION_RENAMED_OLD_NAME:
-                        fileInfo.Action=OLD_NAME;
-                        break;
-                    case FILE_ACTION_RENAMED_NEW_NAME:
-                        fileInfo.Action=NEW_NAME;
-                        break;
-                    default:
-                        continue;//other reasons we are not interested in
-                }
-
-                auto nameLen=buffer[current+2]/2;
-                auto name=new wchar_t[nameLen+1];
-
-//                std::cout<<"dwords-next-current-3: "<<(dwords-next-current-3)<<", len: "<<(nameLen)<<"\n";
-
-                memcpy(name, buffer+current+3, (dwords-next-current-3)*sizeof(DWORD)); // int is a POD
-                name[nameLen]='\0';
-                std::wcout<<"File name: "<<name<<", reason: "<<fileInfo.Action<<"\n";
-                auto cname=wstr2str(name);
-                fileInfo.FileName=cname;
-
-                delete[](name);
-
-                current+=next;
-
-                if(next==0)
-                    break;
-
-            }
-
-//            for(int k=0;k<dwords;k++)
-//            {
-//                printf_s("DWORD %d: %06X\n",k,buffer[k]);
-//
-//            }
-
-        }
-
-        //TODO will not happen
-        if(m>10)
-            break;
-
-    }
-    delete[](buffer);
-    std::cout<<"Stop monitoring changes\n";
-
-    CloseHandle(handle);
 }
 
 void SpaceScanner::init_platform()
@@ -331,7 +205,7 @@ void SpaceScanner::scan_dir_prv(FileEntry *parent)
             if(isDir)
                 scan_dir_prv(fe);
         }
-        found=(scannerStatus==SCANNING) && FindNextFileW(handle, &fileData)!=0;
+        found=(scannerStatus==ScannerStatus::SCANNING) && FindNextFileW(handle, &fileData)!=0;
     }
     FindClose(handle);
     hasPendingChanges = true;

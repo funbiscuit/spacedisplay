@@ -11,11 +11,10 @@
 #include "fileentryshared.h"
 #include "fileentrypool.h"
 
-enum ScannerStatus {
+enum class ScannerStatus {
     IDLE=0,
     SCANNING=1,
     STOPPING=2,
-    WATCHING=3,
 };
 
 class SpaceScanner {
@@ -42,7 +41,6 @@ public:
     FileEntrySharedPtr get_root_file(float minSizeRatio, uint16_t flags, const char* filepath, int depth);
     void update_root_file(FileEntrySharedPtr& root, float minSizeRatio, uint16_t flags, const char* filepath, int depth);
     bool is_running();
-    bool is_watching();
     bool is_loaded();
     bool can_refresh();
     bool has_changes();
@@ -97,7 +95,6 @@ private:
     void scan_dir_prv(FileEntry *parent);
     void async_scan();
     void async_rescan();
-    void watch_file_changes();
     void check_disk_space();
 
     /**
