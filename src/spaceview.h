@@ -9,12 +9,13 @@
 
 class SpaceScanner;
 class FileEntryPopup;
+class MainWindow;
 
 class SpaceView : public QWidget
 {
 Q_OBJECT
 public:
-    SpaceView();
+    SpaceView(MainWindow* parent);
 
     void setScanner(SpaceScanner* _scanner);
 
@@ -80,6 +81,7 @@ public:
     void clearHistory();
 
 protected:
+    MainWindow* parent;
     const int MIN_DEPTH =1;
     const int MAX_DEPTH =9;
 

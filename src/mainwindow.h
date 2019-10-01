@@ -3,6 +3,7 @@
 #define SPACEDISPLAY_MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QVBoxLayout>
 #include <memory>
 
 
@@ -12,6 +13,7 @@ class QMenu;
 QT_END_NAMESPACE
 
 class SpaceView;
+class StatusView;
 class SpaceScanner;
 
 
@@ -38,6 +40,7 @@ public:
     };
 
     void updateAvailableActions();
+    void updateStatusView();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -94,8 +97,10 @@ private:
 
     int timerId;
     std::unique_ptr<SpaceScanner> scanner;
+    std::unique_ptr<QVBoxLayout> layout;
 
     SpaceView *spaceWidget;
+    StatusView *statusView;
 };
 
 #endif //SPACEDISPLAY_MAINWINDOW_H

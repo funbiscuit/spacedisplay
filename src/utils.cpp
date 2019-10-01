@@ -120,21 +120,21 @@ std::string Utils::format_size(int64_t size)
     if(sz>GB)
     {
         sz/=GB;
-        sizeStr=string_format("%0.1fGiB",sz);
+        sizeStr=string_format("%0.1f GiB",sz);
     }
     else if(sz>MB)
     {
         sz/=MB;
-        sizeStr=string_format("%0.1fMiB",sz);
+        sizeStr=string_format("%0.1f MiB",sz);
     }
     else if(sz>KB)
     {
         sz/=KB;
-        sizeStr=string_format("%0.1fKiB",sz);
+        sizeStr=string_format("%0.1f KiB",sz);
     }
     else
     {
-        sizeStr=string_format("%0.1fB",sz);
+        sizeStr=string_format("%0.1f B",sz);
     }
 
     return sizeStr;

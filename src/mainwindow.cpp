@@ -5,6 +5,7 @@
 
 #include "mainwindow.h"
 #include "spaceview.h"
+#include "statusview.h"
 #include "spacescanner.h"
 #include "resource_builder/resources.h"
 #include "resources.h"
@@ -38,15 +39,28 @@ bool operator!(MainWindow::ActionMask mask)
 }
 
 MainWindow::MainWindow()
-        : spaceWidget(new SpaceView)
+        : spaceWidget(new SpaceView(this)), statusView(new StatusView)
 {
     setMinimumSize(800, 600);
     scanner = Utils::make_unique<SpaceScanner>();
+    layout = Utils::make_unique<QVBoxLayout>();
+//    layout->setContentsMargins(0,0,0,0);
+//    layout->setSpacing(0);
 
-    setCentralWidget(spaceWidget);
+    statusView->scanOpened=false;
+    statusView->set_progress(true,0.f);
+
+    auto window = new QWidget();
+
+    window->setLayout(layout.get());
+
+    setCentralWidget(window);
+
+    layout->addWidget(spaceWidget,1);
+    layout->addWidget(statusView,0);
 
     createActions();
-    createStatusBar();
+//    createStatusBar();
 
     readSettings();
 
@@ -68,7 +82,28 @@ MainWindow::~MainWindow()
 void MainWindow::onScanUpdate()
 {
     spaceWidget->onScanUpdate();
+    updateStatusView();
     updateAvailableActions();
+}
+
+void MainWindow::updateStatusView()
+{
+    auto total=(float)scanner->get_total_space();
+    auto free=(float)scanner->get_free_space();
+    auto scannedHidden=(float)spaceWidget->getHiddenSize();
+    auto scannedVisible=(float)scanner->get_scanned_space();
+    float unknown= total - free - scannedVisible;
+    scannedVisible-=scannedHidden;
+
+    bool isAtRoot = spaceWidget->isAtRoot();
+
+    statusView->isDirScanned=!isRootScanned;
+    statusView->showFree= toggleFreeAct->isChecked() && isAtRoot;
+    statusView->showUnknown= toggleUnknownAct->isChecked() && isAtRoot;
+    statusView->scanOpened=scanner->is_loaded();
+    statusView->set_progress(!scanner->is_loaded() || scanner->can_refresh(), scanner->get_scan_progress());
+    statusView->set_sizes(isAtRoot, scannedVisible, scannedHidden, free, unknown);
+    statusView->repaint();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -164,22 +199,26 @@ void MainWindow::startScan(const std::string& path)
 void MainWindow::goBack()
 {
     spaceWidget->navigateBack();
+    updateStatusView();
     updateAvailableActions();
 }
 void MainWindow::goForward()
 {
     spaceWidget->navigateForward();
+    updateStatusView();
     updateAvailableActions();
 }
 void MainWindow::goUp()
 {
     if(!spaceWidget->navigateUp())
         goHome();
+    updateStatusView();
     updateAvailableActions();
 }
 void MainWindow::goHome()
 {
     spaceWidget->setScanner(scanner.get());
+    updateStatusView();
     updateAvailableActions();
 }
 void MainWindow::refreshView()
@@ -198,6 +237,7 @@ void MainWindow::refreshView()
         auto path = spaceWidget->getCurrentPath();
         spaceWidget->rescanDir(path);
     }
+    updateStatusView();
 }
 void MainWindow::lessDetail()
 {
@@ -212,10 +252,12 @@ void MainWindow::moreDetail()
 void MainWindow::toggleFree()
 {
     spaceWidget->setShowFreeSpace(toggleFreeAct->isChecked());
+    updateStatusView();
 }
 void MainWindow::toggleUnknown()
 {
     spaceWidget->setShowUnknownSpace(toggleUnknownAct->isChecked());
+    updateStatusView();
 }
 
 void MainWindow::about()

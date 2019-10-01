@@ -9,7 +9,7 @@
 #include "resources.h"
 #include "resource_builder/resources.h"
 
-SpaceView::SpaceView() : QWidget()
+SpaceView::SpaceView(MainWindow* parent) : QWidget(), parent(parent)
 {
     setMouseTracking(true);
     entryPopup = Utils::make_unique<FileEntryPopup>(this);
@@ -122,41 +122,36 @@ bool SpaceView::drawViewBg(QPainter& painter, const FileEntrySharedPtr &file, bo
 
 void SpaceView::mouseReleaseEvent(QMouseEvent *event)
 {
-    if(event->button() == Qt::RightButton)
+    if(event->button() == Qt::RightButton && parent)
     {
-        auto parent = dynamic_cast<MainWindow*>(parentWidget());
-//        bool isWidgetHovered = spaceWidget->rect().contains(spaceWidget->mapFromGlobal(event->globalPos()));
-        if(parent)
+        if(scanner && root)
         {
-            if(scanner && root)
+            auto hovered = getHoveredEntry();
+            if(hovered)
             {
-                auto hovered = getHoveredEntry();
-                if(hovered)
+                std::string entryPath;
+                if(currentPath.length()>0)
                 {
-                    std::string entryPath;
-                    if(currentPath.length()>0)
-                    {
-                        if(currentPath.back()!='/' && currentPath.back()!='\\')
-                            currentPath.append("/");
-                        entryPath = currentPath + hovered->get_path(false);
-                    }
-                    else
-                        entryPath = hovered->get_path();
-
-                    entryPopup->updateActions(scanner);
-                    if(hovered->is_dir())
-                        entryPopup->popupDir(entryPath);
-                    else
-                        entryPopup->popupFile(entryPath);
+                    if(currentPath.back()!='/' && currentPath.back()!='\\')
+                        currentPath.append("/");
+                    entryPath = currentPath + hovered->get_path(false);
                 }
-            } else
-            {
-                parent->newScan();
+                else
+                    entryPath = hovered->get_path();
+
+                entryPopup->updateActions(scanner);
+                if(hovered->is_dir())
+                    entryPopup->popupDir(entryPath);
+                else
+                    entryPopup->popupFile(entryPath);
             }
-            parent->updateAvailableActions();
-            event->accept();
-            return;
+        } else
+        {
+            parent->newScan();
         }
+        parent->updateAvailableActions();
+        event->accept();
+        return;
     }
     QWidget::mouseReleaseEvent(event);
 }
@@ -215,7 +210,7 @@ bool SpaceView::updateHoveredView(FileEntryShared* prevHovered)
 //            std::cout << "Show for: "<<hoveredEntry->get_name()<<"\n";
             tooltipEntry = hoveredEntry;
             QToolTip::showText(mapToGlobal(QPoint(mouseX, mouseY)),
-                    hoveredEntry->get_tooltip().c_str());
+                               hoveredEntry->get_tooltip().c_str());
         }
     } else if(QToolTip::isVisible())
     {
@@ -313,8 +308,8 @@ void SpaceView::allocateEntries()
     int padding=0;
     rect.x=padding;
     rect.y=padding;
-    rect.w=sz.width()-2*padding;
-    rect.h=sz.height()-2*padding;
+    rect.w=sz.width()-2*padding-1;
+    rect.h=sz.height()-2*padding-1;
 
     if(scanner!=nullptr)
     {
@@ -534,9 +529,11 @@ void SpaceView::mousePressEvent(QMouseEvent *event) {
             historyPush();
             event->accept();
             onScanUpdate();
-            auto parent = dynamic_cast<MainWindow*>(parentWidget());
             if(parent)
+            {
                 parent->updateAvailableActions();
+                parent->updateStatusView();
+            }
             return;
         }
     }
