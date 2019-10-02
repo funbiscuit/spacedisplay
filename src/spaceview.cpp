@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include "spaceview.h"
+#include "colortheme.h"
 #include "mainwindow.h"
 #include "spacescanner.h"
 #include "fileentrypopup.h"
@@ -47,24 +48,25 @@ void SpaceView::paintEvent(QPaintEvent *event)
 
 void SpaceView::drawView(QPainter& painter, const FileEntrySharedPtr &file, int nestLevel, bool forceFill)
 {
-    if(!drawViewBg(painter, file, forceFill || file->get_type() != FileEntry::DIRECTORY))
+    QColor bg;
+    if(!drawViewBg(painter, bg, file, forceFill || file->get_type() != FileEntry::DIRECTORY))
         return;
 
 
     if(nestLevel>0 && file->get_type()==FileEntry::DIRECTORY && !file->get_children().empty())
     {
-        drawViewTitle(painter, file);
+        drawViewTitle(painter, bg, file);
         for(const auto& child : file->get_children())
         {
             drawView(painter, child, nestLevel - 1, false);
         }
     } else
     {
-        drawViewText(painter, file);
+        drawViewText(painter, bg, file);
     }
 }
 
-bool SpaceView::drawViewBg(QPainter& painter, const FileEntrySharedPtr &file, bool fillDir)
+bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntrySharedPtr &file, bool fillDir)
 {
     auto rect=file->get_draw_area();
 
@@ -73,48 +75,42 @@ bool SpaceView::drawViewBg(QPainter& painter, const FileEntrySharedPtr &file, bo
 
     QRect qr {rect.x, rect.y, rect.w, rect.h};
 
-    int rgbF[3];//for fill
-    int rgbS[3];//for stroke
-
-    int fillColor, strokeColor;
+    QColor fillColor, strokeColor;
 
     switch(file->get_type())
     {
         case FileEntry::AVAILABLE_SPACE:
-            fillColor=0x77dd77;
-            strokeColor=0x5faf5f;//80% value of 0x77dd77
+            fillColor=colorTheme->viewFreeFill;
+            strokeColor=colorTheme->viewFreeLine;
             break;
         case FileEntry::DIRECTORY:
-            fillColor=0xffdead;
-            strokeColor=0xccb08a;//80% value of 0xffdead
+            fillColor=colorTheme->viewDirFill;
+            strokeColor=colorTheme->viewDirLine;
             break;
         case FileEntry::FILE:
-            fillColor=0x779ecb;
-            strokeColor=0x5e7da0;//80% value of 0x779ecb
+            fillColor=colorTheme->viewFileFill;
+            strokeColor=colorTheme->viewFileLine;
             break;
         default:
-            fillColor=0xcfcfc4;
-            strokeColor=0xa5a59d;//80% value of 0xcfcfc4
+            fillColor=colorTheme->viewUnknownFill;
+            strokeColor=colorTheme->viewUnknownLine;
             break;
     }
 
     if(file->isHovered && (!fillDir || file->get_type()!=FileEntry::DIRECTORY))
     {
-        hex_to_rgbi_tint(fillColor,rgbF,0.9f);
-        hex_to_rgbi_tint(strokeColor,rgbS,0.5f);
-    }
-    else
-    {
-        hex_to_rgbi(fillColor,rgbF);
-        hex_to_rgbi(strokeColor,rgbS);
+        fillColor = colorTheme->tint(fillColor, 0.9f);
+        strokeColor = colorTheme->tint(strokeColor, 0.5f);
     }
 
+    bg_out = fillColor;
+
     if(fillDir || file->isParentHovered)
-        painter.setBrush(QBrush(QColor(rgbF[0],rgbF[1],rgbF[2])));
+        painter.setBrush(QBrush(fillColor));
     else
         painter.setBrush(Qt::NoBrush);
 
-    painter.setPen(QPen(QColor(rgbS[0],rgbS[1],rgbS[2])));
+    painter.setPen(QPen(strokeColor));
     painter.drawRect(qr);
 
     return true;
@@ -230,6 +226,11 @@ void SpaceView::setScanner(SpaceScanner* _scanner)
     onScanUpdate();
 }
 
+void SpaceView::setTheme(std::shared_ptr<ColorTheme> theme)
+{
+    colorTheme = theme;
+}
+
 bool SpaceView::isAtRoot()
 {
     if(!scanner)
@@ -339,13 +340,14 @@ void SpaceView::allocateEntries()
     }
 }
 
-void SpaceView::drawViewTitle(QPainter& painter, const FileEntrySharedPtr &file)
+void SpaceView::drawViewTitle(QPainter& painter, const QColor& bg, const FileEntrySharedPtr &file)
 {
     Utils::RectI rect=file->get_draw_area();
     if(rect.w < textHeight || rect.h < textHeight)
         return;
 
-    auto titlePix = file->getTitlePixmap(painter);
+    auto col = colorTheme->textFor(bg);
+    auto titlePix = file->getTitlePixmap(painter, col);
 
     QRect rt{textHeight / 2 + rect.x, rect.y,
              rect.w - textHeight, (textHeight * 3) / 2};
@@ -356,7 +358,7 @@ void SpaceView::drawViewTitle(QPainter& painter, const FileEntrySharedPtr &file)
     painter.setClipping(false);
 }
 
-void SpaceView::drawViewText(QPainter &painter, const FileEntrySharedPtr &file)
+void SpaceView::drawViewText(QPainter &painter, const QColor& bg, const FileEntrySharedPtr &file)
 {
     auto rect=file->get_draw_area();
     if(rect.w < textHeight || rect.h < textHeight)
@@ -367,8 +369,10 @@ void SpaceView::drawViewText(QPainter &painter, const FileEntrySharedPtr &file)
     //if even name doesn't fit - display nothing
     //if width not enough - don't center text, just start it from the left border
 
-    auto namePix = file->getNamePixmap(painter);
-    auto sizePix = file->getSizePixmap(painter);
+    auto col = colorTheme->textFor(bg);
+
+    auto namePix = file->getNamePixmap(painter, col);
+    auto sizePix = file->getSizePixmap(painter, col);
 
     int lineHeight = painter.fontMetrics().height();
     bool showSize = true;
@@ -380,11 +384,8 @@ void SpaceView::drawViewText(QPainter &painter, const FileEntrySharedPtr &file)
 
     QRect rt{2+rect.x, 2+rect.y,
              rect.w-4, rect.h-4};
-    int rgb[3];
-    hex_to_rgbi(0x3b3b3b,rgb);
 
     painter.setClipRect(rt);
-    painter.setPen(QColor(rgb[0],rgb[1],rgb[2]));
 
     int dx1=2;
     if(namePix.width()<=rt.width())

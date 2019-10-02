@@ -339,35 +339,32 @@ void FileEntryShared::allocate_children2(size_t start, size_t end, std::vector<F
     }
 }
 
-QPixmap FileEntryShared::getNamePixmap(QPainter &painter)
+QPixmap FileEntryShared::getNamePixmap(QPainter &painter, const QColor& color)
 {
-    createPixmapCache(painter);
+    createPixmapCache(painter, color);
     return  cachedNamePix;
 }
 
-QPixmap FileEntryShared::getSizePixmap(QPainter &painter)
+QPixmap FileEntryShared::getSizePixmap(QPainter &painter, const QColor& color)
 {
-    createPixmapCache(painter);
+    createPixmapCache(painter, color);
     return  cachedSizePix;
 }
 
-QPixmap FileEntryShared::getTitlePixmap(QPainter &painter)
+QPixmap FileEntryShared::getTitlePixmap(QPainter &painter, const QColor& color)
 {
-    createPixmapCache(painter);
+    createPixmapCache(painter, color);
     return  cachedTitlePix;
 }
 
-void FileEntryShared::createPixmapCache(QPainter &painter)
+void FileEntryShared::createPixmapCache(QPainter &painter, const QColor& color)
 {
     std::string textName = get_name();
     std::string textSize = format_size();
 
-    int rgb[3];
-    hex_to_rgbi(0x3b3b3b,rgb);
-
     bool titleValid = true;
 
-    if(cachedName != textName)
+    if(cachedName != textName || cachedNameColor != color)
     {
         titleValid = false;
         QSize sz = painter.fontMetrics().size(0, textName.c_str());
@@ -375,12 +372,13 @@ void FileEntryShared::createPixmapCache(QPainter &painter)
             cachedNamePix = QPixmap(sz);
         cachedNamePix.fill(Qt::transparent);
         QPainter painter_pix(&cachedNamePix);
-        painter_pix.setPen(QColor(rgb[0],rgb[1],rgb[2]));
+        painter_pix.setPen(color);
         painter_pix.drawText(QRect(QPoint(0,0), sz), 0, textName.c_str());
         cachedName = textName;
+        cachedNameColor = color;
     }
 
-    if(cachedSize != textSize)
+    if(cachedSize != textSize || cachedSizeColor != color)
     {
         titleValid = false;
         QSize sz = painter.fontMetrics().size(0, textSize.c_str());
@@ -388,9 +386,10 @@ void FileEntryShared::createPixmapCache(QPainter &painter)
             cachedSizePix = QPixmap(sz);
         cachedSizePix.fill(Qt::transparent);
         QPainter painter_pix(&cachedSizePix);
-        painter_pix.setPen(QColor(rgb[0],rgb[1],rgb[2]));
+        painter_pix.setPen(color);
         painter_pix.drawText(QRect(QPoint(0,0), sz), 0, textSize.c_str());
         cachedSize = textSize;
+        cachedSizeColor = color;
     }
     if(!titleValid)
     {
@@ -400,7 +399,7 @@ void FileEntryShared::createPixmapCache(QPainter &painter)
             cachedTitlePix = QPixmap(sz);
         cachedTitlePix.fill(Qt::transparent);
         QPainter painter_pix(&cachedTitlePix);
-        painter_pix.setPen(QColor(rgb[0],rgb[1],rgb[2]));
+        painter_pix.setPen(color);
         painter_pix.drawText(QRect(QPoint(0,0),sz), 0, title.c_str());
     }
 }

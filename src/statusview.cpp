@@ -3,6 +3,7 @@
 #include <algorithm>
 #include "utils.h"
 #include "statusview.h"
+#include "colortheme.h"
 
 void StatusView::set_sizes(bool isAtRoot, float scannedVisible, float scannedHidden, float free, float unknown)
 {
@@ -22,6 +23,11 @@ void StatusView::set_progress(bool isReady, float progress)
 {
     scanReady=isReady;
     scanProgress=progress;
+}
+
+void StatusView::setTheme(std::shared_ptr<ColorTheme> theme)
+{
+    colorTheme = theme;
 }
 
 std::string StatusView::get_text_status_progress()
@@ -46,10 +52,6 @@ void StatusView::paintEvent(QPaintEvent *event)
     int width = size().width()-1;
     int height = size().height()-1;
 
-    auto colorUnknown = QColor(207, 207, 196);
-    auto colorFree = QColor(119, 221, 119);
-    auto colorUsed = QColor(119, 158, 203);
-    auto textColor = QColor(27, 27, 27);
     int textMargin = 5;
 
     auto fm = painter.fontMetrics();
@@ -59,7 +61,7 @@ void StatusView::paintEvent(QPaintEvent *event)
 
     QRect textRect{0,0,size().width(),size().height()};
 
-    painter.setPen(QPen(textColor));
+    painter.setPen(QPen(colorTheme->foreground));
     painter.drawText(textRect, Qt::AlignVCenter | Qt::AlignRight, str.c_str());
 
     //don't render actual bars if scan is not opened
@@ -70,22 +72,22 @@ void StatusView::paintEvent(QPaintEvent *event)
 
     StatusPart partScannedVisible, partScannedHidden, partFree, partUnknown;
 
-    partScannedVisible.color = colorUsed;
+    partScannedVisible.color = colorTheme->viewFileFill;
     partScannedVisible.isHidden = false;
     partScannedVisible.label = Utils::format_size((int64_t)scannedSpaceVisible);
     partScannedVisible.weight = scannedSpaceVisible;
 
-    partScannedHidden.color = colorUsed;
+    partScannedHidden.color = colorTheme->viewFileFill;
     partScannedHidden.isHidden = true;
     partScannedHidden.label = Utils::format_size((int64_t)scannedSpaceHidden);
     partScannedHidden.weight = scannedSpaceHidden;
 
-    partFree.color = colorFree;
+    partFree.color = colorTheme->viewFreeFill;
     partFree.isHidden = !showFree;
     partFree.label = Utils::format_size((int64_t)freeSpace);
     partFree.weight = freeSpace;
 
-    partUnknown.color = colorUnknown;
+    partUnknown.color = colorTheme->viewUnknownFill;
     partUnknown.isHidden = !showUnknown;
     partUnknown.label = Utils::format_size((int64_t)unknownSpace);
     partUnknown.weight = unknownSpace;
@@ -111,12 +113,22 @@ void StatusView::paintEvent(QPaintEvent *event)
         if(barWidth > 0)
         {
             if(part.isHidden)
-                part.color.setAlpha(127);
+            {
+                //the same as just setting alpha, but we need actual final color to
+                //correctly determine appropriate color for text
+                auto bg = colorTheme->background;
+                qreal r = 0.5;
+                part.color = QColor::fromRgbF(
+                        part.color.redF()*(1.0-r) + bg.redF()*r,
+                        part.color.greenF()*(1.0-r) + bg.greenF()*r,
+                        part.color.blueF()*(1.0-r) + bg.blueF()*r);
+            }
 
             painter.fillRect(start1,0,barWidth,height, part.color);
 
             textRect.setX(start1);
             textRect.setWidth(barWidth);
+            painter.setPen(QPen(colorTheme->textFor(part.color)));
             painter.drawText(textRect, Qt::AlignCenter, part.label.c_str());
 
             if(!part.isHidden)

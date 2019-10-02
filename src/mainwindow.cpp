@@ -9,6 +9,7 @@
 #include "spacescanner.h"
 #include "resource_builder/resources.h"
 #include "resources.h"
+#include "colortheme.h"
 
 
 MainWindow::ActionMask operator|(MainWindow::ActionMask lhs, MainWindow::ActionMask rhs)
@@ -41,6 +42,12 @@ bool operator!(MainWindow::ActionMask mask)
 MainWindow::MainWindow()
         : spaceWidget(new SpaceView(this)), statusView(new StatusView)
 {
+    auto p = palette();
+    colorTheme = std::make_shared<ColorTheme>(p.window().color(),
+            p.windowText().color(), ColorTheme::NativeStyle::NATIVE);
+    spaceWidget->setTheme(colorTheme);
+    statusView->setTheme(colorTheme);
+
     setMinimumSize(800, 600);
     scanner = Utils::make_unique<SpaceScanner>();
     layout = Utils::make_unique<QVBoxLayout>();

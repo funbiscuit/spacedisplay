@@ -10,6 +10,8 @@
 class SpaceScanner;
 class FileEntryPopup;
 class MainWindow;
+class ColorTheme;
+
 
 class SpaceView : public QWidget
 {
@@ -18,6 +20,7 @@ public:
     SpaceView(MainWindow* parent);
 
     void setScanner(SpaceScanner* _scanner);
+    void setTheme(std::shared_ptr<ColorTheme> theme);
 
     void onScanUpdate();
 
@@ -84,6 +87,7 @@ protected:
     MainWindow* parent;
     const int MIN_DEPTH =1;
     const int MAX_DEPTH =9;
+    std::shared_ptr<ColorTheme> colorTheme;
 
     QPixmap bgIcon;
 
@@ -120,9 +124,9 @@ protected:
     bool updateHoveredView(FileEntryShared* prevHovered = nullptr);
 
     void drawView(QPainter& painter, const FileEntrySharedPtr &file, int nestLevel, bool forceFill);
-    void drawViewTitle(QPainter& painter, const FileEntrySharedPtr &file);
-    void drawViewText(QPainter& painter, const FileEntrySharedPtr &file);
-    bool drawViewBg(QPainter& painter, const FileEntrySharedPtr &file, bool fillDir);
+    void drawViewTitle(QPainter& painter, const QColor& bg, const FileEntrySharedPtr &file);
+    void drawViewText(QPainter& painter, const QColor& bg, const FileEntrySharedPtr &file);
+    bool drawViewBg(QPainter& painter, QColor& bg_out, const FileEntrySharedPtr &file, bool fillDir);
 
 };
 

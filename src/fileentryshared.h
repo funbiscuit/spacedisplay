@@ -70,9 +70,9 @@ public:
         return id;
     }
 
-    QPixmap getNamePixmap(QPainter &painter);
-    QPixmap getSizePixmap(QPainter &painter);
-    QPixmap getTitlePixmap(QPainter &painter);
+    QPixmap getNamePixmap(QPainter &painter, const QColor& color);
+    QPixmap getSizePixmap(QPainter &painter, const QColor& color);
+    QPixmap getTitlePixmap(QPainter &painter, const QColor& color);
 
     bool isHovered;
     bool isParentHovered;
@@ -99,12 +99,14 @@ private:
     void set_parent_hovered(bool hovered);
     void set_hovered(bool hovered);
 
-    void createPixmapCache(QPainter &painter);
+    void createPixmapCache(QPainter &painter, const QColor& color);
 
     QPixmap cachedNamePix;
     std::string cachedName;
+    QColor cachedNameColor;
     QPixmap cachedSizePix;
     std::string cachedSize;
+    QColor cachedSizeColor;
     QPixmap cachedTitlePix;
 
     Utils::RectI drawArea;

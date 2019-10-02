@@ -15,6 +15,7 @@ QT_END_NAMESPACE
 class SpaceView;
 class StatusView;
 class SpaceScanner;
+class ColorTheme;
 
 
 
@@ -98,6 +99,7 @@ private:
     int timerId;
     std::unique_ptr<SpaceScanner> scanner;
     std::unique_ptr<QVBoxLayout> layout;
+    std::shared_ptr<ColorTheme> colorTheme;
 
     SpaceView *spaceWidget;
     StatusView *statusView;
