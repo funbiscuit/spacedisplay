@@ -62,6 +62,7 @@ public slots:
     void moreDetail();
     void toggleFree();
     void toggleUnknown();
+    void switchTheme();
     void about();
 
 private:
@@ -69,6 +70,8 @@ private:
     void createStatusBar();
     void readSettings();
     void writeSettings();
+
+    void setTheme(bool isDark, bool updateIcons);
 
     void onScanUpdate();
 
@@ -79,6 +82,9 @@ private:
     void enableActions(ActionMask actions);
     void disableActions(ActionMask actions);
 
+    //settings keys
+    const char* SETTINGS_GEOMETRY = "geometry";
+    const char* SETTINGS_THEME = "dark_theme";
 
     //actions
     std::unique_ptr<QAction> newAct;
@@ -91,6 +97,7 @@ private:
     std::unique_ptr<QAction> moreDetailAct;
     std::unique_ptr<QAction> toggleFreeAct;
     std::unique_ptr<QAction> toggleUnknownAct;
+    std::unique_ptr<QAction> themeAct;
 
 
     ActionMask enabledActions;

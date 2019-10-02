@@ -43,12 +43,10 @@ MainWindow::MainWindow()
         : spaceWidget(new SpaceView(this)), statusView(new StatusView)
 {
     auto p = palette();
-    p.setColor(QPalette::Light, p.window().color());    //hide white line on top of toolbar in windows
-    setPalette(p);
+    //at start create theme with default colors and then switch to appropriate custom theme
     colorTheme = std::make_shared<ColorTheme>(p.window().color(),
             p.windowText().color(), ColorTheme::NativeStyle::NATIVE);
-    spaceWidget->setTheme(colorTheme);
-    statusView->setTheme(colorTheme);
+    setTheme(colorTheme->isDark(), false);
 
     setMinimumSize(800, 600);
     scanner = Utils::make_unique<SpaceScanner>();
@@ -268,6 +266,55 @@ void MainWindow::toggleUnknown()
     spaceWidget->setShowUnknownSpace(toggleUnknownAct->isChecked());
     updateStatusView();
 }
+void MainWindow::switchTheme()
+{
+    setTheme(!colorTheme->isDark(), true);
+    QSettings settings;
+    settings.setValue("dark_theme", colorTheme->isDark());
+}
+
+void MainWindow::setTheme(bool isDark, bool updateIcons)
+{
+    if(isDark)
+        colorTheme = std::make_shared<ColorTheme>(ColorTheme::CustomStyle::DARK);
+    else
+        colorTheme = std::make_shared<ColorTheme>(ColorTheme::CustomStyle::LIGHT);
+    auto p = palette();
+    p.setColor(QPalette::Window, colorTheme->background);
+    p.setColor(QPalette::WindowText, colorTheme->foreground);
+    p.setColor(QPalette::Light, p.window().color());    //hide white line on top of toolbar in windows
+    setPalette(p);
+    spaceWidget->setTheme(colorTheme);
+    statusView->setTheme(colorTheme);
+
+    if(updateIcons)
+    {
+        const QIcon newIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_NEW_SCAN_SVG);
+        const QIcon rescanIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_REFRESH_SVG);
+        const QIcon backIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ARROW_BACK_SVG);
+        const QIcon forwardIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ARROW_FORWARD_SVG);
+        const QIcon upIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_FOLDER_NAVIGATE_UP_SVG);
+        const QIcon homeIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_HOME_SVG);
+        const QIcon lessIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ZOOM_OUT_SVG);
+        const QIcon moreIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ZOOM_IN_SVG);
+        const QIcon freeIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SPACE_FREE_SVG);
+        const QIcon unknownIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SPACE_UNKNOWN_SVG);
+        const QIcon themeIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SMOOTH_MODE_SVG);
+
+        newAct->setIcon(newIcon);
+        rescanAct->setIcon(rescanIcon);
+        backAct->setIcon(backIcon);
+        forwardAct->setIcon(backIcon);
+        upAct->setIcon(upIcon);
+        homeAct->setIcon(homeIcon);
+        lessDetailAct->setIcon(lessIcon);
+        moreDetailAct->setIcon(moreIcon);
+        toggleFreeAct->setIcon(freeIcon);
+        toggleUnknownAct->setIcon(unknownIcon);
+        themeAct->setIcon(themeIcon);
+    }
+
+}
 
 void MainWindow::about()
 {
@@ -370,6 +417,7 @@ void MainWindow::createActions()
     const QIcon moreIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ZOOM_IN_SVG);
     const QIcon freeIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SPACE_FREE_SVG);
     const QIcon unknownIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SPACE_UNKNOWN_SVG);
+    const QIcon themeIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SMOOTH_MODE_SVG);
 
     newAct = Utils::make_unique<QAction>(newIcon, "&New Scan", this);
     newAct->setShortcuts(QKeySequence::New);
@@ -419,6 +467,9 @@ void MainWindow::createActions()
     toggleUnknownAct->setCheckable(true);
     connect(toggleUnknownAct.get(), &QAction::triggered, this, &MainWindow::toggleUnknown);
 
+    themeAct = Utils::make_unique<QAction>(themeIcon, "Switch theme", this);
+    connect(themeAct.get(), &QAction::triggered, this, &MainWindow::switchTheme);
+
     //create menubar
 /*
     auto fileMenu = menuBar()->addMenu("&Scan");
@@ -466,6 +517,9 @@ void MainWindow::createActions()
     mainToolbar->addAction(moreDetailAct.get());
     mainToolbar->addAction(toggleFreeAct.get());
     mainToolbar->addAction(toggleUnknownAct.get());
+    mainToolbar->addSeparator();
+
+    mainToolbar->addAction(themeAct.get());
 
 
 //    cutAct->setEnabled(false);
@@ -520,7 +574,7 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
 void MainWindow::readSettings()
 {
     QSettings settings;
-    const QByteArray geometry = settings.value("geometry", QByteArray()).toByteArray();
+    const QByteArray geometry = settings.value(SETTINGS_GEOMETRY, QByteArray()).toByteArray();
     if (geometry.isEmpty())
     {
         const QRect availableGeometry = QApplication::desktop()->availableGeometry(this);
@@ -529,12 +583,20 @@ void MainWindow::readSettings()
              (availableGeometry.height() - height()) / 2);
     } else
         restoreGeometry(geometry);
+
+    if(settings.contains(SETTINGS_THEME))
+    {
+        bool isDark = settings.value(SETTINGS_THEME).toBool();
+        if(colorTheme->isDark() != isDark)
+            switchTheme();
+    }
 }
 
 void MainWindow::writeSettings()
 {
     QSettings settings;
-    settings.setValue("geometry", saveGeometry());
+    settings.setValue(SETTINGS_GEOMETRY, saveGeometry());
+    settings.setValue(SETTINGS_THEME, colorTheme->isDark());
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent *event)

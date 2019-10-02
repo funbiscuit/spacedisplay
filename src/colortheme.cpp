@@ -5,26 +5,28 @@
 #include <iostream>
 
 
-ColorTheme::ColorTheme(CustomStyle style)
+ColorTheme::ColorTheme(CustomStyle _style)
 {
-    if(style == CustomStyle::DARK)
-        initStyle(QColor(50,50,50), QColor(230,230,230), style);
+    style = _style;
+    if(_style == CustomStyle::DARK)
+        initStyle(QColor(50,50,50), QColor(230,230,230), _style);
     else
         initStyle(QColor(250,250,250), QColor(35,35,35), CustomStyle::LIGHT);
 }
 
-ColorTheme::ColorTheme(const QColor& _background, const QColor& _foreground, NativeStyle style)
+ColorTheme::ColorTheme(const QColor& _background, const QColor& _foreground, NativeStyle _style)
 {
-    auto customStyle = style==NativeStyle::NATIVE_DARK ? CustomStyle::DARK : CustomStyle::LIGHT;
+    style = _style==NativeStyle::NATIVE_DARK ? CustomStyle::DARK : CustomStyle::LIGHT;
 
     //determine style from background
-    if(style == NativeStyle::NATIVE)
-        customStyle = _background.lightnessF() < 0.5f ? CustomStyle::DARK : CustomStyle::LIGHT;
-    initStyle(_background,  _foreground, customStyle);
+    if(_style == NativeStyle::NATIVE)
+        style = _background.lightnessF() < 0.5f ? CustomStyle::DARK : CustomStyle::LIGHT;
+    initStyle(_background,  _foreground, style);
 }
 
-void ColorTheme::initStyle(const QColor& _background, const QColor& _foreground, CustomStyle style)
+void ColorTheme::initStyle(const QColor& _background, const QColor& _foreground, CustomStyle _style)
 {
+    style = _style;
     std::cout << "Using "<<(style==CustomStyle::DARK ? "dark" : "light")<<" style\n";
 
     background = _background;
@@ -68,6 +70,11 @@ void ColorTheme::initStyle(const QColor& _background, const QColor& _foreground,
 
 //    viewDirFill = QColor(234, 78, 34);
 //    viewFileFill = QColor(78, 12, 46);
+}
+
+bool ColorTheme::isDark()
+{
+    return style == CustomStyle::DARK;
 }
 
 QIcon ColorTheme::createIcon(ResourceBuilder::ResourceId id)

@@ -132,7 +132,7 @@ void StatusView::paintEvent(QPaintEvent *event)
         start1+=barWidth;
     }
 
-    painter.setPen( QColor(88,88,88));
+    painter.setPen( colorTheme->foreground);
     painter.setBrush(Qt::transparent);
     if(endAllVisible!=end1)
         painter.drawRect(0,0,endAllVisible, height);

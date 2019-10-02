@@ -20,10 +20,12 @@ public:
         LIGHT
     };
 
-    explicit ColorTheme(CustomStyle style);
+    explicit ColorTheme(CustomStyle _style);
 
     // for NATIVE style DARK or LIGHT will be determined from background color automatically
-    ColorTheme(const QColor& _background, const QColor& _foreground, NativeStyle style = NativeStyle::NATIVE);
+    ColorTheme(const QColor& _background, const QColor& _foreground, NativeStyle _style = NativeStyle::NATIVE);
+
+    bool isDark();
 
     QIcon createIcon(ResourceBuilder::ResourceId id);
 
@@ -53,8 +55,9 @@ public:
     QColor viewFreeLine;
 
 private:
-    void initStyle(const QColor& _background, const QColor& _foreground, CustomStyle style);
+    void initStyle(const QColor& _background, const QColor& _foreground, CustomStyle _style);
 
+    CustomStyle style;
 };
 
 
