@@ -1,4 +1,5 @@
 #include "colortheme.h"
+#include "resources.h"
 
 #include <utility>
 #include <iostream>
@@ -24,34 +25,72 @@ ColorTheme::ColorTheme(const QColor& _background, const QColor& _foreground, Nat
 
 void ColorTheme::initStyle(const QColor& _background, const QColor& _foreground, CustomStyle style)
 {
+    std::cout << "Using "<<(style==CustomStyle::DARK ? "dark" : "light")<<" style\n";
+
     background = _background;
     foreground = _foreground;
     viewTextLight = QColor(230, 230, 230);
     viewTextDark = QColor(60, 60, 60);
 
-    viewDirFill = QColor(255, 222, 173);
-    viewFileFill = QColor(119, 158, 203);
-    viewUnknownFill = QColor(207, 207, 196);
-    viewFreeFill = QColor(119, 221, 119);
+    if(style==CustomStyle::DARK)
+    {
+        viewDirFill = QColor(150, 130, 95);
+        viewDirLine = QColor(120, 100, 75);
 
-    viewDirLine = QColor(204, 176, 138);
-    viewFileLine = QColor(94, 125, 160);
-    viewUnknownLine = QColor(165, 165, 157);
-    viewFreeLine = QColor(95, 175, 95);
+        viewFileFill = QColor(65, 85, 115);
+        viewFileLine = QColor(50, 65, 90);
 
+        viewFreeFill = QColor(73, 156, 84);
+        viewFreeLine = QColor(50, 115, 60);
+
+        viewUnknownFill = QColor(120, 120, 110);
+        viewUnknownLine = QColor(105, 105, 95);
+
+        iconEnabled = QColor(200, 200, 200);
+    } else
+    {
+        viewDirFill = QColor(255, 222, 173);
+        viewDirLine = QColor(204, 176, 138);
+
+        viewFileFill = QColor(119, 158, 203);
+        viewFileLine = QColor(94, 125, 160);
+
+        viewFreeFill = QColor(119, 221, 119);
+        viewFreeLine = QColor(95, 175, 95);
+
+        viewUnknownFill = QColor(207, 207, 196);
+        viewUnknownLine = QColor(165, 165, 157);
+
+        iconEnabled = QColor(120, 120, 120);
+    }
+
+    iconDisabled = blend(iconEnabled, background, 0.7);
 
 //    viewDirFill = QColor(234, 78, 34);
 //    viewFileFill = QColor(78, 12, 46);
 }
 
-QColor ColorTheme::tint(QColor src, float factor)
+QIcon ColorTheme::createIcon(ResourceBuilder::ResourceId id)
 {
-    qreal h, s, l;
-    src.getHslF(&h,&s,&l);
-    l = l + (1-l)*factor;
-    src.setHslF(h, s, l);
+    auto& r = Resources::get();
 
-    return src;
+    QIcon icon(r.get_vector_pixmap(id,64, iconEnabled));
+    icon.addPixmap(r.get_vector_pixmap(id,64, iconDisabled), QIcon::Disabled);
+
+    return icon;
+}
+
+QColor ColorTheme::tint(const QColor& src, float factor)
+{
+    return ColorTheme::blend(src,background,factor);
+}
+
+QColor ColorTheme::blend(const QColor& foreground, const QColor& background, qreal bg_amount)
+{
+    return QColor::fromRgbF(
+            foreground.redF()*(1.0-bg_amount) + background.redF()*bg_amount,
+            foreground.greenF()*(1.0-bg_amount) + background.greenF()*bg_amount,
+            foreground.blueF()*(1.0-bg_amount) + background.blueF()*bg_amount);
 }
 
 QColor ColorTheme::textFor(const QColor& bg)

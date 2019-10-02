@@ -22,7 +22,9 @@ Resources& Resources::get()
     return instance;
 }
 
-QImage Resources::tint(const QImage& src, const QColor& color, qreal strength){
+QImage Resources::tint(const QImage& src, const QColor& color, qreal strength)
+{
+    // FIXME tint result is not very good if source is complete black and target is complete wight
     if(src.isNull()) return QImage();
     QGraphicsScene scene;
     QGraphicsPixmapItem item;

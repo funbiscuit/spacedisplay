@@ -43,6 +43,8 @@ MainWindow::MainWindow()
         : spaceWidget(new SpaceView(this)), statusView(new StatusView)
 {
     auto p = palette();
+    p.setColor(QPalette::Light, p.window().color());    //hide white line on top of toolbar in windows
+    setPalette(p);
     colorTheme = std::make_shared<ColorTheme>(p.window().color(),
             p.windowText().color(), ColorTheme::NativeStyle::NATIVE);
     spaceWidget->setTheme(colorTheme);
@@ -358,40 +360,16 @@ void MainWindow::createActions()
     aboutAct->setStatusTip("Show the application's About box");
     connect(aboutAct, &QAction::triggered, this, &MainWindow::about);
 
-    auto& r = Resources::get();
-
-    auto btnColor = palette().color(QPalette::Mid);
-
-    const QIcon newIcon(r.get_vector_pixmap(
-            ResourceBuilder::RES___ICONS_SVG_NEW_SCAN_SVG,
-            64, btnColor));
-    const QIcon rescanIcon(r.get_vector_pixmap(
-            ResourceBuilder::RES___ICONS_SVG_REFRESH_SVG,
-            64, btnColor));
-    const QIcon backIcon(r.get_vector_pixmap(
-            ResourceBuilder::RES___ICONS_SVG_ARROW_BACK_SVG,
-            64, btnColor));
-    const QIcon forwardIcon(r.get_vector_pixmap(
-            ResourceBuilder::RES___ICONS_SVG_ARROW_FORWARD_SVG,
-            64, btnColor));
-    const QIcon upIcon(r.get_vector_pixmap(
-            ResourceBuilder::RES___ICONS_SVG_FOLDER_NAVIGATE_UP_SVG,
-            64, btnColor));
-    const QIcon homeIcon(r.get_vector_pixmap(
-            ResourceBuilder::RES___ICONS_SVG_HOME_SVG,
-            64, btnColor));
-    const QIcon lessIcon(r.get_vector_pixmap(
-            ResourceBuilder::RES___ICONS_SVG_ZOOM_OUT_SVG,
-            64, btnColor));
-    const QIcon moreIcon(r.get_vector_pixmap(
-            ResourceBuilder::RES___ICONS_SVG_ZOOM_IN_SVG,
-            64, btnColor));
-    const QIcon freeIcon(r.get_vector_pixmap(
-            ResourceBuilder::RES___ICONS_SVG_SPACE_FREE_SVG,
-            64, btnColor));
-    const QIcon unknownIcon(r.get_vector_pixmap(
-            ResourceBuilder::RES___ICONS_SVG_SPACE_UNKNOWN_SVG,
-            64, btnColor));
+    const QIcon newIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_NEW_SCAN_SVG);
+    const QIcon rescanIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_REFRESH_SVG);
+    const QIcon backIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ARROW_BACK_SVG);
+    const QIcon forwardIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ARROW_FORWARD_SVG);
+    const QIcon upIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_FOLDER_NAVIGATE_UP_SVG);
+    const QIcon homeIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_HOME_SVG);
+    const QIcon lessIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ZOOM_OUT_SVG);
+    const QIcon moreIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ZOOM_IN_SVG);
+    const QIcon freeIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SPACE_FREE_SVG);
+    const QIcon unknownIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SPACE_UNKNOWN_SVG);
 
     newAct = Utils::make_unique<QAction>(newIcon, "&New Scan", this);
     newAct->setShortcuts(QKeySequence::New);
@@ -442,7 +420,7 @@ void MainWindow::createActions()
     connect(toggleUnknownAct.get(), &QAction::triggered, this, &MainWindow::toggleUnknown);
 
     //create menubar
-
+/*
     auto fileMenu = menuBar()->addMenu("&Scan");
     auto goMenu = menuBar()->addMenu("&Go");
     auto viewMenu = menuBar()->addMenu("&View");
@@ -468,7 +446,7 @@ void MainWindow::createActions()
 
     //create help menu
     helpMenu->addAction(aboutAct);
-
+*/
 
     //create toolbar
     QToolBar *mainToolbar = addToolBar("Toolbar");

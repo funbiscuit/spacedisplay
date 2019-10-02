@@ -42,7 +42,9 @@ void SpaceView::paintEvent(QPaintEvent *event)
         int x0=(width-bgIcon.width())/2;
         int y0=(height-bgIcon.height())/2;
         painter.drawPixmap(x0,y0, bgIcon);
-        painter.fillRect(0, 0, width, height, QColor::fromRgbF(1.0,1.0,1.0,0.6));
+        auto col = colorTheme->background;
+        col.setAlpha(150);
+        painter.fillRect(0, 0, width, height, col);
     }
 }
 
@@ -99,7 +101,7 @@ bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntrySha
 
     if(file->isHovered && (!fillDir || file->get_type()!=FileEntry::DIRECTORY))
     {
-        fillColor = colorTheme->tint(fillColor, 0.9f);
+        fillColor = colorTheme->tint(fillColor, 0.7f);
         strokeColor = colorTheme->tint(strokeColor, 0.5f);
     }
 

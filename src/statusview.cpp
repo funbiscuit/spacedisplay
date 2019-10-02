@@ -116,12 +116,7 @@ void StatusView::paintEvent(QPaintEvent *event)
             {
                 //the same as just setting alpha, but we need actual final color to
                 //correctly determine appropriate color for text
-                auto bg = colorTheme->background;
-                qreal r = 0.5;
-                part.color = QColor::fromRgbF(
-                        part.color.redF()*(1.0-r) + bg.redF()*r,
-                        part.color.greenF()*(1.0-r) + bg.greenF()*r,
-                        part.color.blueF()*(1.0-r) + bg.blueF()*r);
+                part.color = ColorTheme::blend(part.color, colorTheme->background, 0.5);
             }
 
             painter.fillRect(start1,0,barWidth,height, part.color);
