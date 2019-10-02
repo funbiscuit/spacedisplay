@@ -15,6 +15,12 @@ SpaceView::SpaceView(MainWindow* parent) : QWidget(), parent(parent)
     setMouseTracking(true);
     entryPopup = Utils::make_unique<FileEntryPopup>(this);
 
+    entryPopup->onRescanListener = [this](const std::string& str)
+    {
+        rescanDir(str);
+        this->parent->updateAvailableActions();
+        this->parent->updateStatusView();
+    };
 
     auto& r = Resources::get();
     bgIcon = r.get_vector_pixmap(

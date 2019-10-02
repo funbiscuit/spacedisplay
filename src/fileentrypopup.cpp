@@ -37,7 +37,7 @@ void FileEntryPopup::updateActions(SpaceScanner* scanner)
 {
     if(scanner)
     {
-//        rescanAct->setEnabled(scanner->can_refresh());
+        rescanAct->setEnabled(scanner->can_refresh());
         //todo maybe allow to delete while scanning
 //        deleteDirAct->setEnabled(scanner->can_refresh());
     }
@@ -45,7 +45,9 @@ void FileEntryPopup::updateActions(SpaceScanner* scanner)
 
 void FileEntryPopup::onRescan()
 {
-    std::cout<<"rescan\n";
+    if(onRescanListener)
+        onRescanListener(currentEntryPath);
+    std::cout<<"rescan: "<<currentEntryPath.c_str()<< "\n";
 }
 void FileEntryPopup::onDeleteDir()
 {

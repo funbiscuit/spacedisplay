@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QAction>
 #include <memory>
+#include <functional>
 #include <string>
 
 QT_BEGIN_NAMESPACE
@@ -22,6 +23,8 @@ public:
     void popupDir(std::string dir_path);
     void popupFile(std::string file_path);
     void updateActions(SpaceScanner* scanner);
+
+    std::function<void(const std::string&)> onRescanListener = nullptr;
 
 private slots:
     void onRescan();
