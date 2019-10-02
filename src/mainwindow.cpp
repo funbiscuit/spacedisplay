@@ -270,7 +270,7 @@ void MainWindow::switchTheme()
 {
     setTheme(!colorTheme->isDark(), true);
     QSettings settings;
-    settings.setValue("dark_theme", colorTheme->isDark());
+    settings.setValue(SETTINGS_THEME, colorTheme->isDark());
 }
 
 void MainWindow::setTheme(bool isDark, bool updateIcons)
@@ -289,29 +289,26 @@ void MainWindow::setTheme(bool isDark, bool updateIcons)
 
     if(updateIcons)
     {
-        const QIcon newIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_NEW_SCAN_SVG);
-        const QIcon rescanIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_REFRESH_SVG);
-        const QIcon backIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ARROW_BACK_SVG);
-        const QIcon forwardIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ARROW_FORWARD_SVG);
-        const QIcon upIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_FOLDER_NAVIGATE_UP_SVG);
-        const QIcon homeIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_HOME_SVG);
-        const QIcon lessIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ZOOM_OUT_SVG);
-        const QIcon moreIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ZOOM_IN_SVG);
-        const QIcon freeIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SPACE_FREE_SVG);
-        const QIcon unknownIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SPACE_UNKNOWN_SVG);
-        const QIcon themeIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SMOOTH_MODE_SVG);
-
-        newAct->setIcon(newIcon);
-        rescanAct->setIcon(rescanIcon);
-        backAct->setIcon(backIcon);
-        forwardAct->setIcon(backIcon);
-        upAct->setIcon(upIcon);
-        homeAct->setIcon(homeIcon);
-        lessDetailAct->setIcon(lessIcon);
-        moreDetailAct->setIcon(moreIcon);
-        toggleFreeAct->setIcon(freeIcon);
-        toggleUnknownAct->setIcon(unknownIcon);
-        themeAct->setIcon(themeIcon);
+        using namespace ResourceBuilder;
+        std::vector<std::pair<ResourceId, QAction*>> iconPairs={
+                std::make_pair(RES___ICONS_SVG_NEW_SCAN_SVG,newAct.get()),
+                std::make_pair(RES___ICONS_SVG_REFRESH_SVG,rescanAct.get()),
+                std::make_pair(RES___ICONS_SVG_ARROW_BACK_SVG,backAct.get()),
+                std::make_pair(RES___ICONS_SVG_ARROW_FORWARD_SVG,forwardAct.get()),
+                std::make_pair(RES___ICONS_SVG_FOLDER_NAVIGATE_UP_SVG,upAct.get()),
+                std::make_pair(RES___ICONS_SVG_HOME_SVG,homeAct.get()),
+                std::make_pair(RES___ICONS_SVG_ZOOM_OUT_SVG,lessDetailAct.get()),
+                std::make_pair(RES___ICONS_SVG_ZOOM_IN_SVG,moreDetailAct.get()),
+                std::make_pair(RES___ICONS_SVG_SPACE_FREE_SVG,toggleFreeAct.get()),
+                std::make_pair(RES___ICONS_SVG_SPACE_UNKNOWN_SVG,toggleUnknownAct.get()),
+                std::make_pair(RES___ICONS_SVG_SMOOTH_MODE_SVG,themeAct.get()),
+        };
+        for(auto& pair : iconPairs)
+        {
+            auto icon = colorTheme->createIcon(pair.first);
+            //FIXME calling QAction::setIcon() seems to not releasing previous icon which leads to memory leak
+            pair.second->setIcon(icon);
+        }
     }
 
 }
