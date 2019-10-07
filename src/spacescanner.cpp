@@ -1,6 +1,8 @@
 
 #include "spacescanner.h"
 #include "fileentry.h"
+#include "fileentryshared.h"
+#include "fileentrypool.h"
 
 #include <fstream>
 #include <iostream>
@@ -8,25 +10,15 @@
 #include <chrono>
 #include <thread>
 
-SpaceScanner::SpaceScanner(): scannerStatus(ScannerStatus::IDLE), rootFile(nullptr)
+SpaceScanner::SpaceScanner(): scannerStatus(ScannerStatus::IDLE)
 {
+    entryPool = Utils::make_unique<FileEntryPool>();
     init_platform();
 }
 
 SpaceScanner::~SpaceScanner()
 {
     cleanup_platform();
-}
-
-bool SpaceScanner::on_timeout()
-{
-    if(hasPendingChanges)
-    {
-        hasPendingChanges = false;
-//        m_signal_data_changed.emit();
-    }
-
-    return true;
 }
 
 std::vector<std::string> SpaceScanner::get_available_roots()
@@ -40,7 +32,7 @@ void SpaceScanner::reset_database()
 {
     mtx.lock();
     fileCount=0;
-    entryPool.cache_children(rootFile);
+    entryPool->cache_children(rootFile);
     rootFile= nullptr;
     mtx.unlock();
 }
@@ -227,12 +219,12 @@ void SpaceScanner::scan_dir(const std::string &path)
     unknownSpace = unknownSpace<0 ? 0 : unknownSpace;
     
     
-    auto fe=entryPool.create_entry(fileCount,"", FileEntry::AVAILABLE_SPACE);
+    auto fe=entryPool->create_entry(fileCount,"", FileEntry::AVAILABLE_SPACE);
     fe->set_size(freeSpace);
     fe->set_parent(parent);
     ++fileCount;
     
-    fe=entryPool.create_entry(fileCount,"", FileEntry::UNKNOWN_SPACE);
+    fe=entryPool->create_entry(fileCount,"", FileEntry::UNKNOWN_SPACE);
     fe->set_size(unknownSpace);
     fe->set_parent(parent);
     ++fileCount;
@@ -303,7 +295,7 @@ void SpaceScanner::async_rescan()
             if(test!= nullptr)
             {
                 file=test;
-                file->clear_entry(&entryPool);
+                file->clear_entry(entryPool.get());
 
                 hasPendingChanges = true;
                 scan_dir_prv(file);
@@ -351,4 +343,11 @@ uint64_t SpaceScanner::get_scanned_space()
 uint64_t SpaceScanner::get_free_space()
 {
     return freeSpace;
+}
+
+const char *SpaceScanner::get_root_path()
+{
+    if(rootFile)
+        return rootFile->get_name();
+    return "";
 }

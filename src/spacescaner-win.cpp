@@ -3,6 +3,7 @@
 // windows code goes here
 #include "spacescanner.h"
 #include "fileentry.h"
+#include "fileentrypool.h"
 #include "utils.h"
 
 #include <fstream>
@@ -101,7 +102,7 @@ FileEntry* SpaceScanner::create_root_entry(const char* path)
     );
 
 
-    auto parent=entryPool.create_entry(fileCount,cname, FileEntry::DIRECTORY);
+    auto parent=entryPool->create_entry(fileCount,cname, FileEntry::DIRECTORY);
     delete[](cname);
 
     if(handle!=INVALID_HANDLE_VALUE)
@@ -193,7 +194,7 @@ void SpaceScanner::scan_dir_prv(FileEntry *parent)
             uint64_t size=(uint64_t(fileData.nFileSizeHigh) * (uint64_t(MAXDWORD)+1)) + uint64_t(fileData.nFileSizeLow);
             //size+=size % 4096;
 
-            auto fe=entryPool.create_entry(fileCount,cname.c_str(), isDir ? FileEntry::DIRECTORY : FileEntry::FILE);
+            auto fe=entryPool->create_entry(fileCount,cname.c_str(), isDir ? FileEntry::DIRECTORY : FileEntry::FILE);
             fe->set_size(size);
 
             mtx.lock();

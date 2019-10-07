@@ -7,15 +7,16 @@
 #include <vector>
 #include <mutex>          // std::mutex
 #include <queue>
-#include "fileentry.h"
-#include "fileentryshared.h"
-#include "fileentrypool.h"
 
 enum class ScannerStatus {
     IDLE=0,
     SCANNING=1,
     STOPPING=2,
 };
+
+class FileEntry;
+class FileEntryShared;
+class FileEntryPool;
 
 class SpaceScanner {
 
@@ -38,19 +39,14 @@ public:
     std::vector<std::string> get_available_roots();
 
     float get_scan_progress();
-    FileEntrySharedPtr get_root_file(float minSizeRatio, uint16_t flags, const char* filepath, int depth);
-    void update_root_file(FileEntrySharedPtr& root, float minSizeRatio, uint16_t flags, const char* filepath, int depth);
+    std::shared_ptr<FileEntryShared> get_root_file(float minSizeRatio, uint16_t flags, const char* filepath, int depth);
+    void update_root_file(std::shared_ptr<FileEntryShared>& root, float minSizeRatio, uint16_t flags, const char* filepath, int depth);
     bool is_running();
     bool is_loaded();
     bool can_refresh();
     bool has_changes();
 
-    const char* get_root_path()
-    {
-        if(rootFile)
-            return rootFile->get_name();
-        return "";
-    }
+    const char* get_root_path();
 
     void lock();
     bool try_lock();
@@ -60,21 +56,15 @@ public:
     uint64_t get_free_space();
     uint64_t get_scanned_space();
 
-//    type_signal_data_changed signal_data_changed();
-
 private:
-//    type_signal_data_changed m_signal_data_changed;
-    uint64_t totalSpace;
-    uint64_t freeSpace;
+    uint64_t totalSpace = 0;
+    uint64_t freeSpace = 0;
     std::recursive_mutex mtx;           // mutex for critical section
-    FileEntryPool entryPool;
+    std::unique_ptr<FileEntryPool> entryPool;
 
     std::queue<std::string> rescanPathQueue;
 
     bool hasPendingChanges = false;
-
-//    sigc::connection timeout_connection;
-    bool on_timeout();
 
     void init_platform();
     void on_before_new_scan();
@@ -89,7 +79,7 @@ private:
     void read_available_drives();
 
     ScannerStatus scannerStatus;
-    FileEntry* rootFile;
+    FileEntry* rootFile = nullptr;
     uint64_t fileCount=0;
     uint64_t totalSize=0;
     void scan_dir_prv(FileEntry *parent);

@@ -2,6 +2,7 @@
 #ifdef __linux__
 #include "spacescanner.h"
 #include "fileentry.h"
+#include "fileentrypool.h"
 #include "utils.h"
 
 #include <regex>
@@ -119,7 +120,7 @@ FileEntry* SpaceScanner::create_root_entry(const char* path)
 
     auto cname=new char[strlen(path)+1];
     strcpy(cname, path);
-    auto parent=entryPool.create_entry(fileCount,cname, FileEntry::DIRECTORY);
+    auto parent=entryPool->create_entry(fileCount,cname, FileEntry::DIRECTORY);
     delete[](cname);
 
     status = lstat(path, &file_stat);
@@ -184,7 +185,7 @@ void SpaceScanner::scan_dir_prv(FileEntry *parent)
             
             totalSize+=nameLen+2;
     
-            auto fe=entryPool.create_entry(fileCount,dp->d_name, isDir ? FileEntry::DIRECTORY : FileEntry::FILE);
+            auto fe=entryPool->create_entry(fileCount,dp->d_name, isDir ? FileEntry::DIRECTORY : FileEntry::FILE);
             fe->set_size(file_stat.st_size);
     
             mtx.lock();
