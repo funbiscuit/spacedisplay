@@ -147,7 +147,7 @@ void SpaceScanner::on_before_new_scan()
 
 }
 
-void SpaceScanner::scan_dir_prv(FileEntry *parent)
+void SpaceScanner::_scan_entry(FileEntry *parent)
 {
     if(!parent || !parent->is_dir())
         return;
@@ -200,7 +200,7 @@ void SpaceScanner::scan_dir_prv(FileEntry *parent)
                 if(newPath.back() != '/')
                     newPath.append("/");
                 if(!in_array(newPath, availableRoots) && !in_array(newPath, excludedMounts))
-                    scan_dir_prv(fe);
+                    _scan_entry(fe);
                 else
                     std::cout<<"Skip scan of: "<<newPath<<"\n";
             }

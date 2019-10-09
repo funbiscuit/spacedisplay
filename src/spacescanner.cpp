@@ -50,7 +50,7 @@ void SpaceScanner::unlock()
     mtx.unlock();
 }
 
-void SpaceScanner::async_scan()
+void SpaceScanner::_scan_root()
 {
     std::cout<<"Start scanning\n";
 
@@ -59,7 +59,7 @@ void SpaceScanner::async_scan()
 
     on_before_new_scan();
     totalSize=0;
-    scan_dir_prv(rootFile);
+    _scan_entry(rootFile);
 
     auto stop   = high_resolution_clock::now();
 
@@ -196,11 +196,11 @@ void SpaceScanner::stop_scan()
         scannerStatus=ScannerStatus::STOPPING;
 }
 
-void SpaceScanner::scan_dir(const std::string &path)
+ScannerError SpaceScanner::scan_dir(const std::string &path)
 {
     //do nothing if scan is already in progress
     if(scannerStatus!=ScannerStatus::IDLE)
-        return;
+        return ScannerError::SCAN_RUNNING;
 
     scannerStatus=ScannerStatus::SCANNING;
 
@@ -209,7 +209,7 @@ void SpaceScanner::scan_dir(const std::string &path)
     {
         scannerStatus=ScannerStatus::IDLE;
         std::cout<<"Can't open "<<path.c_str()<<"\n";
-        return;
+        return ScannerError::CANT_OPEN_DIR;
     }
     
     check_disk_space();//this will load all info about disk space (available, used, total)
@@ -230,23 +230,16 @@ void SpaceScanner::scan_dir(const std::string &path)
     ++fileCount;
 
     std::cout<<"Start scan thread\n";
-    std::thread t(&SpaceScanner::async_scan, this);
+    std::thread t(&SpaceScanner::_scan_root, this);
     t.detach();
     hasPendingChanges = true;
 
-    //std::thread thr(ReadDirChanges, path);
-    //thr.detach();
-
-
-    //TODO
-    //std::thread thr(ReadDirChanges, path);
-    //thr.detach();
-
-
+    return ScannerError::NONE;
 }
 
 void SpaceScanner::rescan_dir(const std::string &path)
 {
+    //TODO currently only one element could be in queue
     //do nothing if scan is already in progress
     if(scannerStatus!=ScannerStatus::IDLE)
         return;
@@ -258,12 +251,12 @@ void SpaceScanner::rescan_dir(const std::string &path)
 
     scannerStatus=ScannerStatus::SCANNING;
     std::cout<<"Start rescan thread\n";
-    std::thread t(&SpaceScanner::async_rescan, this);
+    std::thread t(&SpaceScanner::_rescan_from_queue, this);
     t.detach();
 }
 
 
-void SpaceScanner::async_rescan()
+void SpaceScanner::_rescan_from_queue()
 {
     if(rescanPathQueue.empty())
         return;
@@ -298,7 +291,7 @@ void SpaceScanner::async_rescan()
                 file->clear_entry(entryPool.get());
 
                 hasPendingChanges = true;
-                scan_dir_prv(file);
+                _scan_entry(file);
             }
             else
             {

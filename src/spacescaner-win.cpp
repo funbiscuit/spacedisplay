@@ -41,9 +41,7 @@ void SpaceScanner::read_available_drives()
 
     for(char drive='A';drive<='Z';drive++)
     {
-        bool isSet=(drivesMask & 0x1)!=0;
-
-        if(isSet)
+        if(drivesMask & 0x1)
         {
             driveName[0]=drive;
 
@@ -83,13 +81,10 @@ void SpaceScanner::check_disk_space()
 
 FileEntry* SpaceScanner::create_root_entry(const char* path)
 {
-    //we can't have multiple roots (so empty array)
+    //we can't have multiple roots (so reset db)
     reset_database();
 
-    auto cname=new char[strlen(path)+1];
-    strcpy(cname, path);
-
-    auto wname=str2wstr(cname);
+    auto wname=str2wstr(path);
 
     auto handle=CreateFileW(
             wname.c_str(),
@@ -102,8 +97,7 @@ FileEntry* SpaceScanner::create_root_entry(const char* path)
     );
 
 
-    auto parent=entryPool->create_entry(fileCount,cname, FileEntry::DIRECTORY);
-    delete[](cname);
+    auto parent=entryPool->create_entry(fileCount, path, FileEntry::DIRECTORY);
 
     if(handle!=INVALID_HANDLE_VALUE)
     {
@@ -138,7 +132,7 @@ FileEntry* SpaceScanner::create_root_entry(const char* path)
 }
 
 
-void SpaceScanner::scan_dir_prv(FileEntry *parent)
+void SpaceScanner::_scan_entry(FileEntry *parent)
 {
     if(!parent || !parent->is_dir())
         return;
@@ -204,7 +198,7 @@ void SpaceScanner::scan_dir_prv(FileEntry *parent)
             mtx.unlock();
 
             if(isDir)
-                scan_dir_prv(fe);
+                _scan_entry(fe);
         }
         found=(scannerStatus==ScannerStatus::SCANNING) && FindNextFileW(handle, &fileData)!=0;
     }

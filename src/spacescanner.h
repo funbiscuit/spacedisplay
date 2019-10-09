@@ -18,13 +18,20 @@ class FileEntry;
 class FileEntryShared;
 class FileEntryPool;
 
+enum class ScannerError
+{
+    NONE = 0,
+    SCAN_RUNNING,
+    CANT_OPEN_DIR
+};
+
 class SpaceScanner {
 
 public:
 
     SpaceScanner();
     ~SpaceScanner();
-    void scan_dir(const std::string &path);
+    ScannerError scan_dir(const std::string &path);
 
     void stop_scan();
     void reset_database();
@@ -82,9 +89,9 @@ private:
     FileEntry* rootFile = nullptr;
     uint64_t fileCount=0;
     uint64_t totalSize=0;
-    void scan_dir_prv(FileEntry *parent);
-    void async_scan();
-    void async_rescan();
+    void _scan_entry(FileEntry *parent);
+    void _scan_root();
+    void _rescan_from_queue();
     void check_disk_space();
 
     /**
