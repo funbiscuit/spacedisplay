@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.3.2)
 
 project(spacedisplay LANGUAGES CXX)
 
@@ -13,7 +13,14 @@ execute_process(COMMAND ${RES_GEN_COMMAND})
 find_package (Threads REQUIRED)
 
 if( WIN32 )
-    set (CMAKE_PREFIX_PATH "C:\\Qt\\Qt5.13.1\\5.13.1\\msvc2015_64\\")
+    # In file qt5path.txt you should write path to your installed qt5. See qt5path.example.txt for an example
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/qt5path.txt")
+        file (STRINGS "qt5path.txt" QT5_PATH)
+        set (CMAKE_PREFIX_PATH ${QT5_PATH})
+    else()
+        message(FATAL_ERROR "qt5path.txt not found!\nRename qt5path.example.txt to qt5path.txt and "
+                "modify it so it points to your Qt5 installation")
+    endif()
 endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
