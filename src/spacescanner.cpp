@@ -82,26 +82,6 @@ void SpaceScanner::reset_database()
     rootFile= nullptr;
 }
 
-//void SpaceScanner::_scan_root()
-//{
-//    std::cout<<"Start scanning\n";
-//
-//    using namespace std::chrono;
-//    auto start   = high_resolution_clock::now();
-//
-//    on_before_new_scan();
-//    totalSize=0;
-//    _scan_entry(rootFile);
-//
-//    auto stop   = high_resolution_clock::now();
-//
-//    auto mseconds = duration_cast<milliseconds>(stop - start).count();
-//
-//    std::cout << "Time taken: " << mseconds<<"ms, "<<fileCount<<" file(s) scanned\n";
-//
-//    scannerStatus=ScannerStatus::IDLE;
-//    hasPendingChanges = true;
-//}
 bool SpaceScanner::can_refresh()
 {
     return rootFile!= nullptr && !is_running();
@@ -287,21 +267,6 @@ void SpaceScanner::rescan_dir(const std::string &path)
     entry->clear_entry(entryPool.get());
     scanQueue.push_back(entry);
     hasPendingChanges = true;
-    
-    //TODO currently only one element could be in queue
-    //do nothing if scan is already in progress
-//    if(scannerStatus!=ScannerStatus::IDLE)
-//        return;
-
-//    rescanPathQueue.push(path);
-//    check_disk_space();//disk space might change since last update, so update it again
-//    if(rootFile)
-//        rootFile->update_free_space(freeSpace);
-//
-//    scannerStatus=ScannerStatus::SCANNING;
-//    std::cout<<"Start rescan thread\n";
-//    std::thread t(&SpaceScanner::_rescan_from_queue, this);
-//    t.detach();
 }
 
 FileEntry* SpaceScanner::getEntryAt(const char* path)
@@ -323,67 +288,6 @@ FileEntry* SpaceScanner::getEntryAt(const char* path)
 
     return file;
 }
-
-//void SpaceScanner::_rescan_from_queue()
-//{
-//    if(rescanPathQueue.empty())
-//        return;
-//
-//    std::cout<<"Start rescanning\n";
-//
-//    using namespace std::chrono;
-//    auto start   = high_resolution_clock::now();
-//
-//    bool rootRescan = false;
-//
-//    while (!rescanPathQueue.empty())
-//    {
-//        auto file = rootFile;
-//
-//        auto path = rescanPathQueue.front();
-//        rescanPathQueue.pop();
-//
-//        if(path.length()>0)
-//        {
-//            auto rootLen = strlen(rootFile->get_name());
-//            auto filepath = path.c_str();
-//            if(strncmp(rootFile->get_name(), filepath, rootLen)==0)
-//            {
-//                filepath = filepath + rootLen*sizeof(char);
-//            }
-//
-//            auto test = file->find_child_dir(filepath);
-//            if(test!= nullptr)
-//            {
-//                file=test;
-//                file->clear_entry(entryPool.get());
-//
-//                hasPendingChanges = true;
-//                _scan_entry(file);
-//            }
-//            else
-//            {
-//                rootRescan=true;
-//                //for rescanning of root just start a new scan
-//                scannerStatus = ScannerStatus::IDLE;
-//                scan_dir(path);
-//            }
-//        }
-//    }
-//
-//
-//    if(!rootRescan)
-//    {
-//        auto stop   = high_resolution_clock::now();
-//
-//        auto mseconds = duration_cast<milliseconds>(stop - start).count();
-//
-//        std::cout << "Time taken: " << mseconds<<"ms, "<<fileCount<<" file(s) scanned\n";
-//
-//        scannerStatus=ScannerStatus::IDLE;
-//    }
-//    hasPendingChanges = true;
-//}
 
 uint64_t SpaceScanner::get_total_space()
 {

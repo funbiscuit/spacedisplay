@@ -118,8 +118,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
     if(scanner->is_running())
     {
         scanner->stop_scan();
-        while(scanner->is_running())
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     //maybe not really needed since system will free all memory by itself
     scanner->reset_database();
@@ -170,9 +168,6 @@ void MainWindow::startScan(const std::string& path)
     if(scanner->is_running())
     {
         scanner->stop_scan();
-        //todo move to scanner function
-        while(scanner->is_running())
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     auto parts = scanner->get_available_roots();

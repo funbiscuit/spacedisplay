@@ -200,103 +200,14 @@ void SpaceScanner::update_entry_children(FileEntry *entry)
                     std::cout<<"Skip scan of: "<<newPath<<"\n";
             }
 
-
-//            std::cout <<"dir: "<<isDir<<", "<<path_buf<<", "<< dp->d_name<<", "<<file_stat.st_size<<"\n";
         }
     }
 
     hasPendingChanges = true;
-//    do {
-//        if ((dp = readdir(dirp)) != nullptr) {
-//            std::cout << dp->d_name<<"\n";
-//
-//        }
-//    } while (dp != nullptr);
-    
-    
     
     closedir(dirp);
     
 }
-
-//void SpaceScanner::_scan_entry(FileEntry *parent)
-//{
-//    if(!parent || !parent->is_dir())
-//        return;
-//
-//    DIR *dirp;
-//    struct dirent *dp;
-//
-//    std::string path;
-//    parent->get_path(path);
-//
-//    if ((dirp = opendir(path.c_str())) == nullptr) {
-//        std::cout << "Couldn't open "<<path<<"\n";
-//        return;
-//    }
-//
-//    struct stat file_stat{};
-//    int status;
-//
-//    while((dp = readdir(dirp)) != nullptr)
-//    {
-//        if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)
-//            continue;
-//
-//        auto nameLen=strlen(dp->d_name);
-//
-//        std::string child = path;
-//        child.append("/");
-//        child.append( dp->d_name);
-//
-//        status = lstat(child.c_str(), &file_stat);
-//
-//        if(status==0)
-//        {
-//            bool isDir=S_ISDIR(file_stat.st_mode);
-//
-//            totalSize+=nameLen+2;
-//
-//            auto fe=entryPool->create_entry(fileCount,dp->d_name, isDir ? FileEntry::DIRECTORY : FileEntry::FILE);
-//            fe->set_size(file_stat.st_size);
-//
-//            std::lock_guard<std::mutex> lock_mtx(mtx);
-//            fe->set_parent(parent);
-//            ++fileCount;
-//
-//            if(isDir)
-//            {
-//                std::string newPath;
-//                fe->get_path(newPath);
-//                if(newPath.back() != '/')
-//                    newPath.append("/");
-//                if(!in_array(newPath, availableRoots) && !in_array(newPath, excludedMounts))
-//                    _scan_entry(fe);
-//                else
-//                    std::cout<<"Skip scan of: "<<newPath<<"\n";
-//            }
-//
-//
-////            std::cout <<"dir: "<<isDir<<", "<<path_buf<<", "<< dp->d_name<<", "<<file_stat.st_size<<"\n";
-//        }
-//
-//        if(scannerStatus!=ScannerStatus::SCANNING)
-//            break;
-//    }
-//
-//    hasPendingChanges = true;
-////    do {
-////        if ((dp = readdir(dirp)) != nullptr) {
-////            std::cout << dp->d_name<<"\n";
-////
-////        }
-////    } while (dp != nullptr);
-//
-//
-//
-//    closedir(dirp);
-//
-//}
 
 #endif
 
