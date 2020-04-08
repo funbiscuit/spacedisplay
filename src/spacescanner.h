@@ -7,6 +7,7 @@
 #include <vector>
 #include <mutex>          // std::mutex
 #include <queue>
+#include <list>
 
 enum class ScannerStatus {
     IDLE=0,
@@ -55,20 +56,21 @@ public:
 
     const char* get_root_path();
 
-    void lock();
-    bool try_lock();
-    void unlock();
-
     uint64_t get_total_space();
     uint64_t get_free_space();
     uint64_t get_scanned_space();
 
 private:
+    std::thread workerThread;
+    bool runWorker;
+
     uint64_t totalSpace = 0;
     uint64_t freeSpace = 0;
-    std::recursive_mutex mtx;           // mutex for critical section
+    std::mutex mtx;           // mutex for critical section
     std::unique_ptr<FileEntryPool> entryPool;
 
+    //edits to queue should be mutex protected
+    std::list<FileEntry*> scanQueue;
     std::queue<std::string> rescanPathQueue;
 
     bool hasPendingChanges = false;
@@ -93,6 +95,11 @@ private:
     void _scan_root();
     void _rescan_from_queue();
     void check_disk_space();
+    
+    FileEntry* getEntryAt(const char* path);
+
+    void worker_run();
+    void update_entry_children(FileEntry* entry);
 
     /**
      * Creates root FileEntry at specified path. When called, existing root and all children will be deleted

@@ -10,15 +10,60 @@
 #include <chrono>
 #include <thread>
 
-SpaceScanner::SpaceScanner(): scannerStatus(ScannerStatus::IDLE)
+SpaceScanner::SpaceScanner() :
+        scannerStatus(ScannerStatus::IDLE)
 {
     entryPool = Utils::make_unique<FileEntryPool>();
     init_platform();
+    //Start thread after everything is initialized
+    workerThread=std::thread(&SpaceScanner::worker_run, this);
 }
 
 SpaceScanner::~SpaceScanner()
 {
     cleanup_platform();
+    runWorker = false;
+    workerThread.join();
+}
+
+void SpaceScanner::worker_run()
+{
+    std::cout << "Start worker thread\n";
+    runWorker = true;
+    while(runWorker)
+    {
+        using namespace std::chrono;
+        //start scanning as soon as something is placed in queue
+        if(!scanQueue.empty())
+        {
+            auto start = high_resolution_clock::now();
+            while(!scanQueue.empty() && runWorker)
+            {
+                FileEntry* entry = nullptr;
+                {
+                    std::lock_guard<std::mutex> guard(mtx);
+                    if(!scanQueue.empty())
+                    {
+                        entry = scanQueue.front();
+                        scanQueue.pop_front();
+                    }
+                }
+                if(entry)
+                    update_entry_children(entry);
+
+                if(scannerStatus==ScannerStatus::STOPPING)
+                    scanQueue.clear();
+            }
+
+            auto stop   = high_resolution_clock::now();
+            auto mseconds = duration_cast<milliseconds>(stop - start).count();
+            std::cout << "Time taken: " << mseconds <<"ms, "<<fileCount<<" file(s) scanned\n";
+            scannerStatus = ScannerStatus::IDLE;
+        }
+        std::this_thread::sleep_for(milliseconds(20));
+    }
+
+    std::cout << "End worker thread\n";
 }
 
 std::vector<std::string> SpaceScanner::get_available_roots()
@@ -30,46 +75,33 @@ std::vector<std::string> SpaceScanner::get_available_roots()
 
 void SpaceScanner::reset_database()
 {
-    mtx.lock();
+    stop_scan();
+    std::lock_guard<std::mutex> lock_mtx(mtx);
     fileCount=0;
     entryPool->cache_children(rootFile);
     rootFile= nullptr;
-    mtx.unlock();
 }
 
-void SpaceScanner::lock()
-{
-    mtx.lock();
-}
-bool SpaceScanner::try_lock()
-{
-    return mtx.try_lock();
-}
-void SpaceScanner::unlock()
-{
-    mtx.unlock();
-}
-
-void SpaceScanner::_scan_root()
-{
-    std::cout<<"Start scanning\n";
-
-    using namespace std::chrono;
-    auto start   = high_resolution_clock::now();
-
-    on_before_new_scan();
-    totalSize=0;
-    _scan_entry(rootFile);
-
-    auto stop   = high_resolution_clock::now();
-
-    auto mseconds = duration_cast<milliseconds>(stop - start).count();
-
-    std::cout << "Time taken: " << mseconds<<"ms, "<<fileCount<<" file(s) scanned\n";
-
-    scannerStatus=ScannerStatus::IDLE;
-    hasPendingChanges = true;
-}
+//void SpaceScanner::_scan_root()
+//{
+//    std::cout<<"Start scanning\n";
+//
+//    using namespace std::chrono;
+//    auto start   = high_resolution_clock::now();
+//
+//    on_before_new_scan();
+//    totalSize=0;
+//    _scan_entry(rootFile);
+//
+//    auto stop   = high_resolution_clock::now();
+//
+//    auto mseconds = duration_cast<milliseconds>(stop - start).count();
+//
+//    std::cout << "Time taken: " << mseconds<<"ms, "<<fileCount<<" file(s) scanned\n";
+//
+//    scannerStatus=ScannerStatus::IDLE;
+//    hasPendingChanges = true;
+//}
 bool SpaceScanner::can_refresh()
 {
     return rootFile!= nullptr && !is_running();
@@ -87,7 +119,7 @@ bool SpaceScanner::is_loaded()
 
 FileEntrySharedPtr SpaceScanner::get_root_file(float minSizeRatio, uint16_t flags, const char* filepath, int depth)
 {
-    mtx.lock();
+    std::lock_guard<std::mutex> lock_mtx(mtx);
     
     if(rootFile!= nullptr)
     {
@@ -121,10 +153,8 @@ FileEntrySharedPtr SpaceScanner::get_root_file(float minSizeRatio, uint16_t flag
         auto minSize=int64_t(float(fullSpace)*minSizeRatio);
         auto sharedCopy=FileEntryShared::create_copy(*file, depth, minSize, flags);
 
-        mtx.unlock();
         return sharedCopy;
     }
-    mtx.unlock();
     return nullptr;
 }
 
@@ -135,7 +165,7 @@ bool SpaceScanner::has_changes()
 
 void SpaceScanner::update_root_file(FileEntrySharedPtr& root, float minSizeRatio, uint16_t flags, const char* filepath, int depth)
 {
-    mtx.lock();
+    std::lock_guard<std::mutex> lock_mtx(mtx);
     hasPendingChanges=false;
     if(rootFile!= nullptr)
     {
@@ -169,31 +199,34 @@ void SpaceScanner::update_root_file(FileEntrySharedPtr& root, float minSizeRatio
         auto minSize=int64_t(float(fullSpace)*minSizeRatio);
         FileEntryShared::update_copy(root, *file, depth, minSize, flags);
     }
-    mtx.unlock();
 }
 
 float SpaceScanner::get_scan_progress()
 {
-    mtx.lock();
+    std::lock_guard<std::mutex> lock_mtx(mtx);
     if(scannerStatus==ScannerStatus::SCANNING && (totalSpace-freeSpace)>0)
     {
         if(rootFile!=nullptr)
         {
             float a=float(rootFile->get_size())/float(totalSpace-freeSpace);
-            mtx.unlock();
             return a>1.f ? 1.f : a;
         }
-        mtx.unlock();
         return 0.f;
     }
-    mtx.unlock();
     return 1.f;
 }
 
 void SpaceScanner::stop_scan()
 {
-    if(scannerStatus!=ScannerStatus::STOPPING && scannerStatus!=ScannerStatus::IDLE)
-        scannerStatus=ScannerStatus::STOPPING;
+    {
+        std::lock_guard<std::mutex> lock_mtx(mtx);
+        if(scannerStatus!=ScannerStatus::STOPPING && scannerStatus!=ScannerStatus::IDLE)
+            scannerStatus=ScannerStatus::STOPPING;
+        scanQueue.clear();
+    }
+    //wait until everythin is stopped
+    while(scannerStatus!=ScannerStatus::IDLE)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 ScannerError SpaceScanner::scan_dir(const std::string &path)
@@ -201,6 +234,9 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     //do nothing if scan is already in progress
     if(scannerStatus!=ScannerStatus::IDLE)
         return ScannerError::SCAN_RUNNING;
+
+    //we can't have multiple roots (so reset db)
+    reset_database();
 
     scannerStatus=ScannerStatus::SCANNING;
 
@@ -229,9 +265,8 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     fe->set_parent(parent);
     ++fileCount;
 
-    std::cout<<"Start scan thread\n";
-    std::thread t(&SpaceScanner::_scan_root, this);
-    t.detach();
+    std::lock_guard<std::mutex> lock_mtx(mtx);
+    scanQueue.push_back(rootFile);
     hasPendingChanges = true;
 
     return ScannerError::NONE;
@@ -239,83 +274,116 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
 
 void SpaceScanner::rescan_dir(const std::string &path)
 {
+    auto entry = getEntryAt(path.c_str());
+    
+    if(!entry)
+        return;
+
+    std::lock_guard<std::mutex> lock_mtx(mtx);
+
+    check_disk_space();//disk space might change since last update, so update it again
+    rootFile->update_free_space(freeSpace);
+
+    entry->clear_entry(entryPool.get());
+    scanQueue.push_back(entry);
+    hasPendingChanges = true;
+    
     //TODO currently only one element could be in queue
     //do nothing if scan is already in progress
-    if(scannerStatus!=ScannerStatus::IDLE)
-        return;
+//    if(scannerStatus!=ScannerStatus::IDLE)
+//        return;
 
-    rescanPathQueue.push(path);
-    check_disk_space();//disk space might change since last update, so update it again
-    if(rootFile)
-        rootFile->update_free_space(freeSpace);
-
-    scannerStatus=ScannerStatus::SCANNING;
-    std::cout<<"Start rescan thread\n";
-    std::thread t(&SpaceScanner::_rescan_from_queue, this);
-    t.detach();
+//    rescanPathQueue.push(path);
+//    check_disk_space();//disk space might change since last update, so update it again
+//    if(rootFile)
+//        rootFile->update_free_space(freeSpace);
+//
+//    scannerStatus=ScannerStatus::SCANNING;
+//    std::cout<<"Start rescan thread\n";
+//    std::thread t(&SpaceScanner::_rescan_from_queue, this);
+//    t.detach();
 }
 
-
-void SpaceScanner::_rescan_from_queue()
+FileEntry* SpaceScanner::getEntryAt(const char* path)
 {
-    if(rescanPathQueue.empty())
-        return;
+    std::lock_guard<std::mutex> lock_mtx(mtx);
+    if(!rootFile)
+        return nullptr;
 
-    std::cout<<"Start rescanning\n";
-
-    using namespace std::chrono;
-    auto start   = high_resolution_clock::now();
-
-    bool rootRescan = false;
-
-    while (!rescanPathQueue.empty())
+    auto rootLen = strlen(rootFile->get_name());
+    if(strncmp(rootFile->get_name(), path, rootLen)==0)
     {
-        auto file = rootFile;
-
-        auto path = rescanPathQueue.front();
-        rescanPathQueue.pop();
-
-        if(path.length()>0)
-        {
-            auto rootLen = strlen(rootFile->get_name());
-            auto filepath = path.c_str();
-            if(strncmp(rootFile->get_name(), filepath, rootLen)==0)
-            {
-                filepath = filepath + rootLen*sizeof(char);
-            }
-
-            auto test = file->find_child_dir(filepath);
-            if(test!= nullptr)
-            {
-                file=test;
-                file->clear_entry(entryPool.get());
-
-                hasPendingChanges = true;
-                _scan_entry(file);
-            }
-            else
-            {
-                rootRescan=true;
-                //for rescanning of root just start a new scan
-                scannerStatus = ScannerStatus::IDLE;
-                scan_dir(path);
-            }
-        }
+        path = &path[rootLen];
     }
+    auto file = rootFile;
 
+    file = file->find_child_dir(path);
+    if(!file)
+        file=rootFile;
 
-    if(!rootRescan)
-    {
-        auto stop   = high_resolution_clock::now();
-
-        auto mseconds = duration_cast<milliseconds>(stop - start).count();
-
-        std::cout << "Time taken: " << mseconds<<"ms, "<<fileCount<<" file(s) scanned\n";
-
-        scannerStatus=ScannerStatus::IDLE;
-    }
-    hasPendingChanges = true;
+    return file;
 }
+
+//void SpaceScanner::_rescan_from_queue()
+//{
+//    if(rescanPathQueue.empty())
+//        return;
+//
+//    std::cout<<"Start rescanning\n";
+//
+//    using namespace std::chrono;
+//    auto start   = high_resolution_clock::now();
+//
+//    bool rootRescan = false;
+//
+//    while (!rescanPathQueue.empty())
+//    {
+//        auto file = rootFile;
+//
+//        auto path = rescanPathQueue.front();
+//        rescanPathQueue.pop();
+//
+//        if(path.length()>0)
+//        {
+//            auto rootLen = strlen(rootFile->get_name());
+//            auto filepath = path.c_str();
+//            if(strncmp(rootFile->get_name(), filepath, rootLen)==0)
+//            {
+//                filepath = filepath + rootLen*sizeof(char);
+//            }
+//
+//            auto test = file->find_child_dir(filepath);
+//            if(test!= nullptr)
+//            {
+//                file=test;
+//                file->clear_entry(entryPool.get());
+//
+//                hasPendingChanges = true;
+//                _scan_entry(file);
+//            }
+//            else
+//            {
+//                rootRescan=true;
+//                //for rescanning of root just start a new scan
+//                scannerStatus = ScannerStatus::IDLE;
+//                scan_dir(path);
+//            }
+//        }
+//    }
+//
+//
+//    if(!rootRescan)
+//    {
+//        auto stop   = high_resolution_clock::now();
+//
+//        auto mseconds = duration_cast<milliseconds>(stop - start).count();
+//
+//        std::cout << "Time taken: " << mseconds<<"ms, "<<fileCount<<" file(s) scanned\n";
+//
+//        scannerStatus=ScannerStatus::IDLE;
+//    }
+//    hasPendingChanges = true;
+//}
 
 uint64_t SpaceScanner::get_total_space()
 {
