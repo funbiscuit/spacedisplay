@@ -103,13 +103,20 @@ FileEntrySharedPtr SpaceScanner::get_root_file(float minSizeRatio, uint16_t flag
     
     if(rootFile!= nullptr)
     {
+        FileEntryShared::CopyOptions options;
         int64_t fullSpace=0;
         int64_t unknownSpace=totalSpace-rootFile->get_size()-freeSpace;
 
         if((flags & FileEntryShared::INCLUDE_AVAILABLE_SPACE)!=0)
+        {
+            options.freeSpace = freeSpace;
             fullSpace+=freeSpace;
+        }
         if((flags & FileEntryShared::INCLUDE_UNKNOWN_SPACE)!=0)
+        {
+            options.unknownSpace = unknownSpace;
             fullSpace+=unknownSpace;
+        }
 
         auto file = rootFile;
 
@@ -126,12 +133,16 @@ FileEntrySharedPtr SpaceScanner::get_root_file(float minSizeRatio, uint16_t flag
             {
                 file=test;
                 fullSpace=0;
+                //we don't show unknown and free space if child is opened
+                options.freeSpace = 0;
+                options.unknownSpace = 0;
             }
         }
         fullSpace+=file->get_size();
-        
-        auto minSize=int64_t(float(fullSpace)*minSizeRatio);
-        auto sharedCopy=FileEntryShared::create_copy(*file, depth, minSize, flags);
+
+        options.minSize = int64_t(float(fullSpace)*minSizeRatio);
+        options.nestLevel = depth;
+        auto sharedCopy=FileEntryShared::create_copy(*file, options);
 
         return sharedCopy;
     }
@@ -149,13 +160,20 @@ void SpaceScanner::update_root_file(FileEntrySharedPtr& root, float minSizeRatio
     hasPendingChanges=false;
     if(rootFile!= nullptr)
     {
+        FileEntryShared::CopyOptions options;
         int64_t fullSpace=0;
         int64_t unknownSpace=totalSpace-rootFile->get_size()-freeSpace;
 
         if((flags & FileEntryShared::INCLUDE_AVAILABLE_SPACE)!=0)
+        {
+            options.freeSpace = freeSpace;
             fullSpace+=freeSpace;
+        }
         if((flags & FileEntryShared::INCLUDE_UNKNOWN_SPACE)!=0)
+        {
+            options.unknownSpace = unknownSpace;
             fullSpace+=unknownSpace;
+        }
 
         auto file = rootFile;
 
@@ -172,12 +190,16 @@ void SpaceScanner::update_root_file(FileEntrySharedPtr& root, float minSizeRatio
             {
                 file=test;
                 fullSpace=0;
+                //we don't show unknown and free space if child is opened
+                options.freeSpace = 0;
+                options.unknownSpace = 0;
             }
         }
         fullSpace+=file->get_size();
 
-        auto minSize=int64_t(float(fullSpace)*minSizeRatio);
-        FileEntryShared::update_copy(root, *file, depth, minSize, flags);
+        options.minSize = int64_t(float(fullSpace)*minSizeRatio);
+        options.nestLevel = depth;
+        FileEntryShared::update_copy(root, *file, options);
     }
 }
 
@@ -231,19 +253,19 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     check_disk_space();//this will load all info about disk space (available, used, total)
     
     //create unknown space and free space children
-    auto unknownSpace=totalSpace-freeSpace;
-    unknownSpace = unknownSpace<0 ? 0 : unknownSpace;
+//    auto unknownSpace=totalSpace-freeSpace;
+//    unknownSpace = unknownSpace<0 ? 0 : unknownSpace;
     
     
-    auto fe=entryPool->create_entry(fileCount,"", FileEntry::AVAILABLE_SPACE);
-    fe->set_size(freeSpace);
-    fe->set_parent(parent);
-    ++fileCount;
+//    auto fe=entryPool->create_entry(fileCount,"", FileEntry::AVAILABLE_SPACE);
+//    fe->set_size(freeSpace);
+//    fe->set_parent(parent);
+//    ++fileCount;
     
-    fe=entryPool->create_entry(fileCount,"", FileEntry::UNKNOWN_SPACE);
-    fe->set_size(unknownSpace);
-    fe->set_parent(parent);
-    ++fileCount;
+//    fe=entryPool->create_entry(fileCount,"", FileEntry::UNKNOWN_SPACE);
+//    fe->set_size(unknownSpace);
+//    fe->set_parent(parent);
+//    ++fileCount;
 
     std::lock_guard<std::mutex> lock_mtx(mtx);
     scanQueue.push_back(rootFile);
@@ -262,7 +284,7 @@ void SpaceScanner::rescan_dir(const std::string &path)
     std::lock_guard<std::mutex> lock_mtx(mtx);
 
     check_disk_space();//disk space might change since last update, so update it again
-    rootFile->update_free_space(freeSpace);
+//    rootFile->update_free_space(freeSpace);
 
     entry->clear_entry(entryPool.get());
     scanQueue.push_back(entry);

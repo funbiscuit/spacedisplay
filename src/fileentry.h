@@ -14,9 +14,7 @@ class FileEntry {
 public:
     enum EntryType{
         DIRECTORY,
-        FILE,
-        AVAILABLE_SPACE,
-        UNKNOWN_SPACE
+        FILE
     };
     
     FileEntry(uint64_t id, char *name, EntryType entryType);
@@ -66,15 +64,13 @@ public:
         return nextEntry;
     }
 
-    void update_free_space(int64_t newFree);
-
     void clear_entry(FileEntryPool* pool);
 
     //const std::vector<FileEntry*>&  get_children();
     
     void remove_child(FileEntry* child);
     
-    bool is_dir() {
+    bool is_dir() const {
         return isDir;
     }
 
@@ -85,8 +81,6 @@ private:
     EntryType  entryType;
     FileEntry* parent;
     FileEntry* firstChild;
-    FileEntry* childUnknownSpace;
-    FileEntry* childFreeSpace;
     FileEntry* nextEntry;
     size_t childCount=0;
     bool isDir;

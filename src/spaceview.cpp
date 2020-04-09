@@ -57,11 +57,11 @@ void SpaceView::paintEvent(QPaintEvent *event)
 void SpaceView::drawView(QPainter& painter, const FileEntrySharedPtr &file, int nestLevel, bool forceFill)
 {
     QColor bg;
-    if(!drawViewBg(painter, bg, file, forceFill || file->get_type() != FileEntry::DIRECTORY))
+    if(!drawViewBg(painter, bg, file, forceFill || file->get_type() != FileEntryShared::EntryType::DIRECTORY))
         return;
 
 
-    if(nestLevel>0 && file->get_type()==FileEntry::DIRECTORY && !file->get_children().empty())
+    if(nestLevel>0 && file->get_type()==FileEntryShared::EntryType::DIRECTORY && !file->get_children().empty())
     {
         drawViewTitle(painter, bg, file);
         for(const auto& child : file->get_children())
@@ -87,15 +87,15 @@ bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntrySha
 
     switch(file->get_type())
     {
-        case FileEntry::AVAILABLE_SPACE:
+        case FileEntryShared::EntryType::AVAILABLE_SPACE:
             fillColor=colorTheme->viewFreeFill;
             strokeColor=colorTheme->viewFreeLine;
             break;
-        case FileEntry::DIRECTORY:
+        case FileEntryShared::EntryType::DIRECTORY:
             fillColor=colorTheme->viewDirFill;
             strokeColor=colorTheme->viewDirLine;
             break;
-        case FileEntry::FILE:
+        case FileEntryShared::EntryType::FILE:
             fillColor=colorTheme->viewFileFill;
             strokeColor=colorTheme->viewFileLine;
             break;
@@ -105,7 +105,7 @@ bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntrySha
             break;
     }
 
-    if(file->isHovered && (!fillDir || file->get_type()!=FileEntry::DIRECTORY))
+    if(file->isHovered && (!fillDir || file->get_type()!=FileEntryShared::EntryType::DIRECTORY))
     {
         fillColor = colorTheme->tint(fillColor, 0.7f);
         strokeColor = colorTheme->tint(strokeColor, 0.5f);

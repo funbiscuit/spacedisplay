@@ -11,15 +11,14 @@
 const int MAX_CHILD_COUNT=100;
 const int MIN_CHILD_PIXEL_AREA=50;
 
-FileEntryShared::FileEntryShared(FileEntry::EntryType type):
-        id(0), size(0), name(""), entryType(type), isHovered(false), drawArea{} {
+FileEntryShared::FileEntryShared() : drawArea{} {
 
 }
 
 
-FileEntryShared::FileEntryShared(const FileEntry& entry, int nestLevel, int64_t minSize, int flags)
+FileEntryShared::FileEntryShared(const FileEntry& entry, const CopyOptions& options) : drawArea{}
 {
-    reconstruct_from(entry, nestLevel, minSize, flags);
+    reconstruct_from(entry, options);
 }
 
 
@@ -34,19 +33,22 @@ void FileEntryShared::init_from(const FileEntry& entry)
     name=entry.name;
     isHovered=false;
     isParentHovered=false;
-    entryType=entry.get_type();
+    entryType=entry.is_dir() ? EntryType::DIRECTORY : EntryType::FILE;
     drawArea.x=0;
     drawArea.y=0;
     drawArea.w=0;
     drawArea.h=0;
 }
 
-void FileEntryShared::reconstruct_from(const FileEntry& entry, int nestLevel, int64_t minSize, uint16_t flags)
+void FileEntryShared::reconstruct_from(const FileEntry& entry, const CopyOptions& options)
 {
     init_from(entry);
     parent= nullptr;
 
-    if(nestLevel>0)
+    auto unknownSpace = options.unknownSpace;
+    auto freeSpace = options.freeSpace;
+
+    if(options.nestLevel>0)
     {
         auto child=entry.firstChild;
         size_t childCount = 0;
@@ -56,28 +58,71 @@ void FileEntryShared::reconstruct_from(const FileEntry& entry, int nestLevel, in
             if(childCount>=MAX_CHILD_COUNT)
                 break;
 
-            auto type=child->get_type();
-
-            if(child->get_size()<minSize)
+            if(child->get_size()<options.minSize)
                 break;
-            if((type!=FileEntry::AVAILABLE_SPACE || (flags&INCLUDE_AVAILABLE_SPACE)!=0) &&
-               (type!=FileEntry::UNKNOWN_SPACE || (flags&INCLUDE_UNKNOWN_SPACE)!=0))
+
+            auto nextChild = child->nextEntry;
+
+            //TODO if unknown space is less than free space, but they are both bigger than biggest child
+            // it will still be included first (this is not critical)
+            if(unknownSpace>=child->size)
             {
+                FileEntrySharedPtr newChild;
                 if(childCount<existingChildCount)
                 {
-                    update_copy(children[childCount], *child, nestLevel - 1, minSize, flags);
-                    children[childCount]->parent = this;
+                    newChild = children[childCount];
                 } else
                 {
-                    auto newChild = create_copy(*child, nestLevel - 1, minSize, flags);
-                    newChild->parent = this;
+                    newChild = FileEntrySharedPtr(new FileEntryShared());
                     children.push_back(newChild);
                 }
-
+                newChild->parent = this;
+                newChild->entryType = EntryType::UNKNOWN_SPACE;
+                newChild->size = unknownSpace;
+                newChild->name.clear();
                 ++childCount;
+                unknownSpace = 0;
+            }
+            if(freeSpace>=child->size)
+            {
+                FileEntrySharedPtr newChild;
+                if(childCount<existingChildCount)
+                {
+                    newChild = children[childCount];
+                } else
+                {
+                    newChild = FileEntrySharedPtr(new FileEntryShared());
+                    children.push_back(newChild);
+                }
+                newChild->parent = this;
+                newChild->entryType = EntryType::AVAILABLE_SPACE;
+                newChild->size = freeSpace;
+                newChild->name.clear();
+                ++childCount;
+                freeSpace = 0;
             }
 
-            child=child->nextEntry;
+
+            CopyOptions newOptions = options;
+            --newOptions.nestLevel;
+            //we don't need to include unknown and free space to child entries
+            newOptions.freeSpace=0;
+            newOptions.unknownSpace=0;
+
+            if(childCount<existingChildCount)
+            {
+                update_copy(children[childCount], *child, newOptions);
+                children[childCount]->parent = this;
+            } else
+            {
+                auto newChild = create_copy(*child, newOptions);
+                newChild->parent = this;
+                children.push_back(newChild);
+            }
+
+            ++childCount;
+
+            child=nextChild;
         }
 
         while(existingChildCount>childCount)
@@ -209,9 +254,9 @@ void FileEntryShared::allocate_children(Utils::RectI rect, int titleHeight)
 const char* FileEntryShared::get_name() {
     switch(entryType)
     {
-        case FileEntry::AVAILABLE_SPACE:
+        case EntryType::AVAILABLE_SPACE:
             return "Free";
-        case FileEntry::UNKNOWN_SPACE:
+        case EntryType::UNKNOWN_SPACE:
             return "Unknown";
         default:
             return name.c_str();
@@ -415,14 +460,14 @@ void FileEntryShared::set_child_rect(const FileEntrySharedPtr& child, Utils::Rec
     }
 }
 
-FileEntrySharedPtr FileEntryShared::create_copy(const FileEntry& entry, int nestLevel, int64_t minSize, int flags)
+FileEntrySharedPtr FileEntryShared::create_copy(const FileEntry& entry, const CopyOptions& options)
 {
-    return FileEntrySharedPtr(new FileEntryShared(entry, nestLevel, minSize, flags));
+    return FileEntrySharedPtr(new FileEntryShared(entry, options));
 }
 
-void FileEntryShared::update_copy(FileEntrySharedPtr& copy, const FileEntry& entry, int nestLevel, int64_t minSize, int flags)
+void FileEntryShared::update_copy(FileEntrySharedPtr& copy, const FileEntry& entry, const CopyOptions& options)
 {
-    copy->reconstruct_from(entry, nestLevel, minSize, flags);
+    copy->reconstruct_from(entry, options);
 }
 
 const char* FileEntryShared::get_path(bool countRoot) {

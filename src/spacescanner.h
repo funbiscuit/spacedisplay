@@ -91,9 +91,6 @@ private:
     FileEntry* rootFile = nullptr;
     uint64_t fileCount=0;
     uint64_t totalSize=0;
-    void _scan_entry(FileEntry *parent);
-    void _scan_root();
-    void _rescan_from_queue();
     void check_disk_space();
     
     FileEntry* getEntryAt(const char* path);

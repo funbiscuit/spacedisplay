@@ -17,7 +17,6 @@ void FileEntry::reconstruct(uint64_t id, char* name, EntryType entryType)
     this->name = name;
     this->isDir = entryType==DIRECTORY;
     this->parent = nullptr;
-    this->childUnknownSpace = nullptr;
     this->firstChild = nullptr;
     this->nextEntry = nullptr;
     this->childCount = 0;
@@ -70,43 +69,10 @@ void FileEntry::add_child(FileEntry *child) {
     else
         firstChild=child;
     childCount++;
-    
-    if(child->entryType==DIRECTORY || child->entryType==FILE)
-        size+=child->size;
+
+    size+=child->size;
     if(parent)
         parent->on_child_size_changed(this, child->size);
-    else if(childUnknownSpace!= nullptr && (child->entryType==DIRECTORY || child->entryType==FILE))
-    {
-        if(childUnknownSpace->size>child->size)
-            childUnknownSpace->size-=child->size;
-        else
-            childUnknownSpace->size=0;
-    
-        on_child_size_changed(childUnknownSpace, 0);
-    }
-    
-    if(child->entryType==UNKNOWN_SPACE)
-        childUnknownSpace=child;
-    else if(child->entryType==AVAILABLE_SPACE)
-        childFreeSpace=child;
-}
-
-void FileEntry::update_free_space(int64_t newFree)
-{
-    if(childFreeSpace && childUnknownSpace)
-    {
-        auto dsize=childFreeSpace->size-newFree;
-
-        if(childUnknownSpace->size+dsize>0)
-            childUnknownSpace->size+=dsize;
-        else
-            childUnknownSpace->size=0;
-        childFreeSpace->size=newFree;
-
-        //resort children
-        on_child_size_changed(childFreeSpace, 0);
-        on_child_size_changed(childUnknownSpace, 0);
-    }
 }
 
 void FileEntry::clear_entry(FileEntryPool* pool)
@@ -237,18 +203,7 @@ void FileEntry::on_child_size_changed(FileEntry* child, int64_t sizeChange) {
     }
     
     if(parent)
-    {
         parent->on_child_size_changed(this, sizeChange);
-    }
-    else if(childUnknownSpace!= nullptr && (child->entryType==DIRECTORY || child->entryType==FILE))
-    {
-        if(childUnknownSpace->size>sizeChange)
-            childUnknownSpace->size-=sizeChange;
-        else
-            childUnknownSpace->size=0;
-            
-        on_child_size_changed(childUnknownSpace, 0);
-    }
 }
 
 FileEntry *FileEntry::find_child_dir(const char *name) {
