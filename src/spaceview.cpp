@@ -40,7 +40,7 @@ void SpaceView::paintEvent(QPaintEvent *event)
         auto fm = painter.fontMetrics();
 
         textHeight = fm.height();
-        painter.fillRect(0, 0, width, height, Qt::lightGray);
+        painter.fillRect(0, 0, width, height, colorTheme->background);
 //        Utils::tic();
         drawView(painter, root, currentDepth, true);
 //        Utils::toc();

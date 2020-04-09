@@ -139,8 +139,17 @@ void FileEntryShared::reconstruct_from(const FileEntry& entry, const CopyOptions
 
 std::string FileEntryShared::get_title()
 {
+    if(name.empty())
+        return "";
     std::string sizeStr=format_size();
-    return string_format("%s - %s",name.c_str(),sizeStr.c_str());
+
+    auto len = name.length();
+    auto last = name[len-1];
+    //remove trailing backslash but only if this is not a drive name (e.g. D:\ or /)
+    if((last == '\\' || last == '/') && len>1 && (len != 3 || name[1] != ':') )
+        return string_format("%s - %s",name.substr(0,len-1).c_str(),sizeStr.c_str());
+    else
+        return string_format("%s - %s",name.c_str(),sizeStr.c_str());
 }
 
 std::string FileEntryShared::get_tooltip() const
@@ -443,6 +452,8 @@ void FileEntryShared::createPixmapCache(QPainter &painter, const QColor& color)
         if(cachedTitlePix.size() != sz)
             cachedTitlePix = QPixmap(sz);
         cachedTitlePix.fill(Qt::transparent);
+        if(sz.width()==0)
+            return;
         QPainter painter_pix(&cachedTitlePix);
         painter_pix.setPen(color);
         painter_pix.drawText(QRect(QPoint(0,0),sz), 0, title.c_str());
