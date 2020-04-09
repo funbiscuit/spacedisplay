@@ -547,6 +547,17 @@ void MainWindow::wheelEvent(QWheelEvent *event)
 
 void MainWindow::mouseReleaseEvent(QMouseEvent *event)
 {
+    switch (event->button())
+    {
+        case Qt::BackButton:
+            goBack();
+            break;
+        case Qt::ForwardButton:
+            goForward();
+            break;
+        default:
+            break;
+    }
     if(event->button() == Qt::RightButton)
     {
 //        bool isWidgetHovered = spaceWidget->rect().contains(spaceWidget->mapFromGlobal(event->globalPos()));

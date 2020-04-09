@@ -226,7 +226,7 @@ void SpaceScanner::stop_scan()
             scannerStatus=ScannerStatus::STOPPING;
         scanQueue.clear();
     }
-    //wait until everythin is stopped
+    //wait until everything is stopped
     while(scannerStatus!=ScannerStatus::IDLE)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
@@ -251,21 +251,6 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     }
     
     check_disk_space();//this will load all info about disk space (available, used, total)
-    
-    //create unknown space and free space children
-//    auto unknownSpace=totalSpace-freeSpace;
-//    unknownSpace = unknownSpace<0 ? 0 : unknownSpace;
-    
-    
-//    auto fe=entryPool->create_entry(fileCount,"", FileEntry::AVAILABLE_SPACE);
-//    fe->set_size(freeSpace);
-//    fe->set_parent(parent);
-//    ++fileCount;
-    
-//    fe=entryPool->create_entry(fileCount,"", FileEntry::UNKNOWN_SPACE);
-//    fe->set_size(unknownSpace);
-//    fe->set_parent(parent);
-//    ++fileCount;
 
     std::lock_guard<std::mutex> lock_mtx(mtx);
     scanQueue.push_back(rootFile);
@@ -281,10 +266,11 @@ void SpaceScanner::rescan_dir(const std::string &path)
     if(!entry)
         return;
 
+    scannerStatus=ScannerStatus::SCANNING;
+
     std::lock_guard<std::mutex> lock_mtx(mtx);
 
     check_disk_space();//disk space might change since last update, so update it again
-//    rootFile->update_free_space(freeSpace);
 
     entry->clear_entry(entryPool.get());
     scanQueue.push_back(entry);
