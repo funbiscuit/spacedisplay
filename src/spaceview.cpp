@@ -1,6 +1,5 @@
 
 #include <QtWidgets>
-#include <vector>
 #include <iostream>
 #include "spaceview.h"
 #include "colortheme.h"

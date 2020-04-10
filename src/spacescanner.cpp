@@ -8,7 +8,6 @@
 #include <iostream>
 #include <cstring>
 #include <chrono>
-#include <thread>
 
 SpaceScanner::SpaceScanner() :
         scannerStatus(ScannerStatus::IDLE)

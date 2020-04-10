@@ -8,6 +8,8 @@
 #include <mutex>          // std::mutex
 #include <queue>
 #include <list>
+#include <memory>
+#include <thread>
 
 enum class ScannerStatus {
     IDLE=0,
