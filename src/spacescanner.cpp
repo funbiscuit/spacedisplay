@@ -23,6 +23,9 @@ SpaceScanner::~SpaceScanner()
     cleanup_platform();
     runWorker = false;
     workerThread.join();
+    //TODO check if we should call this on exit
+//    std::cout << "Cleaning up cache:\n";
+//    entryPool->cleanup_cache();
 }
 
 void SpaceScanner::worker_run()
@@ -77,8 +80,7 @@ void SpaceScanner::reset_database()
     stop_scan();
     std::lock_guard<std::mutex> lock_mtx(mtx);
     fileCount=0;
-    entryPool->cache_children(rootFile);
-    rootFile= nullptr;
+    entryPool->cache_children(std::move(rootFile));
 }
 
 bool SpaceScanner::can_refresh()
@@ -117,7 +119,7 @@ FileEntrySharedPtr SpaceScanner::get_root_file(float minSizeRatio, uint16_t flag
             fullSpace+=unknownSpace;
         }
 
-        auto file = rootFile;
+        auto file = rootFile.get();
 
         if(strlen(filepath)>0)
         {
@@ -174,7 +176,7 @@ void SpaceScanner::update_root_file(FileEntrySharedPtr& root, float minSizeRatio
             fullSpace+=unknownSpace;
         }
 
-        auto file = rootFile;
+        auto file = rootFile.get();
 
         if(strlen(filepath)>0)
         {
@@ -242,8 +244,7 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
 
     scannerStatus=ScannerStatus::SCANNING;
 
-    auto parent=create_root_entry(path.c_str());
-    if(!parent)
+    if(!create_root_entry(path.c_str()))
     {
         scannerStatus=ScannerStatus::IDLE;
         std::cout<<"Can't open "<<path.c_str()<<"\n";
@@ -253,7 +254,7 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     update_disk_space();//this will load all info about disk space (available, used, total)
 
     std::lock_guard<std::mutex> lock_mtx(mtx);
-    scanQueue.push_back(rootFile);
+    scanQueue.push_back(rootFile.get());
     hasPendingChanges = true;
 
     return ScannerError::NONE;
@@ -288,11 +289,11 @@ FileEntry* SpaceScanner::getEntryAt(const char* path)
     {
         path = &path[rootLen];
     }
-    auto file = rootFile;
+    auto file = rootFile.get();
 
     file = file->find_child_dir(path);
     if(!file)
-        file=rootFile;
+        file=rootFile.get();
 
     return file;
 }

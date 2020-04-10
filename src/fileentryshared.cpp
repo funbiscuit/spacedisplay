@@ -50,7 +50,7 @@ void FileEntryShared::reconstruct_from(const FileEntry& entry, const CopyOptions
 
     if(options.nestLevel>0)
     {
-        auto child=entry.firstChild;
+        auto child=entry.firstChild.get();
         size_t childCount = 0;
         size_t existingChildCount = children.size();
         while (child!= nullptr)
@@ -61,7 +61,7 @@ void FileEntryShared::reconstruct_from(const FileEntry& entry, const CopyOptions
             if(child->get_size()<options.minSize)
                 break;
 
-            auto nextChild = child->nextEntry;
+            auto nextChild = child->nextEntry.get();
 
             //TODO if unknown space is less than free space, but they are both bigger than biggest child
             // it will still be included first (this is not critical)

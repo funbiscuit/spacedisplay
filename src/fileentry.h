@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 class FileEntryShared;
 class FileEntryPool;
@@ -44,8 +45,13 @@ public:
     FileEntry* get_parent() {
         return parent;
     }
-    
-    void add_child(FileEntry* child);
+
+    /**
+     * Adds child to children of this entry.
+     * Adds to relevant place so all children are sorted by size (in decreasing order)
+     * @param child
+     */
+    void add_child(std::unique_ptr<FileEntry> child);
     
     size_t get_child_count() const
     {
@@ -54,21 +60,29 @@ public:
 
     FileEntry* get_first_child()
     {
-        return firstChild;
+        return firstChild.get();
     }
+
+    /**
+     * Removes all children of this entry and returns pointer to the first one
+     * Use child->next to access all others
+     * @return
+     */
+    std::unique_ptr<FileEntry> pop_children();
 
     FileEntry* find_child_dir(const char *name);
     
     FileEntry* get_next()
     {
-        return nextEntry;
+        return nextEntry.get();
+    }
+
+    std::unique_ptr<FileEntry> pop_next()
+    {
+        return std::move(nextEntry);
     }
 
     void clear_entry(FileEntryPool* pool);
-
-    //const std::vector<FileEntry*>&  get_children();
-    
-    void remove_child(FileEntry* child);
     
     bool is_dir() const {
         return isDir;
@@ -80,8 +94,8 @@ private:
     
     EntryType  entryType;
     FileEntry* parent;
-    FileEntry* firstChild;
-    FileEntry* nextEntry;
+    std::unique_ptr<FileEntry> firstChild;
+    std::unique_ptr<FileEntry> nextEntry;
     size_t childCount=0;
     bool isDir;
     uint64_t id;

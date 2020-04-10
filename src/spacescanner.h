@@ -100,7 +100,7 @@ private:
     void update_disk_space();
 
     ScannerStatus scannerStatus;
-    FileEntry* rootFile = nullptr;
+    std::unique_ptr<FileEntry> rootFile;
     uint64_t fileCount=0;
     uint64_t totalSize=0;
     
@@ -110,11 +110,11 @@ private:
     void update_entry_children(FileEntry* entry);
 
     /**
-     * Creates root FileEntry at specified path. When called, existing root and all children will be deleted
+     * Creates root FileEntry at specified path. When called, existing root and all children should be already deleted
      * @param path - global path to root dir
-     * @return pointer to created FileEntry, nullptr if unsuccessful
+     * @return true if rootFile is created, false if unsuccessful
      */
-    FileEntry* create_root_entry(const char* path);
+    bool create_root_entry(const char* path);
 };
 
 

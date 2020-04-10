@@ -103,8 +103,14 @@ void SpaceScanner::update_disk_space()
     std::cout<<"Total: "<<totalSpace<<", free: "<<freeSpace<<"\n";
 }
 
-FileEntry* SpaceScanner::create_root_entry(const char* path)
+bool SpaceScanner::create_root_entry(const char* path)
 {
+    if(rootFile)
+    {
+        std::cerr << "rootFile should be destroyed (cached) before creating new one\n";
+        return false;
+    }
+
     struct stat file_stat{};
     int status;
 
@@ -120,16 +126,16 @@ FileEntry* SpaceScanner::create_root_entry(const char* path)
     {
         bool isDir=S_ISDIR(file_stat.st_mode);
         if(!isDir)
-            return nullptr;
+            return false;
         parent->set_size(file_stat.st_size);
-        rootFile=parent;
+        rootFile=std::move(parent);
         fileCount++;
     }
     else
-        return nullptr;
+        return false;
 
 
-    return parent;
+    return true;
 }
 
 void SpaceScanner::on_before_new_scan()
@@ -179,17 +185,18 @@ void SpaceScanner::update_entry_children(FileEntry *entry)
             fe->set_size(file_stat.st_size);
 
             std::lock_guard<std::mutex> lock_mtx(mtx);
-            fe->set_parent(entry);
+            auto fe_raw = fe.get();
+            entry->add_child(std::move(fe));
             ++fileCount;
             
             if(isDir)
             {
                 std::string newPath;
-                fe->get_path(newPath);
+                fe_raw->get_path(newPath);
                 if(newPath.back() != '/')
                     newPath.append("/");
                 if(!in_array(newPath, availableRoots) && !in_array(newPath, excludedMounts))
-                    scanQueue.push_back(fe);
+                    scanQueue.push_back(fe_raw);
                 else
                     std::cout<<"Skip scan of: "<<newPath<<"\n";
             }

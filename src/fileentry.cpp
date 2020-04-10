@@ -17,8 +17,6 @@ void FileEntry::reconstruct(uint64_t id, char* name, EntryType entryType)
     this->name = name;
     this->isDir = entryType==DIRECTORY;
     this->parent = nullptr;
-    this->firstChild = nullptr;
-    this->nextEntry = nullptr;
     this->childCount = 0;
     this->entryType = entryType;
 }
@@ -30,6 +28,10 @@ FileEntry::~FileEntry() {
         //delete(name);
         name=nullptr;
     }
+    if(firstChild)
+        std::cerr << "Possible memory leak. Entry has children and was destroyed!\n";
+    if(nextEntry)
+        std::cerr << "Possible memory leak. Entry has next entry and was destroyed!\n";
 //    if(path)
 //    {
 //        delete(path);
@@ -41,48 +43,47 @@ void FileEntry::set_size(int64_t size) {
     this->size=size;
 }
 
-void FileEntry::set_parent(FileEntry *parent) {
-    if(this->parent)
-        this->parent->remove_child(this);
-    
-    this->parent=parent;
-    parent->add_child(this);
-}
-
-void FileEntry::add_child(FileEntry *child) {
+void FileEntry::add_child(std::unique_ptr<FileEntry> child) {
     if(!child)
         return;
     //insert child in proper position to keep children sorted by size
-    
-    auto ch=firstChild;
+    FileEntry* ch=firstChild.get();
     FileEntry* prev= nullptr;
 
-    while (ch!= nullptr && ch->size>child->size)
+    while (ch && ch->size>child->size)
     {
         prev=ch;
-        ch=ch->nextEntry;
+        ch=ch->nextEntry.get();
     }
-    
-    child->nextEntry=ch;
-    if(prev)
-        prev->nextEntry=child;
-    else
-        firstChild=child;
-    childCount++;
 
-    size+=child->size;
+    auto childSize = child->size;
+
+    child->parent = this;
+    if(prev)
+    {
+        child->nextEntry=std::move(prev->nextEntry);
+        prev->nextEntry=std::move(child);
+    }
+    else
+    {
+        child->nextEntry = std::move(firstChild);
+        firstChild=std::move(child);
+    }
+    childCount++;
+    size+=childSize;
+
     if(parent)
-        parent->on_child_size_changed(this, child->size);
+        parent->on_child_size_changed(this, childSize);
 }
 
 void FileEntry::clear_entry(FileEntryPool* pool)
 {
     int64_t childrenSize =0;
-    auto ch=firstChild;
+    auto ch=firstChild.get();
     while (ch!= nullptr)
     {
         childrenSize+=ch->size;
-        ch=ch->nextEntry;
+        ch=ch->nextEntry.get();
     }
 
     if(parent)
@@ -91,13 +92,7 @@ void FileEntry::clear_entry(FileEntryPool* pool)
     size -= childrenSize;
 
     if(firstChild)
-        pool->cache_children(firstChild);
-
-    firstChild = nullptr;
-}
-
-void FileEntry::remove_child(FileEntry *child) {
-
+        pool->cache_children(std::move(firstChild));
 }
 
 //void FileEntry::set_path(char *path) {
@@ -130,12 +125,11 @@ void FileEntry::get_path(std::string& _path) {
 void FileEntry::on_child_size_changed(FileEntry* child, int64_t sizeChange) {
     size+=sizeChange;
     
-    auto ch=firstChild;
+    auto ch=firstChild.get();
     FileEntry* prev= nullptr;
     FileEntry* oldPrev= nullptr;
     FileEntry* oldNext= nullptr;
     FileEntry* newPrev= nullptr;
-    FileEntry* newNext= nullptr;
     
     bool oldFound=false;
     bool newFound=false;
@@ -145,7 +139,7 @@ void FileEntry::on_child_size_changed(FileEntry* child, int64_t sizeChange) {
         if(ch==child)
         {
             oldPrev=prev;
-            oldNext=ch->nextEntry;
+            oldNext=ch->nextEntry.get();
             oldFound=true;
     
             if(newFound)
@@ -161,44 +155,54 @@ void FileEntry::on_child_size_changed(FileEntry* child, int64_t sizeChange) {
             
             newFound=true;
             newPrev=prev;
-            newNext=ch;
             if(oldFound)
                 break;
         }
         
         prev=ch;
-        ch=ch->nextEntry;
+        ch=ch->nextEntry.get();
     }
     
     //if this is a case - we are already at the end so don't need to move it
     if(!newFound && prev==child)
         oldFound=false;
     
-    //usually we should always found old position, but sometimes we want to skip
+    //usually we should always find old position, but sometimes we want to skip
     //this section by forcing oldFound to be false
     if(oldFound)
     {
+        std::unique_ptr<FileEntry> childPtr;
+
         if(oldPrev!= nullptr)
-            oldPrev->nextEntry=oldNext;
-        else if(oldNext != nullptr)
-            firstChild=oldNext;
-    
-        if(newPrev!= nullptr)
         {
-            child->nextEntry=newNext;
-            newPrev->nextEntry=child;
+            //convert sequence oldPrev -> child -> oldNext to oldPrev -> oldNext
+            childPtr = std::move(oldPrev->nextEntry);
+            oldPrev->nextEntry=std::move(child->nextEntry);
+        }
+        else if(oldNext != nullptr)
+        {
+            // if old prev is null it means that child was the first one
+            childPtr = std::move(firstChild);
+            firstChild=std::move(child->nextEntry);
+        }
+    
+        if(newPrev != nullptr)
+        {
+            //convert sequence newPrev -> newNext to newPrev -> child -> newNext
+            child->nextEntry=std::move(newPrev->nextEntry);
+            newPrev->nextEntry=std::move(childPtr);
         }
         else if(newFound)
         {
             //this is the biggest child
-            child->nextEntry=newNext;
-            firstChild=child;
+            child->nextEntry=std::move(firstChild);
+            firstChild=std::move(childPtr);
         }
         else
         {
             //this is the smallest child
-            child->nextEntry= nullptr;
-            prev->nextEntry=child;
+            child->nextEntry = nullptr;
+            prev->nextEntry=std::move(childPtr);
         }
     }
     
@@ -206,8 +210,13 @@ void FileEntry::on_child_size_changed(FileEntry* child, int64_t sizeChange) {
         parent->on_child_size_changed(this, sizeChange);
 }
 
+std::unique_ptr<FileEntry> FileEntry::pop_children()
+{
+    return std::move(firstChild);
+}
+
 FileEntry *FileEntry::find_child_dir(const char *name) {
-    auto child=firstChild;
+    auto child=firstChild.get();
 
     size_t n=strlen(name);
     size_t tn=strlen(this->name);
@@ -232,7 +241,7 @@ FileEntry *FileEntry::find_child_dir(const char *name) {
     {
         if(!child->is_dir())
         {
-            child=child->nextEntry;
+            child=child->nextEntry.get();
             continue;
         }
 
@@ -248,7 +257,7 @@ FileEntry *FileEntry::find_child_dir(const char *name) {
                 return child;
         }
 
-        child=child->nextEntry;
+        child=child->nextEntry.get();
     }
 
     return child;
