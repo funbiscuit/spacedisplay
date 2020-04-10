@@ -4,3 +4,4 @@ res/build
 bin
 bind
 qt5path.txt
+cmake_win_path.txt
