@@ -24,8 +24,8 @@ SpaceScanner::~SpaceScanner()
     runWorker = false;
     workerThread.join();
     //TODO check if we should call this on exit
-    std::cout << "Cleaning up cache:\n";
-    entryPool->cleanup_cache();
+//    std::cout << "Cleaning up cache:\n";
+//    entryPool->cleanup_cache();
 }
 
 void SpaceScanner::worker_run()
