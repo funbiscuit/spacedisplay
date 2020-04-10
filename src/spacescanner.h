@@ -87,13 +87,22 @@ private:
      */
     std::vector<std::string> excludedMounts;
 
-    void read_available_drives();
+    /**
+     * Scans system for mount points and populates availableRoots and excludedMounts vectors
+     * Can be called multiple times to update information about available mounts
+     */
+    void update_available_drives();
+
+    /**
+     * If valid rootFile is available then this will update info about total and available space on this drive
+     * Can be called multiple times, just need rootFile to be valid
+     */
+    void update_disk_space();
 
     ScannerStatus scannerStatus;
     FileEntry* rootFile = nullptr;
     uint64_t fileCount=0;
     uint64_t totalSize=0;
-    void check_disk_space();
     
     FileEntry* getEntryAt(const char* path);
 

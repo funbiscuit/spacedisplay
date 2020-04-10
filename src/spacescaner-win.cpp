@@ -28,7 +28,7 @@ void SpaceScanner::cleanup_platform()
 {
 }
 
-void SpaceScanner::read_available_drives()
+void SpaceScanner::update_available_drives()
 {
     auto drivesMask=GetLogicalDrives();
 
@@ -49,18 +49,12 @@ void SpaceScanner::read_available_drives()
 
             if(type==DRIVE_FIXED || type==DRIVE_REMOVABLE)
                 availableRoots.emplace_back(driveName);
-
-//            std::cout<<"Drive "<<drive<<" is available with type "<<type<<"\n";
-
         }
-//        else
-//            std::cout<<"Drive "<<drive<<" is not available\n";
         drivesMask>>=1;
     }
-
 }
 
-void SpaceScanner::check_disk_space()
+void SpaceScanner::update_disk_space()
 {
     if(!rootFile)
         return;
@@ -70,7 +64,6 @@ void SpaceScanner::check_disk_space()
     ULARGE_INTEGER totalNumberOfBytes;
     ULARGE_INTEGER totalNumberOfFreeBytes;
     ULARGE_INTEGER freeBytesAvailableToCaller;
-
 
     GetDiskFreeSpaceExW(wname.c_str(),&freeBytesAvailableToCaller,&totalNumberOfBytes,&totalNumberOfFreeBytes);
     totalSpace=totalNumberOfBytes.QuadPart;

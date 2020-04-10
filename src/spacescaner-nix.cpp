@@ -39,7 +39,7 @@ void SpaceScanner::cleanup_platform()
 {
 }
 
-void SpaceScanner::read_available_drives()
+void SpaceScanner::update_available_drives()
 {
     excludedMounts.clear();
     availableRoots.clear();
@@ -89,23 +89,17 @@ void SpaceScanner::read_available_drives()
     }
 }
 
-void SpaceScanner::check_disk_space()
+void SpaceScanner::update_disk_space()
 {
     if(!rootFile)
         return;
-    
-    
+
     struct statvfs disk_stat;
-    
     auto res= statvfs(rootFile->get_name(), &disk_stat);
-    
-    
-    
+
     totalSpace=uint64_t(disk_stat.f_frsize)*uint64_t(disk_stat.f_blocks);
     freeSpace=uint64_t(disk_stat.f_bavail)*uint64_t(disk_stat.f_frsize);
-    
-    //freeSpace=freeBytesAvailableToCaller.QuadPart;
-    
+
     std::cout<<"Total: "<<totalSpace<<", free: "<<freeSpace<<"\n";
 }
 

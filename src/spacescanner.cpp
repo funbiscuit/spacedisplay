@@ -67,7 +67,7 @@ void SpaceScanner::worker_run()
 
 std::vector<std::string> SpaceScanner::get_available_roots()
 {
-    read_available_drives();
+    update_available_drives();
 
     return availableRoots;
 }
@@ -250,7 +250,7 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
         return ScannerError::CANT_OPEN_DIR;
     }
     
-    check_disk_space();//this will load all info about disk space (available, used, total)
+    update_disk_space();//this will load all info about disk space (available, used, total)
 
     std::lock_guard<std::mutex> lock_mtx(mtx);
     scanQueue.push_back(rootFile);
@@ -270,7 +270,7 @@ void SpaceScanner::rescan_dir(const std::string &path)
 
     std::lock_guard<std::mutex> lock_mtx(mtx);
 
-    check_disk_space();//disk space might change since last update, so update it again
+    update_disk_space();//disk space might change since last update, so update it again
 
     entry->clear_entry(entryPool.get());
     scanQueue.push_back(entry);
