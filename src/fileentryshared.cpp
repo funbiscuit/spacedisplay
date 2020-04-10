@@ -65,7 +65,7 @@ void FileEntryShared::reconstruct_from(const FileEntry& entry, const CopyOptions
 
             //TODO if unknown space is less than free space, but they are both bigger than biggest child
             // it will still be included first (this is not critical)
-            if(unknownSpace>=child->size)
+            if(unknownSpace>child->size)
             {
                 FileEntrySharedPtr newChild;
                 if(childCount<existingChildCount)
@@ -83,7 +83,7 @@ void FileEntryShared::reconstruct_from(const FileEntry& entry, const CopyOptions
                 ++childCount;
                 unknownSpace = 0;
             }
-            if(freeSpace>=child->size)
+            if(freeSpace>child->size)
             {
                 FileEntrySharedPtr newChild;
                 if(childCount<existingChildCount)

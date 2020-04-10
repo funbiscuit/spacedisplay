@@ -9,13 +9,10 @@
 #include <stb_image.h>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsObject>
+#include <QtSvg/qsvgrenderer.h>
 #include <iostream>
 #include <memory>
 
-#define NANOSVG_IMPLEMENTATION
-#include "nanosvg.h"
-#define NANOSVGRAST_IMPLEMENTATION
-#include "nanosvgrast.h"
 
 Resources& Resources::get()
 {
@@ -51,28 +48,18 @@ QPixmap Resources::get_vector_pixmap(ResourceBuilder::ResourceId id, int width, 
     auto data=ResourceBuilder::get_resource_data(id);
     auto size=ResourceBuilder::get_resource_size(id);
 
-    auto data_cp = std::unique_ptr<char[]>(new char[size]);
-    memcpy(data_cp.get(), data, size);
+    QByteArray svgData=QByteArray::fromRawData((const char*)data, size);
+    QSvgRenderer qSvgRenderer(svgData);
+    auto sz = QSizeF(qSvgRenderer.defaultSize());
 
-    auto svgImage = nsvgParse(data_cp.get(), "px", 96.0f);
-    if (svgImage == nullptr)
-        return QPixmap(0,0);
+    auto scale = double(width)/sz.width();
+    auto height = (int)std::round(sz.height()*scale);
 
-    float w0 = svgImage->width;
-    float scale = float(width)/w0;
-    auto height = (int)std::round(svgImage->height*scale);
+    QImage img(width, height, QImage::Format_RGBA8888);
 
-    auto rast = nsvgCreateRasterizer();
+    img.fill(Qt::transparent);
+    QPainter painter_pix(&img);
+    qSvgRenderer.render(&painter_pix);
 
-    auto img = std::unique_ptr<uint8_t[]>(new uint8_t[width*height*4]);
-
-    printf("rasterizing vector image at %d x %d\n", width, height);
-    nsvgRasterize(rast, svgImage, 0, 0, scale, img.get(), width, height, width * 4);
-
-    nsvgDeleteRasterizer(rast);
-    nsvgDelete(svgImage);
-    QImage myImage(img.get(), width, height, width*4, QImage::Format_RGBA8888);
-    QPixmap myPixmap = QPixmap::fromImage(tint(myImage, color, strength));
-
-    return myPixmap;
+    return QPixmap::fromImage(tint(img, color, strength));
 }

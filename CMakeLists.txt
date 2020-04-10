@@ -33,8 +33,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
-
+find_package(Qt5 COMPONENTS Core Widgets Svg REQUIRED)
 
 include_directories(
         ${PROJECT_SOURCE_DIR}/inc
@@ -69,12 +68,17 @@ if( WIN32 )
 #        endif()
 #    endif()
 
-    target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets)
+    target_link_libraries(${PROJECT_NAME}
+            PRIVATE Qt5::Widgets
+            PRIVATE Qt5::Svg
+            )
 else()
     file(GLOB all_OBJS ${PROJECT_SOURCE_DIR}/res/build/objs/*.o)
     add_executable(${PROJECT_NAME} ${all_SRCS})
     target_link_libraries(${PROJECT_NAME}
             PRIVATE ${CMAKE_THREAD_LIBS_INIT}
             PRIVATE ${all_OBJS}
-            PRIVATE Qt5::Widgets)
+            PRIVATE Qt5::Widgets
+            PRIVATE Qt5::Svg
+            )
 endif()

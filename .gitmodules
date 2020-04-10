@@ -4,9 +4,6 @@
 [submodule "deps/stb"]
 	path = deps/stb
 	url = https://github.com/nothings/stb.git
-[submodule "deps/nanosvg"]
-	path = deps/nanosvg
-	url = https://github.com/memononen/nanosvg.git
 [submodule "deps/pfd"]
 	path = deps/pfd
 	url = https://github.com/samhocevar/portable-file-dialogs.git
