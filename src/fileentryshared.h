@@ -77,11 +77,6 @@ public:
         return entryType==EntryType::FILE;
     }
 
-    int64_t get_id() const
-    {
-        return id;
-    }
-
     QPixmap getNamePixmap(QPainter &painter, const QColor& color);
     QPixmap getSizePixmap(QPainter &painter, const QColor& color);
     QPixmap getTitlePixmap(QPainter &painter, const QColor& color);

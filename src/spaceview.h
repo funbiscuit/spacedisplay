@@ -17,7 +17,7 @@ class SpaceView : public QWidget
 {
 Q_OBJECT
 public:
-    SpaceView(MainWindow* parent);
+    explicit SpaceView(MainWindow* parent);
 
     void setScanner(SpaceScanner* _scanner);
     void setTheme(std::shared_ptr<ColorTheme> theme);

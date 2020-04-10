@@ -24,12 +24,6 @@ public:
     void reconstruct(uint64_t id, char* name, EntryType entryType);
     
     void set_size(int64_t size);
-//    void set_path(char *path);
-    
-    EntryType get_type() const
-    {
-        return entryType;
-    }
 
     const char* get_name() {
         return name;
@@ -39,12 +33,6 @@ public:
     int64_t get_size() {
         return size;
     }
-    
-    void set_parent(FileEntry* parent);
-    
-    FileEntry* get_parent() {
-        return parent;
-    }
 
     /**
      * Adds child to children of this entry.
@@ -52,16 +40,6 @@ public:
      * @param child
      */
     void add_child(std::unique_ptr<FileEntry> child);
-    
-    size_t get_child_count() const
-    {
-        return childCount;
-    }
-
-    FileEntry* get_first_child()
-    {
-        return firstChild.get();
-    }
 
     /**
      * Removes all children of this entry and returns pointer to the first one
@@ -71,11 +49,6 @@ public:
     std::unique_ptr<FileEntry> pop_children();
 
     FileEntry* find_child_dir(const char *name);
-    
-    FileEntry* get_next()
-    {
-        return nextEntry.get();
-    }
 
     std::unique_ptr<FileEntry> pop_next()
     {
