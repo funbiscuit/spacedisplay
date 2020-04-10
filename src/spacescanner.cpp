@@ -228,7 +228,6 @@ void SpaceScanner::stop_scan()
         scanQueue.clear();
     }
     //wait until everything is stopped
-    // FIXME this takes a long time to finish because scanner thread scans a lot of files after it needs to be stopped
     while(scannerStatus!=ScannerStatus::IDLE)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }

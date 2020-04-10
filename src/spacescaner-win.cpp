@@ -150,7 +150,7 @@ void SpaceScanner::update_entry_children(FileEntry* entry)
         return;
     }
 
-    while(found)
+    while(found && scannerStatus!=ScannerStatus::STOPPING)
     {
         auto cname=wstr2str(fileData.cFileName);
 

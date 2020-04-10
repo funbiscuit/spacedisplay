@@ -159,7 +159,7 @@ void SpaceScanner::update_entry_children(FileEntry *entry)
     struct stat file_stat{};
     int status;
 
-    while((dp = readdir(dirp)) != nullptr)
+    while((dp = readdir(dirp)) != nullptr && scannerStatus != ScannerStatus::STOPPING)
     {
         if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)
             continue;
