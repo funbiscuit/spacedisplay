@@ -114,7 +114,7 @@ private:
      * @param path - global path to root dir
      * @return true if rootFile is created, false if unsuccessful
      */
-    bool create_root_entry(const char* path);
+    bool create_root_entry(const std::string& path);
 };
 
 

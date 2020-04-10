@@ -72,7 +72,7 @@ void SpaceScanner::update_disk_space()
     std::cout<<"Total: "<<totalSpace<<", free: "<<freeSpace<<"\n";
 }
 
-bool SpaceScanner::create_root_entry(const char* path)
+bool SpaceScanner::create_root_entry(const std::string& path)
 {
     if(rootFile)
     {
@@ -179,7 +179,7 @@ void SpaceScanner::update_entry_children(FileEntry* entry)
 
             uint64_t size=(uint64_t(fileData.nFileSizeHigh) * (uint64_t(MAXDWORD)+1)) + uint64_t(fileData.nFileSizeLow);
 
-            auto fe=entryPool->create_entry(fileCount,cname.c_str(), isDir ? FileEntry::DIRECTORY : FileEntry::FILE);
+            auto fe=entryPool->create_entry(fileCount,cname, isDir ? FileEntry::DIRECTORY : FileEntry::FILE);
             fe->set_size(size);
 
             std::lock_guard<std::mutex> lock_mtx(mtx);
@@ -187,7 +187,7 @@ void SpaceScanner::update_entry_children(FileEntry* entry)
             entry->add_child(std::move(fe));
             ++fileCount;
             if(isDir)
-                scanQueue.push_back(fe_raw);
+                scanQueue.push_front(fe_raw);
         }
         found = FindNextFileW(handle, &fileData) != 0;
     }

@@ -103,7 +103,7 @@ void SpaceScanner::update_disk_space()
     std::cout<<"Total: "<<totalSpace<<", free: "<<freeSpace<<"\n";
 }
 
-bool SpaceScanner::create_root_entry(const char* path)
+bool SpaceScanner::create_root_entry(const std::string& path)
 {
     if(rootFile)
     {
@@ -114,12 +114,9 @@ bool SpaceScanner::create_root_entry(const char* path)
     struct stat file_stat{};
     int status;
 
-    auto cname=new char[strlen(path)+1];
-    strcpy(cname, path);
-    auto parent=entryPool->create_entry(fileCount,cname, FileEntry::DIRECTORY);
-    delete[](cname);
+    auto parent=entryPool->create_entry(fileCount, path, FileEntry::DIRECTORY);
 
-    status = lstat(path, &file_stat);
+    status = lstat(path.c_str(), &file_stat);
 
 
     if(status==0)
@@ -196,7 +193,7 @@ void SpaceScanner::update_entry_children(FileEntry *entry)
                 if(newPath.back() != '/')
                     newPath.append("/");
                 if(!in_array(newPath, availableRoots) && !in_array(newPath, excludedMounts))
-                    scanQueue.push_back(fe_raw);
+                    scanQueue.push_front(fe_raw);
                 else
                     std::cout<<"Skip scan of: "<<newPath<<"\n";
             }

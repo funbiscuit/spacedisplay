@@ -5,42 +5,32 @@
 #include "fileentry.h"
 #include "fileentrypool.h"
 
-FileEntry::FileEntry(uint64_t id, char *name, EntryType entryType)
+FileEntry::FileEntry(uint64_t id, std::unique_ptr<char[]> name, EntryType entryType)
 {
-    reconstruct(id, name, entryType);
+    reconstruct(id, std::move(name), entryType);
 }
 
-void FileEntry::reconstruct(uint64_t id, char* name, EntryType entryType)
+void FileEntry::reconstruct(uint64_t id_, std::unique_ptr<char[]> name_, EntryType entryType_)
 {
-    this->id = id;
-    this->size = 0;
-    this->name = name;
-    this->isDir = entryType==DIRECTORY;
-    this->parent = nullptr;
-    this->childCount = 0;
-    this->entryType = entryType;
+    id = id_;
+    size = 0;
+    name = std::move(name_);
+    isDir = entryType_==DIRECTORY;
+    parent = nullptr;
+    childCount = 0;
+    entryType = entryType_;
 }
 
 FileEntry::~FileEntry() {
-    //name will be deleted by pool allocator
-    if(name /*&& name!=path*/)
-    {
-        //delete(name);
-        name=nullptr;
-    }
+    //if name is valid, it's okay for it to destroy here
     if(firstChild)
         std::cerr << "Possible memory leak. Entry has children and was destroyed!\n";
     if(nextEntry)
         std::cerr << "Possible memory leak. Entry has next entry and was destroyed!\n";
-//    if(path)
-//    {
-//        delete(path);
-//        path=nullptr;
-//    }
 }
 
-void FileEntry::set_size(int64_t size) {
-    this->size=size;
+void FileEntry::set_size(int64_t size_) {
+    size=size_;
 }
 
 void FileEntry::add_child(std::unique_ptr<FileEntry> child) {
@@ -110,16 +100,16 @@ void FileEntry::get_path(std::string& _path) {
 
         if(_path.back()=='/' || _path.back()=='\\')
         {
-            _path.append(name);
+            _path.append(name.get());
         }
         else
         {
             _path.append("/");
-            _path.append(name);
+            _path.append(name.get());
         }
     }
     else
-        _path = name;
+        _path = name.get();
 }
 
 void FileEntry::on_child_size_changed(FileEntry* child, int64_t sizeChange) {
@@ -215,26 +205,16 @@ std::unique_ptr<FileEntry> FileEntry::pop_children()
     return std::move(firstChild);
 }
 
-FileEntry *FileEntry::find_child_dir(const char *name) {
+FileEntry *FileEntry::find_child_dir(const char *name_) {
     auto child=firstChild.get();
 
-    size_t n=strlen(name);
-    size_t tn=strlen(this->name);
+    size_t n=strlen(name_);
 
-    while(n>0 && name[0]=='/')
+    while(n>0 && name_[0] == '/')
     {
-        name = name + sizeof(char);
+        name_ = name_ + sizeof(char);
         --n;
     }
-
-//    if(tn>n)
-//        return nullptr;
-//
-//    if(strncmp(this->name, name, tn)==0)
-//    {
-//        name=name+tn*sizeof(char);
-//        n -= tn;
-//    }
 
 
     while (child != nullptr)
@@ -245,13 +225,13 @@ FileEntry *FileEntry::find_child_dir(const char *name) {
             continue;
         }
 
-        size_t cn=strlen(child->name);
-        if(strncmp(child->name, name, cn)==0 && (n==cn || name[cn]=='/'))
+        size_t cn=strlen(child->name.get());
+        if(strncmp(child->name.get(), name_, cn) == 0 && (n == cn || name_[cn] == '/'))
         {
             if(n>cn+1)
             {
-                name=name+cn+1;
-                return child->find_child_dir(name);
+                name_= name_ + cn + 1;
+                return child->find_child_dir(name_);
             }
             else
                 return child;

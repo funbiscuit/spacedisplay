@@ -30,7 +30,7 @@ void FileEntryShared::init_from(const FileEntry& entry)
 {
     id=entry.id;
     size=entry.size;
-    name=entry.name;
+    name=entry.name.get();
     isHovered=false;
     isParentHovered=false;
     entryType=entry.is_dir() ? EntryType::DIRECTORY : EntryType::FILE;

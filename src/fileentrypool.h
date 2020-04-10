@@ -13,7 +13,7 @@ class FileEntryPool {
 public:
     FileEntryPool();
 
-    std::unique_ptr<FileEntry> create_entry(uint64_t id, const char *name, FileEntry::EntryType entryType);
+    std::unique_ptr<FileEntry> create_entry(uint64_t id, const std::string& name, FileEntry::EntryType entryType);
 
     void cache_children(std::unique_ptr<FileEntry> firstChild);
 
@@ -28,7 +28,7 @@ private:
     std::vector<std::unique_ptr<FileEntry>> entriesCache;
 
     //map key is length of stored string (allocated memory is key+1)
-    std::unordered_map<int, std::vector<char*>> charsCache;
+    std::unordered_map<size_t, std::vector<std::unique_ptr<char[]>>> charsCache;
 
     uint64_t _cache_children(std::unique_ptr<FileEntry> firstChild);
     uint64_t _delete_children(std::unique_ptr<FileEntry> firstChild);

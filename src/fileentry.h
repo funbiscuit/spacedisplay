@@ -18,15 +18,15 @@ public:
         FILE
     };
     
-    FileEntry(uint64_t id, char *name, EntryType entryType);
+    FileEntry(uint64_t id, std::unique_ptr<char[]> name, EntryType entryType);
     ~FileEntry();
 
-    void reconstruct(uint64_t id, char* name, EntryType entryType);
+    void reconstruct(uint64_t id_, std::unique_ptr<char[]> name_, EntryType entryType_);
     
     void set_size(int64_t size);
 
     const char* get_name() {
-        return name;
+        return name.get();
     }
     
     void get_path(std::string& _path);
@@ -48,7 +48,7 @@ public:
      */
     std::unique_ptr<FileEntry> pop_children();
 
-    FileEntry* find_child_dir(const char *name);
+    FileEntry* find_child_dir(const char *name_);
 
     std::unique_ptr<FileEntry> pop_next()
     {
@@ -73,8 +73,8 @@ private:
     bool isDir;
     uint64_t id;
     int64_t size;
-    char* name;
-//    char* path;
+    //not using std::string to reduce memory consumption (there are might be millions of entries so each byte counts)
+    std::unique_ptr<char[]> name;
 
 
     friend class FileEntryPool;

@@ -33,6 +33,10 @@ namespace Utils
     std::unique_ptr<T> make_unique(Args&&... args) {
         return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
     }
+    template<typename T>
+    std::unique_ptr<T[]> make_unique_arr(size_t N) {
+        return std::unique_ptr<T[]>(new T[N]);
+    }
 }
 
 void hex_to_rgb(int hex_color, float (&rgb)[3]);
