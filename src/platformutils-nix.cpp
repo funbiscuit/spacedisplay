@@ -6,6 +6,7 @@
 #include <regex>
 
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 
 bool PlatformUtils::can_scan_dir(const std::string& path)
 {

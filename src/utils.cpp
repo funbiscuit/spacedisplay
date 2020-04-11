@@ -1,7 +1,6 @@
 
 #include <cstdio>
 #include <cstdint>
-#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include "utils.h"
