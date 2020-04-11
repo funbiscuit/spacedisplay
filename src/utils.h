@@ -37,6 +37,19 @@ namespace Utils
     std::unique_ptr<T[]> make_unique_arr(size_t N) {
         return std::unique_ptr<T[]>(new T[N]);
     }
+
+     /**
+      * Checks if given value is inside the array
+      * @tparam T type of value
+      * @param value
+      * @param array
+      * @return
+      */
+    template<typename T>
+    bool in_array(const T& value, const std::vector<T>& array)
+    {
+        return std::find(array.begin(), array.end(), value) != array.end();
+    }
 }
 
 void hex_to_rgb(int hex_color, float (&rgb)[3]);
@@ -51,7 +64,6 @@ void hex_to_rgbi(int hex_color, int (&rgb)[3]);
  */
 void hex_to_rgb_tint(int hex_color, float (&rgb)[3], float tint_factor);
 void hex_to_rgbi_tint(int hex_color, int (&rgb)[3], float tint_factor);
-bool in_array(const std::string &value, const std::vector<std::string> &array);
 
 template<typename ... Args>
 std::string string_format( const std::string& format, Args ... args )
@@ -70,17 +82,5 @@ std::string string_format( const char* format, Args ... args )
 
 void open_folder_in_file_manager(const char* folder_path);
 void show_file_in_file_manager(const char* file_path);
-
-/**
- * System specific utils
- */
-
-#ifdef _WIN32
-
-std::wstring str2wstr(std::string const &str);
-std::string wstr2str(std::wstring const &str);
-
-#endif
-
 
 #endif //SPACEDISPLAY_UTILS_H

@@ -36,14 +36,8 @@ void hex_to_rgbi_tint(int hex_color, int (&rgb)[3], float tint_factor)
 {
     //TODO
     hex_to_rgbi(hex_color, rgb);
-    rgb[0] = rgb[0] + (255 - rgb[0]) * tint_factor;
-    rgb[1] = rgb[1] + (255 - rgb[1]) * tint_factor;
-    rgb[2] = rgb[2] + (255 - rgb[2]) * tint_factor;
-}
-
-bool in_array(const std::string &value, const std::vector<std::string> &array)
-{
-    return std::find(array.begin(), array.end(), value) != array.end();
+    for(int & i : rgb)
+        i = i + int(float(255 - i) * tint_factor);
 }
 
 int Utils::_prof_meas(bool start, const char* message)
@@ -60,7 +54,7 @@ int Utils::_prof_meas(bool start, const char* message)
             std::cout << message << ": "<<dur<<"ms\n";
         else
             std::cout << "toc: "<<dur<<"ms\n";
-        return dur;
+        return int(dur);
     }
     return 0;
 }

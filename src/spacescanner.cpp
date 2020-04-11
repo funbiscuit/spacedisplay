@@ -3,6 +3,7 @@
 #include "fileentry.h"
 #include "fileentryshared.h"
 #include "fileentrypool.h"
+#include "platformutils.h"
 
 #include <fstream>
 #include <iostream>
@@ -70,7 +71,7 @@ void SpaceScanner::worker_run()
 
 std::vector<std::string> SpaceScanner::get_available_roots()
 {
-    update_available_drives();
+    PlatformUtils::get_mount_points(availableRoots, excludedMounts);
 
     return availableRoots;
 }
@@ -232,6 +233,34 @@ void SpaceScanner::stop_scan()
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
+void SpaceScanner::update_disk_space()
+{
+    if(!rootFile)
+        return;
+
+    PlatformUtils::get_mount_space(rootFile->get_name(), totalSpace, freeSpace);
+
+    std::cout<<"Total: "<<totalSpace<<", free: "<<freeSpace<<"\n";
+}
+
+bool SpaceScanner::create_root_entry(const std::string& path)
+{
+    if(rootFile)
+    {
+        std::cerr << "rootFile should be destroyed (cached) before creating new one\n";
+        return false;
+    }
+
+    if(PlatformUtils::can_scan_dir(path))
+    {
+        rootFile=entryPool->create_entry(fileCount, path, FileEntry::DIRECTORY);
+        ++fileCount;
+        return true;
+    }
+
+    return true;
+}
+
 ScannerError SpaceScanner::scan_dir(const std::string &path)
 {
     //do nothing if scan is already in progress
@@ -243,7 +272,7 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
 
     scannerStatus=ScannerStatus::SCANNING;
 
-    if(!create_root_entry(path.c_str()))
+    if(!create_root_entry(path))
     {
         scannerStatus=ScannerStatus::IDLE;
         std::cout<<"Can't open "<<path.c_str()<<"\n";

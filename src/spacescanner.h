@@ -88,12 +88,6 @@ private:
     std::vector<std::string> excludedMounts;
 
     /**
-     * Scans system for mount points and populates availableRoots and excludedMounts vectors
-     * Can be called multiple times to update information about available mounts
-     */
-    void update_available_drives();
-
-    /**
      * If valid rootFile is available then this will update info about total and available space on this drive
      * Can be called multiple times, just need rootFile to be valid
      */
