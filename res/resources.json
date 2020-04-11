@@ -1,6 +1,5 @@
 {
   "resources": [
-    "./icons/r*/*.png",
     "./icons/svg/*.svg"
   ],
   "output" : "build",
