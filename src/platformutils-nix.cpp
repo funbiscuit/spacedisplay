@@ -14,6 +14,7 @@
 #include <sys/statvfs.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <pwd.h>
 
 namespace PlatformUtils
 {
