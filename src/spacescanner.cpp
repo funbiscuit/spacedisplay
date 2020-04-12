@@ -11,17 +11,15 @@
 #include <chrono>
 
 SpaceScanner::SpaceScanner() :
-        scannerStatus(ScannerStatus::IDLE)
+        scannerStatus(ScannerStatus::IDLE), runWorker(false)
 {
     entryPool = Utils::make_unique<FileEntryPool>();
-    init_platform();
     //Start thread after everything is initialized
     workerThread=std::thread(&SpaceScanner::worker_run, this);
 }
 
 SpaceScanner::~SpaceScanner()
 {
-    cleanup_platform();
     runWorker = false;
     workerThread.join();
     //TODO check if we should call this on exit

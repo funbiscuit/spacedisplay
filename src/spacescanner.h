@@ -73,13 +73,8 @@ private:
 
     //edits to queue should be mutex protected
     std::list<FileEntry*> scanQueue;
-    std::queue<std::string> rescanPathQueue;
 
     bool hasPendingChanges = false;
-
-    void init_platform();
-    void on_before_new_scan();
-    void cleanup_platform();
 
     std::vector<std::string> availableRoots;
     /**

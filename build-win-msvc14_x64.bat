@@ -11,6 +11,6 @@ if not exist "bin\" mkdir bin
 
 cd cmake-build-msvc14_x64-release
 %cmake_path% -G "Visual Studio 14 2015 Win64" ..
-%cmake_path% --build . --config Release --target spacedisplay --
+%cmake_path% --build . --config Release --target spacedisplay
 copy Release\spacedisplay.exe ..\bin\spacedisplay.exe
 cd ..
