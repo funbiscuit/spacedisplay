@@ -4,10 +4,38 @@
 
 #include <fstream>
 #include <regex>
+#include <iostream>
+#include <thread>
+#include <memory>
+#include <array>
+#include <cstdio>
 
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <dirent.h>
+#include <unistd.h>
+
+namespace PlatformUtils
+{
+    enum class FileManager
+    {
+        UNKNOWN=0,
+        DOLPHIN=1,
+        NAUTILUS=2,
+        NEMO=3
+    };
+
+    void system_async(std::string cmd);
+
+    std::string exec(const char* cmd);
+
+    void open_folder_in_file_manager(const char* folder_path);
+
+    FileManager parse_fm_desktop_file(const std::string &path);
+
+    FileManager get_default_manager();
+}
+
 
 class FileIteratorPlatform
 {
@@ -178,6 +206,137 @@ bool PlatformUtils::get_mount_space(const std::string& path, uint64_t& totalSpac
     }
     else
         return false;
+}
+
+
+void PlatformUtils::system_async(std::string cmd)
+{
+    cmd = regex_replace(cmd, std::regex("[$]"), "\\$");
+    std::thread t1([cmd] {
+        std::cout << "Executing: "<<cmd<<"\n";
+        system(cmd.c_str());
+    });
+    t1.detach();
+}
+
+std::string PlatformUtils::exec(const char* cmd)
+{
+    std::array<char, 128> buffer{};
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    return result;
+}
+
+void PlatformUtils::open_folder_in_file_manager(const char* folder_path)
+{
+    auto command = string_format("xdg-open \"%s\"", folder_path);
+    system_async(command);
+}
+
+PlatformUtils::FileManager PlatformUtils::parse_fm_desktop_file(const std::string &path)
+{
+    auto result = FileManager::UNKNOWN;
+
+    std::ifstream infile(path);
+    std::string line;
+    while (std::getline(infile, line))
+    {
+        if(line.rfind("Exec=", 0)==0)
+        {
+            if(line.find("dolphin")!=std::string::npos)
+            {
+                result = FileManager::DOLPHIN;
+                break;
+            }
+            else if(line.find("nautilus")!=std::string::npos)
+            {
+                result = FileManager::NAUTILUS;
+                break;
+            }
+            else if(line.find("nemo")!=std::string::npos)
+            {
+                result = FileManager::NEMO;
+                break;
+            }
+        }
+    }
+
+    return result;
+}
+
+PlatformUtils::FileManager PlatformUtils::get_default_manager()
+{
+    const char *homedir;
+
+    if ((homedir = getenv("HOME")) == nullptr)
+        homedir = getpwuid(getuid())->pw_dir;
+
+
+    std::vector<std::string> desktopLocations;
+    desktopLocations.push_back(string_format("%s/.local/share/applications", homedir));
+    desktopLocations.emplace_back("/usr/local/share/applications");
+    desktopLocations.emplace_back("/usr/share/applications");
+
+    auto fileManager = exec("xdg-mime query default inode/directory");
+    auto fileManagerEnd = fileManager.find_first_of('\n');
+    if(fileManagerEnd != std::string::npos)
+        fileManager=fileManager.substr(0,fileManagerEnd);
+    if(fileManager.empty())
+        return FileManager::UNKNOWN;
+    std::cout << "Default file manager: "<< fileManager<<"\n";
+
+
+    for(auto& loc : desktopLocations)
+    {
+        for(FileIterator it(loc); it.is_valid(); ++it)
+        {
+            if(it.name == fileManager)
+            {
+                auto path = string_format("%s/%s", loc.c_str(), it.name.c_str());
+                return parse_fm_desktop_file(path);
+            }
+        }
+    }
+
+    return FileManager::UNKNOWN;
+}
+
+// on Linux we try to determine default file manager to use appropriate command
+// to select file. From most popular managers only thunar is not supported (it seems it doesn't have
+// command for selecting file)
+//
+// If file manager was not detected than we just open parent directory of this file (file itself is not selected)
+void PlatformUtils::show_file_in_file_manager(const char* file_path)
+{
+    std::string command;
+    switch (get_default_manager())
+    {
+        case FileManager::DOLPHIN:
+            command = string_format("dolphin --select \"%s\"", file_path);
+            break;
+        case FileManager::NAUTILUS:
+            command = string_format("nautilus --select \"%s\"", file_path);
+            break;
+        case FileManager::NEMO:
+            command = string_format("nemo \"%s\"", file_path);
+            break;
+        case FileManager::UNKNOWN:
+        default:
+            std::string dir_path = file_path;
+            auto last_slash = dir_path.find_last_of('/');
+            if(last_slash != std::string::npos)
+                dir_path = dir_path.substr(0,last_slash);
+            command = string_format("xdg-open \"%s\"", dir_path.c_str());
+            break;
+    }
+
+    system_async(command);
 }
 
 #endif

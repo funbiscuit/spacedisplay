@@ -2,6 +2,8 @@
 #include "platformutils.h"
 #include "utils.h"
 
+#include <iostream>
+
 #include <Windows.h>
 
 class FileIteratorPlatform
@@ -173,6 +175,30 @@ bool PlatformUtils::get_mount_space(const std::string& path, uint64_t& totalSpac
     }
     else
         return false;
+}
+
+void PlatformUtils::open_folder_in_file_manager(const char* folder_path)
+{
+    std::string path = Utils::path_to_backslashes(folder_path);// replace all "bad" slashes to explorer-friendly slashes
+
+    auto pars = string_format("/n,\"%s\"", path.c_str());
+    auto parsw = str2wstr(pars);
+
+    std::wcout << L"Launch explorer with args: " << parsw << '\n';
+
+    ShellExecuteW(nullptr, L"open", L"explorer", parsw.c_str(), nullptr, SW_SHOWNORMAL);
+}
+
+void PlatformUtils::show_file_in_file_manager(const char* file_path)
+{
+    std::string path = Utils::path_to_backslashes(file_path);// replace all "bad" slashes to explorer-friendly slashes
+
+    auto pars = string_format("/select,\"%s\"", path.c_str());
+    auto parsw = str2wstr(pars);
+
+    std::wcout << L"Launch explorer with args: " << parsw << '\n';
+
+    ShellExecuteW(nullptr, L"open", L"explorer", parsw.c_str(), nullptr, SW_SHOWNORMAL);
 }
 
 std::wstring PlatformUtils::str2wstr(std::string const &str)

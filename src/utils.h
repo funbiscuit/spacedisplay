@@ -81,7 +81,4 @@ std::string string_format( const char* format, Args ... args )
     return std::string( buf.get(), buf.get() + size - 1 ); // We don't want the '\0' inside
 }
 
-void open_folder_in_file_manager(const char* folder_path);
-void show_file_in_file_manager(const char* file_path);
-
 #endif //SPACEDISPLAY_UTILS_H

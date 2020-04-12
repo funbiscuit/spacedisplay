@@ -6,6 +6,7 @@
 #include "fileentrypopup.h"
 #include "spacescanner.h"
 #include "utils.h"
+#include "platformutils.h"
 
 FileEntryPopup::FileEntryPopup(QWidget* _parent) : parent(_parent)
 {
@@ -64,12 +65,12 @@ void FileEntryPopup::onProperties()
 
 void FileEntryPopup::onShow()
 {
-    show_file_in_file_manager(currentEntryPath.c_str());
+    PlatformUtils::show_file_in_file_manager(currentEntryPath.c_str());
 }
 
 void FileEntryPopup::onOpen()
 {
-    open_folder_in_file_manager(currentEntryPath.c_str());
+    PlatformUtils::open_folder_in_file_manager(currentEntryPath.c_str());
 }
 
 void FileEntryPopup::popupDir(std::string dir_path)
