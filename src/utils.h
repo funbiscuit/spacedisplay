@@ -39,6 +39,13 @@ namespace Utils
         return std::unique_ptr<T[]>(new T[N]);
     }
 
+    /**
+     * Let's user select desired folder with their default manager and returns its path
+     * @param title of window for selecting folder
+     * @return path to selected folder or empty string if cancelled
+     */
+    std::string select_folder(const std::string& title);
+
      /**
       * Checks if given value is inside the array
       * @tparam T type of value

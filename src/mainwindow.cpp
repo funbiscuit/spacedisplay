@@ -1,7 +1,6 @@
 
 #include <iostream>
 #include <QtWidgets>
-#include <portable-file-dialogs.h>
 
 #include "mainwindow.h"
 #include "spaceview.h"
@@ -150,7 +149,7 @@ void MainWindow::newScan()
     connect(browseAction, &QAction::triggered, this, [this]()
     {
         std::cout<<"browse\n";
-        auto path = pfd::select_folder("Choose a directory to scan").result();
+        auto path = Utils::select_folder("Choose a directory to scan");
         if(!path.empty())
         {
             if(path.back() != '/' && path.back() != '\\')

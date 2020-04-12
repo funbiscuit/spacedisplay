@@ -5,6 +5,8 @@
 #include <iostream>
 #include "utils.h"
 
+#include <portable-file-dialogs.h>
+
 void hex_to_rgb(int hex_color, float (&rgb)[3])
 {
 //    printf("Input: %06X\n", hex_color);
@@ -131,4 +133,10 @@ std::string Utils::format_size(int64_t size)
     }
 
     return sizeStr;
+}
+
+std::string Utils::select_folder(const std::string& title)
+{
+    // simple wrapper so we need less memory to compile
+    return pfd::select_folder(title).result();
 }
