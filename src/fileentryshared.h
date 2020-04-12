@@ -1,6 +1,6 @@
 
-#ifndef SPACEDISPLAY_FILEENTRYSHARED_H
-#define SPACEDISPLAY_FILEENTRYSHARED_H
+#ifndef SPACEDISPLAY_FILEENTRYVIEW_H
+#define SPACEDISPLAY_FILEENTRYVIEW_H
 
 #include <QPainter>
 #include <QPixmap>
@@ -10,13 +10,13 @@
 #include "utils.h"
 #include "fileentry.h"
 
-class FileEntryShared;
+class FileEntryView;
 
 /**
  * This class is intended to be used only inside shared pointer object!
  */
-typedef std::shared_ptr<FileEntryShared> FileEntrySharedPtr; // nice short alias
-class FileEntryShared {
+typedef std::shared_ptr<FileEntryView> FileEntryViewPtr; // nice short alias
+class FileEntryView {
 
 public:
     enum CreateCopyFlags : uint16_t {
@@ -37,10 +37,10 @@ public:
         UNKNOWN_SPACE
     };
 
-    ~FileEntryShared();
+    ~FileEntryView();
 
-    static FileEntrySharedPtr create_copy(const FileEntry& entry, const CopyOptions& options);
-    static void update_copy(FileEntrySharedPtr& copy, const FileEntry& entry, const CopyOptions& options);
+    static FileEntryViewPtr create_copy(const FileEntry& entry, const CopyOptions& options);
+    static void update_copy(FileEntryViewPtr& copy, const FileEntry& entry, const CopyOptions& options);
 
     const char* get_name();
 
@@ -49,7 +49,7 @@ public:
         return size;
     }
 
-    FileEntryShared* get_parent() {
+    FileEntryView* get_parent() {
         return parent;
     }
 
@@ -63,12 +63,12 @@ public:
         return drawArea;
     }
 
-    FileEntryShared* update_hovered_element(float mouseX, float mouseY);
+    FileEntryView* update_hovered_element(float mouseX, float mouseY);
     std::string format_size() const;
     std::string get_tooltip() const;
     std::string get_title();
 
-    const std::vector<FileEntrySharedPtr>&  get_children();
+    const std::vector<FileEntryViewPtr>&  get_children();
 
     bool is_dir() const{
         return entryType==EntryType::DIRECTORY;
@@ -94,14 +94,14 @@ private:
      * @param nestLevel amount of nesting to copy (0 - only entry copied, 1 - entry+children, etc)
      * @param minSize minimum size of entry that should be copied. All other entries will not be copied
      */
-    FileEntryShared(const FileEntry& entry, const CopyOptions& options);
-    explicit FileEntryShared();
+    FileEntryView(const FileEntry& entry, const CopyOptions& options);
+    explicit FileEntryView();
 
     void reconstruct_from(const FileEntry& entry, const CopyOptions& options);
     void init_from(const FileEntry& entry);
 
-    void allocate_children2(size_t start, size_t end, std::vector<FileEntrySharedPtr> &bin, Utils::RectI &rect);
-    void set_child_rect(const FileEntrySharedPtr& child, Utils::RectI &rect);
+    void allocate_children2(size_t start, size_t end, std::vector<FileEntryViewPtr> &bin, Utils::RectI &rect);
+    void set_child_rect(const FileEntryViewPtr& child, Utils::RectI &rect);
 
     void set_parent_hovered(bool hovered);
     void set_hovered(bool hovered);
@@ -118,14 +118,13 @@ private:
 
     Utils::RectI drawArea;
 
-    FileEntryShared* parent{};
-    std::vector<FileEntrySharedPtr> children;
+    FileEntryView* parent{};
+    std::vector<FileEntryViewPtr> children;
     uint64_t id = 0;
     int64_t size = 0;
     std::string name;
     EntryType  entryType = EntryType::FILE;
-//    char* path;
 
 };
 
-#endif //SPACEDISPLAY_FILEENTRYSHARED_H
+#endif //SPACEDISPLAY_FILEENTRYVIEW_H

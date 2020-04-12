@@ -7,7 +7,7 @@
 #include <vector>
 #include <memory>
 
-class FileEntryShared;
+class FileEntryView;
 class FileEntryPool;
 
 class FileEntry {
@@ -78,7 +78,7 @@ private:
 
 
     friend class FileEntryPool;
-    friend class FileEntryShared;
+    friend class FileEntryView;
 };
 
 

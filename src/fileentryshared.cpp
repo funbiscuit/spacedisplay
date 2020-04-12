@@ -11,22 +11,22 @@
 const int MAX_CHILD_COUNT=100;
 const int MIN_CHILD_PIXEL_AREA=50;
 
-FileEntryShared::FileEntryShared() : drawArea{} {
+FileEntryView::FileEntryView() : drawArea{} {
 
 }
 
 
-FileEntryShared::FileEntryShared(const FileEntry& entry, const CopyOptions& options) : drawArea{}
+FileEntryView::FileEntryView(const FileEntry& entry, const CopyOptions& options) : drawArea{}
 {
     reconstruct_from(entry, options);
 }
 
 
-FileEntryShared::~FileEntryShared() {
+FileEntryView::~FileEntryView() {
 
 }
 
-void FileEntryShared::init_from(const FileEntry& entry)
+void FileEntryView::init_from(const FileEntry& entry)
 {
     id=entry.id;
     size=entry.size;
@@ -40,7 +40,7 @@ void FileEntryShared::init_from(const FileEntry& entry)
     drawArea.h=0;
 }
 
-void FileEntryShared::reconstruct_from(const FileEntry& entry, const CopyOptions& options)
+void FileEntryView::reconstruct_from(const FileEntry& entry, const CopyOptions& options)
 {
     init_from(entry);
     parent= nullptr;
@@ -67,13 +67,13 @@ void FileEntryShared::reconstruct_from(const FileEntry& entry, const CopyOptions
             // it will still be included first (this is not critical)
             if(unknownSpace>child->size)
             {
-                FileEntrySharedPtr newChild;
+                FileEntryViewPtr newChild;
                 if(childCount<existingChildCount)
                 {
                     newChild = children[childCount];
                 } else
                 {
-                    newChild = FileEntrySharedPtr(new FileEntryShared());
+                    newChild = FileEntryViewPtr(new FileEntryView());
                     children.push_back(newChild);
                 }
                 newChild->parent = this;
@@ -86,13 +86,13 @@ void FileEntryShared::reconstruct_from(const FileEntry& entry, const CopyOptions
             }
             if(freeSpace>child->size)
             {
-                FileEntrySharedPtr newChild;
+                FileEntryViewPtr newChild;
                 if(childCount<existingChildCount)
                 {
                     newChild = children[childCount];
                 } else
                 {
-                    newChild = FileEntrySharedPtr(new FileEntryShared());
+                    newChild = FileEntryViewPtr(new FileEntryView());
                     children.push_back(newChild);
                 }
                 newChild->parent = this;
@@ -139,7 +139,7 @@ void FileEntryShared::reconstruct_from(const FileEntry& entry, const CopyOptions
     }
 }
 
-std::string FileEntryShared::get_title()
+std::string FileEntryView::get_title()
 {
     if(name.empty())
         return "";
@@ -154,7 +154,7 @@ std::string FileEntryShared::get_title()
         return string_format("%s - %s",name.c_str(),sizeStr.c_str());
 }
 
-std::string FileEntryShared::get_tooltip() const
+std::string FileEntryView::get_tooltip() const
 {
     std::string sizeStr=format_size();
     std::string str;
@@ -167,9 +167,9 @@ std::string FileEntryShared::get_tooltip() const
     return str;
 }
 
-FileEntryShared* FileEntryShared::update_hovered_element(float mouseX, float mouseY)
+FileEntryView* FileEntryView::update_hovered_element(float mouseX, float mouseY)
 {
-    FileEntryShared* hoveredEntry = nullptr;
+    FileEntryView* hoveredEntry = nullptr;
     if(drawArea.x<=mouseX && drawArea.y<=mouseY &&
             drawArea.w>=mouseX-drawArea.x && drawArea.h>=mouseY-drawArea.y)
     {
@@ -177,7 +177,7 @@ FileEntryShared* FileEntryShared::update_hovered_element(float mouseX, float mou
         isHovered=true;
         isParentHovered=true;
 
-        FileEntryShared* hoveredChild=nullptr;
+        FileEntryView* hoveredChild=nullptr;
 
         for(const auto& child :children)
         {
@@ -206,7 +206,7 @@ FileEntryShared* FileEntryShared::update_hovered_element(float mouseX, float mou
     return hoveredEntry;
 }
 
-void FileEntryShared::set_hovered(bool hovered)
+void FileEntryView::set_hovered(bool hovered)
 {
     if(isHovered==hovered)
         return;
@@ -219,7 +219,7 @@ void FileEntryShared::set_hovered(bool hovered)
     }
 }
 
-void FileEntryShared::set_parent_hovered(bool hovered)
+void FileEntryView::set_parent_hovered(bool hovered)
 {
     isParentHovered=hovered;
     
@@ -229,12 +229,12 @@ void FileEntryShared::set_parent_hovered(bool hovered)
     }
 }
 
-std::string FileEntryShared::format_size() const
+std::string FileEntryView::format_size() const
 {
     return Utils::format_size(size);
 }
 
-void FileEntryShared::unhover()
+void FileEntryView::unhover()
 {
     isHovered=false;
     isParentHovered=false;
@@ -242,7 +242,7 @@ void FileEntryShared::unhover()
         parent->unhover();
 }
 
-void FileEntryShared::allocate_children(Utils::RectI rect, int titleHeight)
+void FileEntryView::allocate_children(Utils::RectI rect, int titleHeight)
 {
     if(children.empty() || rect.h<titleHeight || rect.w<1)
         return;
@@ -262,7 +262,7 @@ void FileEntryShared::allocate_children(Utils::RectI rect, int titleHeight)
     }
 }
 
-const char* FileEntryShared::get_name() {
+const char* FileEntryView::get_name() {
     switch(entryType)
     {
         case EntryType::AVAILABLE_SPACE:
@@ -274,7 +274,7 @@ const char* FileEntryShared::get_name() {
     }
 }
 
-void FileEntryShared::allocate_children2(size_t start, size_t end, std::vector<FileEntrySharedPtr> &bin, Utils::RectI &rect)
+void FileEntryView::allocate_children2(size_t start, size_t end, std::vector<FileEntryViewPtr> &bin, Utils::RectI &rect)
 {
     if(rect.h<1 || rect.w<1)
         return;
@@ -395,25 +395,25 @@ void FileEntryShared::allocate_children2(size_t start, size_t end, std::vector<F
     }
 }
 
-QPixmap FileEntryShared::getNamePixmap(QPainter &painter, const QColor& color)
+QPixmap FileEntryView::getNamePixmap(QPainter &painter, const QColor& color)
 {
     createPixmapCache(painter, color);
     return  cachedNamePix;
 }
 
-QPixmap FileEntryShared::getSizePixmap(QPainter &painter, const QColor& color)
+QPixmap FileEntryView::getSizePixmap(QPainter &painter, const QColor& color)
 {
     createPixmapCache(painter, color);
     return  cachedSizePix;
 }
 
-QPixmap FileEntryShared::getTitlePixmap(QPainter &painter, const QColor& color)
+QPixmap FileEntryView::getTitlePixmap(QPainter &painter, const QColor& color)
 {
     createPixmapCache(painter, color);
     return  cachedTitlePix;
 }
 
-void FileEntryShared::createPixmapCache(QPainter &painter, const QColor& color)
+void FileEntryView::createPixmapCache(QPainter &painter, const QColor& color)
 {
     std::string textName = get_name();
     std::string textSize = format_size();
@@ -462,7 +462,7 @@ void FileEntryShared::createPixmapCache(QPainter &painter, const QColor& color)
     }
 }
 
-void FileEntryShared::set_child_rect(const FileEntrySharedPtr& child, Utils::RectI &rect)
+void FileEntryView::set_child_rect(const FileEntryViewPtr& child, Utils::RectI &rect)
 {
     child->drawArea=rect;
     
@@ -473,17 +473,17 @@ void FileEntryShared::set_child_rect(const FileEntrySharedPtr& child, Utils::Rec
     }
 }
 
-FileEntrySharedPtr FileEntryShared::create_copy(const FileEntry& entry, const CopyOptions& options)
+FileEntryViewPtr FileEntryView::create_copy(const FileEntry& entry, const CopyOptions& options)
 {
-    return FileEntrySharedPtr(new FileEntryShared(entry, options));
+    return FileEntryViewPtr(new FileEntryView(entry, options));
 }
 
-void FileEntryShared::update_copy(FileEntrySharedPtr& copy, const FileEntry& entry, const CopyOptions& options)
+void FileEntryView::update_copy(FileEntryViewPtr& copy, const FileEntry& entry, const CopyOptions& options)
 {
     copy->reconstruct_from(entry, options);
 }
 
-const char* FileEntryShared::get_path(bool countRoot) {
+const char* FileEntryView::get_path(bool countRoot) {
     if(parent)
     {
         auto ppath=parent->get_path(countRoot);
@@ -514,7 +514,7 @@ const char* FileEntryShared::get_path(bool countRoot) {
 }
 
 
-const std::vector<FileEntrySharedPtr>& FileEntryShared::get_children() {
+const std::vector<FileEntryViewPtr>& FileEntryView::get_children() {
     return children;
 }
 //

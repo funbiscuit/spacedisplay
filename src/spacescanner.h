@@ -18,7 +18,7 @@ enum class ScannerStatus {
 };
 
 class FileEntry;
-class FileEntryShared;
+class FileEntryView;
 class FileEntryPool;
 
 enum class ScannerError
@@ -49,8 +49,8 @@ public:
     std::vector<std::string> get_available_roots();
 
     float get_scan_progress();
-    std::shared_ptr<FileEntryShared> get_root_file(float minSizeRatio, uint16_t flags, const char* filepath, int depth);
-    void update_root_file(std::shared_ptr<FileEntryShared>& root, float minSizeRatio, uint16_t flags, const char* filepath, int depth);
+    std::shared_ptr<FileEntryView> get_root_file(float minSizeRatio, uint16_t flags, const char* filepath, int depth);
+    void update_root_file(std::shared_ptr<FileEntryView>& root, float minSizeRatio, uint16_t flags, const char* filepath, int depth);
     bool is_running();
     bool is_loaded();
     bool can_refresh();

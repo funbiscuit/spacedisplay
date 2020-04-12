@@ -32,7 +32,7 @@ public:
         return currentPath;
     }
 
-    FileEntryShared* getHoveredEntry();
+    FileEntryView* getHoveredEntry();
 
     /**
      * Navigates to the parent directory
@@ -101,13 +101,13 @@ protected:
 
     int currentDepth = 5;
     std::string currentPath;
-    FileEntrySharedPtr root=nullptr;
-    FileEntryShared* hoveredEntry=nullptr;
-    FileEntryShared* tooltipEntry = nullptr;
+    FileEntryViewPtr root=nullptr;
+    FileEntryView* hoveredEntry=nullptr;
+    FileEntryView* tooltipEntry = nullptr;
     SpaceScanner* scanner= nullptr;
 
     int textHeight = 0;
-    uint16_t fileEntryShowFlags = FileEntryShared::INCLUDE_UNKNOWN_SPACE;
+    uint16_t fileEntryShowFlags = FileEntryView::INCLUDE_UNKNOWN_SPACE;
 
     void mousePressEvent(QMouseEvent *event) override;
 
@@ -122,12 +122,12 @@ protected:
 
     void allocateEntries();
 
-    bool updateHoveredView(FileEntryShared* prevHovered = nullptr);
+    bool updateHoveredView(FileEntryView* prevHovered = nullptr);
 
-    void drawView(QPainter& painter, const FileEntrySharedPtr &file, int nestLevel, bool forceFill);
-    void drawViewTitle(QPainter& painter, const QColor& bg, const FileEntrySharedPtr &file);
-    void drawViewText(QPainter& painter, const QColor& bg, const FileEntrySharedPtr &file);
-    bool drawViewBg(QPainter& painter, QColor& bg_out, const FileEntrySharedPtr &file, bool fillDir);
+    void drawView(QPainter& painter, const FileEntryViewPtr &file, int nestLevel, bool forceFill);
+    void drawViewTitle(QPainter& painter, const QColor& bg, const FileEntryViewPtr &file);
+    void drawViewText(QPainter& painter, const QColor& bg, const FileEntryViewPtr &file);
+    bool drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryViewPtr &file, bool fillDir);
 
 };
 

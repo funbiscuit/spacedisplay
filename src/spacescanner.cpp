@@ -133,22 +133,22 @@ bool SpaceScanner::is_loaded()
     return rootFile!= nullptr;
 }
 
-FileEntrySharedPtr SpaceScanner::get_root_file(float minSizeRatio, uint16_t flags, const char* filepath, int depth)
+FileEntryViewPtr SpaceScanner::get_root_file(float minSizeRatio, uint16_t flags, const char* filepath, int depth)
 {
     std::lock_guard<std::mutex> lock_mtx(mtx);
     
     if(rootFile!= nullptr)
     {
-        FileEntryShared::CopyOptions options;
+        FileEntryView::CopyOptions options;
         int64_t fullSpace=0;
         int64_t unknownSpace=totalSpace-rootFile->get_size()-freeSpace;
 
-        if((flags & FileEntryShared::INCLUDE_AVAILABLE_SPACE)!=0)
+        if((flags & FileEntryView::INCLUDE_AVAILABLE_SPACE) != 0)
         {
             options.freeSpace = freeSpace;
             fullSpace+=freeSpace;
         }
-        if((flags & FileEntryShared::INCLUDE_UNKNOWN_SPACE)!=0)
+        if((flags & FileEntryView::INCLUDE_UNKNOWN_SPACE) != 0)
         {
             options.unknownSpace = unknownSpace;
             fullSpace+=unknownSpace;
@@ -178,7 +178,7 @@ FileEntrySharedPtr SpaceScanner::get_root_file(float minSizeRatio, uint16_t flag
 
         options.minSize = int64_t(float(fullSpace)*minSizeRatio);
         options.nestLevel = depth;
-        auto sharedCopy=FileEntryShared::create_copy(*file, options);
+        auto sharedCopy=FileEntryView::create_copy(*file, options);
 
         return sharedCopy;
     }
@@ -190,22 +190,22 @@ bool SpaceScanner::has_changes()
     return hasPendingChanges;
 }
 
-void SpaceScanner::update_root_file(FileEntrySharedPtr& root, float minSizeRatio, uint16_t flags, const char* filepath, int depth)
+void SpaceScanner::update_root_file(FileEntryViewPtr& root, float minSizeRatio, uint16_t flags, const char* filepath, int depth)
 {
     std::lock_guard<std::mutex> lock_mtx(mtx);
     hasPendingChanges=false;
     if(rootFile!= nullptr)
     {
-        FileEntryShared::CopyOptions options;
+        FileEntryView::CopyOptions options;
         int64_t fullSpace=0;
         int64_t unknownSpace=totalSpace-rootFile->get_size()-freeSpace;
 
-        if((flags & FileEntryShared::INCLUDE_AVAILABLE_SPACE)!=0)
+        if((flags & FileEntryView::INCLUDE_AVAILABLE_SPACE) != 0)
         {
             options.freeSpace = freeSpace;
             fullSpace+=freeSpace;
         }
-        if((flags & FileEntryShared::INCLUDE_UNKNOWN_SPACE)!=0)
+        if((flags & FileEntryView::INCLUDE_UNKNOWN_SPACE) != 0)
         {
             options.unknownSpace = unknownSpace;
             fullSpace+=unknownSpace;
@@ -235,7 +235,7 @@ void SpaceScanner::update_root_file(FileEntrySharedPtr& root, float minSizeRatio
 
         options.minSize = int64_t(float(fullSpace)*minSizeRatio);
         options.nestLevel = depth;
-        FileEntryShared::update_copy(root, *file, options);
+        FileEntryView::update_copy(root, *file, options);
     }
 }
 
