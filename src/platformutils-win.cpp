@@ -1,7 +1,107 @@
 #ifdef _WIN32
 #include "platformutils.h"
+#include "utils.h"
 
 #include <Windows.h>
+
+class FileIteratorPlatform
+{
+public:
+    // can't copy
+    FileIteratorPlatform(const FileIterator&) = delete;
+    FileIteratorPlatform& operator= (const FileIterator&) = delete;
+    ~FileIteratorPlatform()
+    {
+        if(dirHandle!=INVALID_HANDLE_VALUE)
+            FindClose(dirHandle);
+    }
+
+    explicit FileIteratorPlatform(const std::string& path) :
+            isValid(false), name(""), isDir(false), size(0), dirHandle(INVALID_HANDLE_VALUE)
+    {
+        auto wname=PlatformUtils::str2wstr(path);
+        //it's okay to have multiple slashes at the end
+        wname.append(L"\\*");
+
+        WIN32_FIND_DATAW fileData;
+
+        dirHandle=FindFirstFileW(wname.c_str(), &fileData);
+        get_file_data(true, &fileData);
+    }
+
+    bool isValid;
+    std::string name;
+    bool isDir;
+    int64_t size;
+
+    FileIteratorPlatform& operator++ ()
+    {
+        WIN32_FIND_DATAW fileData;
+
+        get_file_data(false, &fileData);
+        return *this;
+    }
+private:
+
+    HANDLE dirHandle;
+
+    /**
+     * Gets file data for the first or next file returned by handle
+     */
+    void get_file_data(bool isFirst, WIN32_FIND_DATAW* fileData)
+    {
+        bool found=dirHandle!=INVALID_HANDLE_VALUE;
+
+        if(found && (isFirst || FindNextFileW(dirHandle, fileData) != 0))
+        {
+            auto cname=PlatformUtils::wstr2str(fileData->cFileName);
+
+            while(found && (cname == "." || cname == ".."))
+            {
+                found = FindNextFileW(dirHandle, fileData) != 0;
+                cname=PlatformUtils::wstr2str(fileData->cFileName);
+            }
+
+            if(found)
+            {
+                isValid = true;
+                name=std::move(cname);
+                isDir=(fileData->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)!=0;
+                //don't count mount points and symlinks as directories
+                if((fileData->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)!=0 &&
+                   (fileData->dwReserved0==IO_REPARSE_TAG_SYMLINK || fileData->dwReserved0==IO_REPARSE_TAG_MOUNT_POINT))
+                    isDir=false;
+
+                size=(uint64_t(fileData->nFileSizeHigh) * (uint64_t(MAXDWORD)+1)) + uint64_t(fileData->nFileSizeLow);
+            }
+        } else
+            isValid = false;
+    }
+};
+
+FileIterator::FileIterator(const std::string& path)
+{
+    pFileIterator = Utils::make_unique<FileIteratorPlatform>(path);
+    update();
+}
+
+FileIterator::~FileIterator() = default;
+
+FileIterator &FileIterator::operator++()
+{
+    ++(*pFileIterator);
+    update();
+    return *this;
+}
+
+void FileIterator::update()
+{
+    isValid=pFileIterator->isValid;
+    name=pFileIterator->name;
+    isDir=pFileIterator->isDir;
+    size=pFileIterator->size;
+}
+
 
 bool PlatformUtils::can_scan_dir(const std::string& path)
 {

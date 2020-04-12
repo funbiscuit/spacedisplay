@@ -69,6 +69,42 @@ void SpaceScanner::worker_run()
     std::cout << "End worker thread\n";
 }
 
+void SpaceScanner::update_entry_children(FileEntry* entry)
+{
+    if(!entry->is_dir())
+        return;
+
+    std::string path;
+    entry->get_path(path);
+
+    //TODO add check if iterator was constructed and we were able to open path
+    for(FileIterator it(path); it.is_valid(); ++it)
+    {
+        auto fe=entryPool->create_entry(fileCount, it.name, it.isDir ? FileEntry::DIRECTORY : FileEntry::FILE);
+        fe->set_size(it.size);
+
+        std::lock_guard<std::mutex> lock_mtx(mtx);
+        auto fe_raw = fe.get();
+        entry->add_child(std::move(fe));
+        ++fileCount;
+
+        // this section is important for linux since not any path should be scanned (e.g. /proc or /sys)
+        if(it.isDir)
+        {
+            std::string newPath;
+            fe_raw->get_path(newPath);
+            if(newPath.back() != '/')
+                newPath.append("/");
+            if(!Utils::in_array(newPath, availableRoots) && !Utils::in_array(newPath, excludedMounts))
+                scanQueue.push_front(fe_raw);
+            else
+                std::cout<<"Skip scan of: "<<newPath<<"\n";
+        }
+    }
+
+    hasPendingChanges = true;
+}
+
 std::vector<std::string> SpaceScanner::get_available_roots()
 {
     PlatformUtils::get_mount_points(availableRoots, excludedMounts);

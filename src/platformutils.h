@@ -3,6 +3,44 @@
 
 #include <string>
 #include <vector>
+#include <memory>
+
+
+class FileIteratorPlatform;
+class FileIterator
+{
+public:
+    // can't copy
+    FileIterator(const FileIterator&) = delete;
+    FileIterator& operator= (const FileIterator&) = delete;
+
+    /**
+     * Create iterator at specific path
+     * @param path
+     */
+    explicit FileIterator(const std::string& path);
+    ~FileIterator();
+
+    /**
+     * Check if iterator is valid, otherwise its members are not valid
+     */
+    bool is_valid() {
+        return isValid;
+    }
+
+    std::string name;   // empty string if not valid
+    bool isDir;         // false if not valid
+    int64_t size;       // 0 if not valid
+
+    FileIterator& operator++ ();
+private:
+    bool isValid;
+    // pointer to platform specific implementation
+    std::unique_ptr<FileIteratorPlatform> pFileIterator;
+
+    void update();
+};
+
 
 /**
  * Collection of functions that a platform dependent
