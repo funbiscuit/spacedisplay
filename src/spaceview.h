@@ -103,6 +103,7 @@ protected:
     std::string currentPath;
     FileEntrySharedPtr root=nullptr;
     FileEntryShared* hoveredEntry=nullptr;
+    FileEntryShared* tooltipEntry = nullptr;
     SpaceScanner* scanner= nullptr;
 
     int textHeight = 0;

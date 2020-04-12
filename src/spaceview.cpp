@@ -195,8 +195,6 @@ bool SpaceView::updateHoveredView(FileEntryShared* prevHovered)
 
     bool updated = prevHovered!=hoveredEntry;
 
-    static FileEntryShared* tooltipEntry = nullptr;
-//return;
     //TODO show tooltip after small delay (when hovered entry stays the same for some time)
     if(hoveredEntry)
     {
@@ -427,6 +425,7 @@ void SpaceView::leaveEvent(QEvent *event)
         hoveredEntry->unhover();
         hoveredEntry= nullptr;
     }
+    tooltipEntry = nullptr;
     repaint();
 }
 

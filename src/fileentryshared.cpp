@@ -80,6 +80,7 @@ void FileEntryShared::reconstruct_from(const FileEntry& entry, const CopyOptions
                 newChild->entryType = EntryType::UNKNOWN_SPACE;
                 newChild->size = unknownSpace;
                 newChild->name.clear();
+                newChild->children.clear();
                 ++childCount;
                 unknownSpace = 0;
             }
@@ -98,6 +99,7 @@ void FileEntryShared::reconstruct_from(const FileEntry& entry, const CopyOptions
                 newChild->entryType = EntryType::AVAILABLE_SPACE;
                 newChild->size = freeSpace;
                 newChild->name.clear();
+                newChild->children.clear();
                 ++childCount;
                 freeSpace = 0;
             }
