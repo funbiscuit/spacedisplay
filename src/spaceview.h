@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "fileentryshared.h"
+#include "fileentryview.h"
 
 class SpaceScanner;
 class FileEntryPopup;

@@ -6,7 +6,7 @@
 #include <cmath>
 
 #include "fileentry.h"
-#include "fileentryshared.h"
+#include "fileentryview.h"
 
 const int MAX_CHILD_COUNT=100;
 const int MIN_CHILD_PIXEL_AREA=50;

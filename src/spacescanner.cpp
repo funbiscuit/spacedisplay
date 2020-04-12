@@ -1,7 +1,7 @@
 
 #include "spacescanner.h"
 #include "fileentry.h"
-#include "fileentryshared.h"
+#include "fileentryview.h"
 #include "fileentrypool.h"
 #include "platformutils.h"
 
