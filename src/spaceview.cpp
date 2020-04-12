@@ -338,7 +338,7 @@ void SpaceView::allocateEntries()
         if(root)
         {
             //extra padding
-            root->allocate_children(rect, (textHeight * 3) / 2);
+            root->allocate_view(rect, (textHeight * 3) / 2);
         }
 
         updateHoveredView();

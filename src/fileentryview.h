@@ -37,6 +37,7 @@ public:
         UNKNOWN_SPACE
     };
 
+    FileEntryView(const FileEntryView&) = delete;
     ~FileEntryView();
 
     static FileEntryViewPtr create_copy(const FileEntry& entry, const CopyOptions& options);
@@ -82,8 +83,15 @@ public:
     QPixmap getTitlePixmap(QPainter &painter, const QColor& color);
 
     bool isHovered;
-    bool isParentHovered{};
-    void allocate_children(Utils::RectI rect, int titleHeight);
+    bool isParentHovered;
+
+    /**
+     * Allocates this view and all its children inside specified rectangle.
+     * Reserves space for titlebar of specified height.
+     * @param rect - rectangle inside of which view should be allocated
+     * @param titleHeight - how much space to reserve for title
+     */
+    void allocate_view(Utils::RectI rect, int titleHeight);
     void unhover();
 
 private:
@@ -100,7 +108,15 @@ private:
     void reconstruct_from(const FileEntry& entry, const CopyOptions& options);
     void init_from(const FileEntry& entry);
 
-    void allocate_children2(size_t start, size_t end, std::vector<FileEntryViewPtr> &bin, Utils::RectI &rect);
+    /**
+     * Allocates children of this view inside specified rectangle
+     * Allocates only children in range from start to end (both inclusive)
+     * @param start
+     * @param end
+     * @param rect
+     */
+    void allocate_children(size_t start, size_t end, Utils::RectI &rect);
+
     void set_child_rect(const FileEntryViewPtr& child, Utils::RectI &rect);
 
     void set_parent_hovered(bool hovered);

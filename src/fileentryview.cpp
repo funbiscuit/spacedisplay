@@ -242,7 +242,7 @@ void FileEntryView::unhover()
         parent->unhover();
 }
 
-void FileEntryView::allocate_children(Utils::RectI rect, int titleHeight)
+void FileEntryView::allocate_view(Utils::RectI rect, int titleHeight)
 {
     if(children.empty() || rect.h<titleHeight || rect.w<1)
         return;
@@ -253,12 +253,12 @@ void FileEntryView::allocate_children(Utils::RectI rect, int titleHeight)
     rect.h-=titleHeight+2+2;
     rect.x+=2;
     rect.w-=4;
-    
-    
-    allocate_children2(0, children.size()-1, children, rect);
+
+
+    allocate_children(0, children.size() - 1, rect);
     for(const auto& child:children)
     {
-        child->allocate_children(child->drawArea, titleHeight);
+        child->allocate_view(child->drawArea, titleHeight);
     }
 }
 
@@ -274,7 +274,7 @@ const char* FileEntryView::get_name() {
     }
 }
 
-void FileEntryView::allocate_children2(size_t start, size_t end, std::vector<FileEntryViewPtr> &bin, Utils::RectI &rect)
+void FileEntryView::allocate_children(size_t start, size_t end, Utils::RectI &rect)
 {
     if(rect.h<1 || rect.w<1)
         return;
@@ -282,14 +282,14 @@ void FileEntryView::allocate_children2(size_t start, size_t end, std::vector<Fil
         return;
     else if((end-start)==0)
     {
-        set_child_rect(bin[start],rect);
+        set_child_rect(children[start],rect);
         return;
     }
 
     int64_t totalSize=0;
     for(size_t i=start;i<=end;++i)
     {
-        totalSize+=bin[i]->size;
+        totalSize+=children[i]->size;
     }
 
     int availableArea = rect.h * rect.w;
@@ -299,32 +299,32 @@ void FileEntryView::allocate_children2(size_t start, size_t end, std::vector<Fil
     size_t newEnd=start;
     for(size_t i=start;i<=end;++i)
     {
-        if(bin[i]->size<minSize && i>start+1)
+        if(children[i]->size<minSize && i>start+1)
             break;
-        totalSize+=bin[i]->size;
+        totalSize+=children[i]->size;
         ++newEnd;
     }
     for(size_t i=newEnd;i<=end;++i)
     {
-        bin[i]->drawArea.w=0.f;
-        bin[i]->drawArea.h=0.f;
+        children[i]->drawArea.w=0.f;
+        children[i]->drawArea.h=0.f;
     }
     if(newEnd==start)
         return;
     end = newEnd-1;
     
     size_t bin1last=start;
-    int64_t sum1=bin[start]->size;
+    int64_t sum1=children[start]->size;
     int64_t sum2=0;
 
     for(size_t i=start+1;i<=end;++i)
-        sum2+=bin[i]->size;
+        sum2+=children[i]->size;
     
     bool bin1Filled=false;
     
     for(size_t i=start+1;i<=end;++i)
     {
-        auto curSize=bin[i]->size;
+        auto curSize=children[i]->size;
         if(!bin1Filled && std::abs(sum2-sum1- curSize*2)<std::abs(sum2-sum1))
         {
             ++bin1last;
@@ -362,16 +362,16 @@ void FileEntryView::allocate_children2(size_t start, size_t end, std::vector<Fil
         rect2.h=rH;
         
         if((bin1last-start)>0)
-            allocate_children2(start, bin1last, bin, rect2);
+            allocate_children(start, bin1last, rect2);
         else
-            set_child_rect(bin[start], rect2);
+            set_child_rect(children[start], rect2);
 
         rect2.x=rX+midW1;
         rect2.w=static_cast<int>(rW-midW1);
         if((end-bin1last)>1)
-            allocate_children2(bin1last+1, end, bin, rect2);
+            allocate_children(bin1last + 1, end, rect2);
         else
-            set_child_rect(bin[end], rect2);
+            set_child_rect(children[end], rect2);
     }
     else
     {
@@ -382,16 +382,16 @@ void FileEntryView::allocate_children2(size_t start, size_t end, std::vector<Fil
         rect2.h=midH1;
         
         if((bin1last-start)>0)
-            allocate_children2(start, bin1last, bin, rect2);
+            allocate_children(start, bin1last, rect2);
         else
-            set_child_rect(bin[start], rect2);
+            set_child_rect(children[start], rect2);
 
         rect2.y=rY+midH1;
         rect2.h=static_cast<int>(rH-midH1);
         if((end-bin1last)>1)
-            allocate_children2(bin1last+1, end, bin, rect2);
+            allocate_children(bin1last + 1, end, rect2);
         else
-            set_child_rect(bin[end], rect2);
+            set_child_rect(children[end], rect2);
     }
 }
 
