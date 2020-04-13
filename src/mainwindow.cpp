@@ -47,7 +47,7 @@ MainWindow::MainWindow()
             p.windowText().color(), ColorTheme::NativeStyle::NATIVE);
     setTheme(colorTheme->isDark(), false);
 
-    setMinimumSize(800, 600);
+    setMinimumSize(600, 400);
     scanner = Utils::make_unique<SpaceScanner>();
     layout = Utils::make_unique<QVBoxLayout>();
 //    layout->setContentsMargins(0,0,0,0);
