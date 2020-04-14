@@ -313,12 +313,8 @@ void SpaceView::allocateEntries()
             hoveredEntry= nullptr;
         }
 
-        if(root)
-            scanner->update_root_file(root, minArea/fullArea, fileEntryShowFlags,
-                                      currentPath.get(), currentDepth);
-        else
-            root=scanner->get_root_file(minArea/fullArea, fileEntryShowFlags,
-                                        currentPath.get(), currentDepth);
+        scanner->updateEntryView(root, minArea / fullArea, fileEntryShowFlags,
+                                 currentPath.get(), currentDepth);
 
         if(root)
         {

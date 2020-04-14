@@ -50,8 +50,7 @@ public:
     std::vector<std::string> get_available_roots();
 
     float get_scan_progress();
-    std::shared_ptr<FileEntryView> get_root_file(float minSizeRatio, uint16_t flags, const FilePath* filepath, int depth);
-    void update_root_file(std::shared_ptr<FileEntryView>& root, float minSizeRatio, uint16_t flags, const FilePath* filepath, int depth);
+    void updateEntryView(std::shared_ptr<FileEntryView>& view, float minSizeRatio, uint16_t flags, const FilePath* filepath, int depth);
     bool is_running();
     bool is_loaded();
     bool can_refresh();

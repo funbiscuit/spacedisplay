@@ -133,62 +133,18 @@ bool SpaceScanner::is_loaded()
     return rootFile!= nullptr;
 }
 
-FileEntryViewPtr SpaceScanner::get_root_file(float minSizeRatio, uint16_t flags, const FilePath* filepath, int depth)
-{
-    std::lock_guard<std::mutex> lock_mtx(mtx);
-    
-    if(rootFile!= nullptr)
-    {
-        FileEntryView::CopyOptions options;
-        int64_t fullSpace=0;
-        int64_t unknownSpace=totalSpace-rootFile->get_size()-freeSpace;
-
-        if((flags & FileEntryView::INCLUDE_AVAILABLE_SPACE) != 0)
-        {
-            options.freeSpace = freeSpace;
-            fullSpace+=freeSpace;
-        }
-        if((flags & FileEntryView::INCLUDE_UNKNOWN_SPACE) != 0)
-        {
-            options.unknownSpace = unknownSpace;
-            fullSpace+=unknownSpace;
-        }
-
-        auto file = rootFile->findEntry(filepath);
-        if(file)
-        {
-            fullSpace=0;
-            //we don't show unknown and free space if child is opened
-            options.freeSpace = 0;
-            options.unknownSpace = 0;
-        }
-        else
-            file = rootFile.get();
-
-        fullSpace+=file->get_size();
-
-        options.minSize = int64_t(float(fullSpace)*minSizeRatio);
-        options.nestLevel = depth;
-        auto sharedCopy=FileEntryView::create_copy(*file, options);
-
-        return sharedCopy;
-    }
-    return nullptr;
-}
-
 bool SpaceScanner::has_changes()
 {
     return hasPendingChanges;
 }
 
-void SpaceScanner::update_root_file(FileEntryViewPtr& root, float minSizeRatio, uint16_t flags, const FilePath* filepath, int depth)
+void SpaceScanner::updateEntryView(FileEntryViewPtr& view, float minSizeRatio, uint16_t flags, const FilePath* filepath, int depth)
 {
-    //FIXME move similar code from get_root_file to separate function or something
     std::lock_guard<std::mutex> lock_mtx(mtx);
     hasPendingChanges=false;
     if(rootFile!= nullptr)
     {
-        FileEntryView::CopyOptions options;
+        FileEntryView::ViewOptions options;
         int64_t fullSpace=0;
         int64_t unknownSpace=totalSpace-rootFile->get_size()-freeSpace;
 
@@ -218,7 +174,10 @@ void SpaceScanner::update_root_file(FileEntryViewPtr& root, float minSizeRatio, 
 
         options.minSize = int64_t(float(fullSpace)*minSizeRatio);
         options.nestLevel = depth;
-        FileEntryView::update_copy(root, *file, options);
+        if(view)
+            FileEntryView::updateView(view, *file, options);
+        else
+            view= FileEntryView::createView(*file, options);
     }
 }
 

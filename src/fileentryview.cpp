@@ -16,7 +16,7 @@ FileEntryView::FileEntryView() : drawArea{} {
 }
 
 
-FileEntryView::FileEntryView(const FileEntry& entry, const CopyOptions& options) : drawArea{}
+FileEntryView::FileEntryView(const FileEntry& entry, const ViewOptions& options) : drawArea{}
 {
     reconstruct_from(entry, options);
 }
@@ -40,7 +40,7 @@ void FileEntryView::init_from(const FileEntry& entry)
     drawArea.h=0;
 }
 
-void FileEntryView::reconstruct_from(const FileEntry& entry, const CopyOptions& options)
+void FileEntryView::reconstruct_from(const FileEntry& entry, const ViewOptions& options)
 {
     init_from(entry);
     parent= nullptr;
@@ -105,7 +105,7 @@ void FileEntryView::reconstruct_from(const FileEntry& entry, const CopyOptions& 
             }
 
 
-            CopyOptions newOptions = options;
+            ViewOptions newOptions = options;
             --newOptions.nestLevel;
             //we don't need to include unknown and free space to child entries
             newOptions.freeSpace=0;
@@ -113,11 +113,11 @@ void FileEntryView::reconstruct_from(const FileEntry& entry, const CopyOptions& 
 
             if(childCount<existingChildCount)
             {
-                update_copy(children[childCount], *child, newOptions);
+                updateView(children[childCount], *child, newOptions);
                 children[childCount]->parent = this;
             } else
             {
-                auto newChild = create_copy(*child, newOptions);
+                auto newChild = createView(*child, newOptions);
                 newChild->parent = this;
                 children.push_back(newChild);
             }
@@ -473,12 +473,12 @@ void FileEntryView::set_child_rect(const FileEntryViewPtr& child, Utils::RectI &
     }
 }
 
-FileEntryViewPtr FileEntryView::create_copy(const FileEntry& entry, const CopyOptions& options)
+FileEntryViewPtr FileEntryView::createView(const FileEntry& entry, const ViewOptions& options)
 {
     return FileEntryViewPtr(new FileEntryView(entry, options));
 }
 
-void FileEntryView::update_copy(FileEntryViewPtr& copy, const FileEntry& entry, const CopyOptions& options)
+void FileEntryView::updateView(FileEntryViewPtr& copy, const FileEntry& entry, const ViewOptions& options)
 {
     copy->reconstruct_from(entry, options);
 }
