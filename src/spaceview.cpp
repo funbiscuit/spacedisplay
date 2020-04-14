@@ -227,6 +227,7 @@ void SpaceView::setScanner(SpaceScanner* _scanner)
     scanner=_scanner;
     currentPath = Utils::make_unique<FilePath>(*(scanner->getRootPath()));
     clearHistory();
+    historyPush();
     onScanUpdate();
 }
 
@@ -267,11 +268,10 @@ void SpaceView::setShowUnknownSpace(bool showUnknown)
 
 void SpaceView::historyPush()
 {
-    while(!pathHistory.empty() && pathHistoryPointer<pathHistory.size()-1)
+    while(!pathHistory.empty() && (pathHistoryPointer+1)<pathHistory.size())
         pathHistory.pop_back();
 
-    //TODO
-//    pathHistory.push_back(currentPath);
+    pathHistory.push_back(Utils::make_unique<FilePath>(*currentPath));
     pathHistoryPointer = pathHistory.size()-1;
 }
 
@@ -452,9 +452,8 @@ void SpaceView::navigateBack()
     if(canNavigateBack())
     {
         --pathHistoryPointer;
-        std::cout << "Go back to: "<<pathHistory[pathHistoryPointer]<<"\n";
-        //TODO
-//        currentPath=pathHistory[pathHistoryPointer];
+        currentPath=Utils::make_unique<FilePath>(*pathHistory[pathHistoryPointer]);
+        std::cout << "Go back to: "<<currentPath->getPath()<<"\n";
         onScanUpdate();
     }
 
@@ -464,10 +463,13 @@ void SpaceView::navigateForward()
 {
     if(canNavigateForward())
     {
+        //TODO if scanner can't give information about this new path, we should do something
+        // this might happen if we navigated to some folder, then moved back, folder was deleted and scanner updated
+        // its info so there is no such folder anymore
+        // the same goes to navigateBack
         ++pathHistoryPointer;
-        std::cout << "Go forward to: "<<pathHistory[pathHistoryPointer]<<"\n";
-        //TODO
-//        currentPath=pathHistory[pathHistoryPointer];
+        currentPath=Utils::make_unique<FilePath>(*pathHistory[pathHistoryPointer]);
+        std::cout << "Go forward to: "<<currentPath->getPath()<<"\n";
         onScanUpdate();
     }
 }
@@ -475,7 +477,7 @@ void SpaceView::navigateForward()
 bool SpaceView::canNavigateBack()
 {
     return !pathHistory.empty() &&
-           (pathHistoryPointer-1>=0 && pathHistoryPointer-1 < pathHistory.size());
+           (pathHistoryPointer>0 && pathHistoryPointer < (pathHistory.size()+1));
 }
 
 bool SpaceView::canNavigateForward()

@@ -211,8 +211,7 @@ void MainWindow::goForward()
 }
 void MainWindow::goUp()
 {
-    if(!spaceWidget->navigateUp())
-        goHome();
+    spaceWidget->navigateUp();
     updateStatusView();
     updateAvailableActions();
 }

@@ -99,7 +99,13 @@ protected:
 
     std::unique_ptr<FileEntryPopup> entryPopup;
 
-    std::vector<std::string> pathHistory;
+    /**
+     * History contains all paths we can get back to. historyPointer points to currentPath
+     * but it is not safe to access history at pointer, it might be null (it is temporarily
+     * moved to currentPath. And after navigating back or forward currentPath is moved back
+     * to history and another path is moved to currentPath
+     */
+    std::vector<std::unique_ptr<FilePath>> pathHistory;
     size_t pathHistoryPointer=0;
 
     int currentDepth = 5;
