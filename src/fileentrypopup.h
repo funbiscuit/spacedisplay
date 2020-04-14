@@ -22,8 +22,7 @@ Q_OBJECT
 public:
     FileEntryPopup(QWidget* _parent);
 
-    void popupDir(std::unique_ptr<FilePath> dir_path);
-    void popupFile(std::unique_ptr<FilePath> file_path);
+    void popup(std::unique_ptr<FilePath> path);
     void updateActions(SpaceScanner* scanner);
 
     std::function<void(const FilePath&)> onRescanListener = nullptr;

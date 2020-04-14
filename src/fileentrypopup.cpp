@@ -72,37 +72,25 @@ void FileEntryPopup::onOpen()
     PlatformUtils::open_folder_in_file_manager(currentEntryPath->getPath().c_str());
 }
 
-void FileEntryPopup::popupDir(std::unique_ptr<FilePath> dir_path)
+void FileEntryPopup::popup(std::unique_ptr<FilePath> path)
 {
-    //TODO make popupDir and popupFile one function since we can call isDir from path
-
-    currentEntryPath = std::move(dir_path);
+    currentEntryPath = std::move(path);
     currentEntryName = currentEntryPath->getName();
 
     QMenu menu(parent);
     auto title = menu.addAction(currentEntryName.c_str());
     title->setEnabled(false);
     menu.addSeparator();
-    menu.addAction(rescanAct.get());
-    menu.addAction(openInFMAct.get());
-    menu.addAction(deleteDirAct.get());
-    menu.addAction(propertiesAct.get());
-
-    menu.exec(QCursor::pos()+QPoint(10,10));
-}
-
-void FileEntryPopup::popupFile(std::unique_ptr<FilePath> file_path)
-{
-    currentEntryPath = std::move(file_path);
-    currentEntryName = currentEntryPath->getName();
-
-    QMenu menu(parent);
-
-    auto title = menu.addAction(currentEntryName.c_str());
-    title->setEnabled(false);
-    menu.addSeparator();
-    menu.addAction(showInFMAct.get());
-    menu.addAction(deleteFileAct.get());
+    if(currentEntryPath->isDir())
+    {
+        menu.addAction(rescanAct.get());
+        menu.addAction(openInFMAct.get());
+        menu.addAction(deleteDirAct.get());
+    } else
+    {
+        menu.addAction(showInFMAct.get());
+        menu.addAction(deleteFileAct.get());
+    }
     menu.addAction(propertiesAct.get());
 
     menu.exec(QCursor::pos()+QPoint(10,10));

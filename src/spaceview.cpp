@@ -137,10 +137,7 @@ void SpaceView::mouseReleaseEvent(QMouseEvent *event)
                 hovered->getPath(*path);
 
                 entryPopup->updateActions(scanner);
-                if(hovered->is_dir())
-                    entryPopup->popupDir(std::move(path));
-                else
-                    entryPopup->popupFile(std::move(path));
+                entryPopup->popup(std::move(path));
             }
         } else
         {
