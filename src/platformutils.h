@@ -92,6 +92,18 @@ namespace PlatformUtils
     void show_file_in_file_manager(const char* file_path);
 
     /**
+     * filePathSeparator - file path separator that is native for the platform
+     * invertedFilePathSeparator - file path separator that is not native for the platform
+     */
+#ifdef _WIN32
+    const char filePathSeparator = '\\';
+    const char invertedFilePathSeparator = '/';
+#else
+    const char filePathSeparator = '/';
+    const char invertedFilePathSeparator = '\\';
+#endif
+
+    /**
      * Functions specific to certain platform
      */
 #ifdef _WIN32
