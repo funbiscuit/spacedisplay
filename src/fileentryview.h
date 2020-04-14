@@ -9,6 +9,7 @@
 #include <string>
 #include "utils.h"
 #include "fileentry.h"
+#include "filepath.h"
 
 class FileEntryView;
 
@@ -44,6 +45,14 @@ public:
     static void update_copy(FileEntryViewPtr& copy, const FileEntry& entry, const CopyOptions& options);
 
     const char* get_name();
+
+    /**
+     * Writes path to this entry to provided local root.
+     * For example, if local hierarchy is {this entry}<-{dir1}<-{dir2}<-{dir3}
+     * Then provided root should have path to {dir3}. And returned path will be {root}/dir2/dir1/{entry name}
+     * @param root - FilePath to local root. 
+     */
+    void getPath(FilePath& root);
 
     const char* get_path(bool countRoot=true);
     int64_t get_size() {

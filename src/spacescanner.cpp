@@ -1,13 +1,13 @@
 
 #include "spacescanner.h"
 #include "fileentry.h"
+#include "filepath.h"
 #include "fileentryview.h"
 #include "fileentrypool.h"
 #include "platformutils.h"
 
 #include <fstream>
 #include <iostream>
-#include <cstring>
 #include <chrono>
 
 SpaceScanner::SpaceScanner() :
@@ -133,7 +133,7 @@ bool SpaceScanner::is_loaded()
     return rootFile!= nullptr;
 }
 
-FileEntryViewPtr SpaceScanner::get_root_file(float minSizeRatio, uint16_t flags, const char* filepath, int depth)
+FileEntryViewPtr SpaceScanner::get_root_file(float minSizeRatio, uint16_t flags, const FilePath* filepath, int depth)
 {
     std::lock_guard<std::mutex> lock_mtx(mtx);
     
@@ -154,26 +154,17 @@ FileEntryViewPtr SpaceScanner::get_root_file(float minSizeRatio, uint16_t flags,
             fullSpace+=unknownSpace;
         }
 
-        auto file = rootFile.get();
-
-        if(strlen(filepath)>0)
+        auto file = rootFile->findEntry(filepath);
+        if(file)
         {
-            auto rootLen = strlen(rootFile->get_name());
-            if(strncmp(rootFile->get_name(), filepath, rootLen)==0)
-            {
-                filepath = filepath + rootLen*sizeof(char);
-            }
-
-            auto test = file->find_child_dir(filepath);
-            if(test!= nullptr)
-            {
-                file=test;
-                fullSpace=0;
-                //we don't show unknown and free space if child is opened
-                options.freeSpace = 0;
-                options.unknownSpace = 0;
-            }
+            fullSpace=0;
+            //we don't show unknown and free space if child is opened
+            options.freeSpace = 0;
+            options.unknownSpace = 0;
         }
+        else
+            file = rootFile.get();
+
         fullSpace+=file->get_size();
 
         options.minSize = int64_t(float(fullSpace)*minSizeRatio);
@@ -190,8 +181,9 @@ bool SpaceScanner::has_changes()
     return hasPendingChanges;
 }
 
-void SpaceScanner::update_root_file(FileEntryViewPtr& root, float minSizeRatio, uint16_t flags, const char* filepath, int depth)
+void SpaceScanner::update_root_file(FileEntryViewPtr& root, float minSizeRatio, uint16_t flags, const FilePath* filepath, int depth)
 {
+    //FIXME move similar code from get_root_file to separate function or something
     std::lock_guard<std::mutex> lock_mtx(mtx);
     hasPendingChanges=false;
     if(rootFile!= nullptr)
@@ -211,26 +203,17 @@ void SpaceScanner::update_root_file(FileEntryViewPtr& root, float minSizeRatio, 
             fullSpace+=unknownSpace;
         }
 
-        auto file = rootFile.get();
-
-        if(strlen(filepath)>0)
+        auto file = rootFile->findEntry(filepath);
+        if(file)
         {
-            auto rootLen = strlen(rootFile->get_name());
-            if(strncmp(rootFile->get_name(), filepath, rootLen)==0)
-            {
-                filepath = filepath + rootLen*sizeof(char);
-            }
-
-            auto test = file->find_child_dir(filepath);
-            if(test!= nullptr)
-            {
-                file=test;
-                fullSpace=0;
-                //we don't show unknown and free space if child is opened
-                options.freeSpace = 0;
-                options.unknownSpace = 0;
-            }
+            fullSpace=0;
+            //we don't show unknown and free space if child is opened
+            options.freeSpace = 0;
+            options.unknownSpace = 0;
         }
+        else
+            file = rootFile.get();
+
         fullSpace+=file->get_size();
 
         options.minSize = int64_t(float(fullSpace)*minSizeRatio);
@@ -305,13 +288,16 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     reset_database();
 
     scannerStatus=ScannerStatus::SCANNING;
+    auto newRootPath = Utils::make_unique<FilePath>(path);
 
-    if(!create_root_entry(path))
+    if(!create_root_entry(newRootPath->getRoot()))
     {
         scannerStatus=ScannerStatus::IDLE;
-        std::cout<<"Can't open "<<path.c_str()<<"\n";
+        std::cout<<"Can't open "<<newRootPath->getRoot()<<"\n";
         return ScannerError::CANT_OPEN_DIR;
     }
+
+    rootPath = std::move(newRootPath);
     
     update_disk_space();//this will load all info about disk space (available, used, total)
 
@@ -322,9 +308,9 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     return ScannerError::NONE;
 }
 
-void SpaceScanner::rescan_dir(const std::string &path)
+void SpaceScanner::rescan_dir(const FilePath& path)
 {
-    auto entry = getEntryAt(path.c_str());
+    auto entry = rootFile->findEntry(&path);
     
     if(!entry)
         return;
@@ -338,26 +324,6 @@ void SpaceScanner::rescan_dir(const std::string &path)
     entry->clear_entry(entryPool.get());
     scanQueue.push_back(entry);
     hasPendingChanges = true;
-}
-
-FileEntry* SpaceScanner::getEntryAt(const char* path)
-{
-    std::lock_guard<std::mutex> lock_mtx(mtx);
-    if(!rootFile)
-        return nullptr;
-
-    auto rootLen = strlen(rootFile->get_name());
-    if(strncmp(rootFile->get_name(), path, rootLen)==0)
-    {
-        path = &path[rootLen];
-    }
-    auto file = rootFile.get();
-
-    file = file->find_child_dir(path);
-    if(!file)
-        file=rootFile.get();
-
-    return file;
 }
 
 uint64_t SpaceScanner::get_total_space()
@@ -381,9 +347,7 @@ uint64_t SpaceScanner::get_free_space()
     return freeSpace;
 }
 
-const char *SpaceScanner::get_root_path()
+const FilePath* SpaceScanner::getRootPath() const
 {
-    if(rootFile)
-        return rootFile->get_name();
-    return "";
+    return rootPath.get();
 }

@@ -11,6 +11,7 @@ class SpaceScanner;
 class FileEntryPopup;
 class MainWindow;
 class ColorTheme;
+class FilePath;
 
 
 class SpaceView : public QWidget
@@ -25,12 +26,9 @@ public:
     void onScanUpdate();
 
     bool isAtRoot();
-    void rescanDir(const std::string &dir_path);
+    void rescanDir(const FilePath& dir_path);
 
-    std::string getCurrentPath()
-    {
-        return currentPath;
-    }
+    FilePath* getCurrentPath();
 
     FileEntryView* getHoveredEntry();
 
@@ -40,6 +38,11 @@ public:
      * so if true - we can navigate up more
      */
     bool navigateUp();
+
+    /**
+     * Navigates to the root directory
+     */
+    void navigateHome();
 
     /**
      * Navigates to the previous view
@@ -100,7 +103,7 @@ protected:
     size_t pathHistoryPointer=0;
 
     int currentDepth = 5;
-    std::string currentPath;
+    std::unique_ptr<FilePath> currentPath;
     FileEntryViewPtr root=nullptr;
     FileEntryView* hoveredEntry=nullptr;
     FileEntryView* tooltipEntry = nullptr;

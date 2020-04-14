@@ -7,6 +7,8 @@
 #include <functional>
 #include <string>
 
+#include "filepath.h"
+
 QT_BEGIN_NAMESPACE
 class QWidget;
 QT_END_NAMESPACE
@@ -20,11 +22,11 @@ Q_OBJECT
 public:
     FileEntryPopup(QWidget* _parent);
 
-    void popupDir(std::string dir_path);
-    void popupFile(std::string file_path);
+    void popupDir(std::unique_ptr<FilePath> dir_path);
+    void popupFile(std::unique_ptr<FilePath> file_path);
     void updateActions(SpaceScanner* scanner);
 
-    std::function<void(const std::string&)> onRescanListener = nullptr;
+    std::function<void(const FilePath&)> onRescanListener = nullptr;
 
 private slots:
     void onRescan();
@@ -36,10 +38,8 @@ private slots:
 
 
 protected:
-    std::string currentEntryPath;
+    std::unique_ptr<FilePath> currentEntryPath;
     std::string currentEntryName;
-
-    void parseName();
 
     QWidget* parent;
 

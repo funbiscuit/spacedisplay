@@ -9,6 +9,7 @@
 
 class FileEntryView;
 class FileEntryPool;
+class FilePath;
 
 class FileEntry {
 
@@ -49,6 +50,13 @@ public:
     std::unique_ptr<FileEntry> pop_children();
 
     FileEntry* find_child_dir(const char *name_);
+
+    /**
+     * Tries to find entry in tree starting from this entry (including it) by given FilePath
+     * @param path - path to entry that should be found
+     * @return pointer to entry if it was found, nullptr otherwise
+     */
+    FileEntry* findEntry(const FilePath* path);
 
     std::unique_ptr<FileEntry> pop_next()
     {

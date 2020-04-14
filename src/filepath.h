@@ -23,9 +23,19 @@ public:
      * @param addDirSlash if true and this path is path to dir, than a closing slash will be added
      * @return
      */
-    std::string getPath(bool addDirSlash = true);
+    std::string getPath(bool addDirSlash = true) const;
     
-    std::string getRoot();
+    std::string getRoot() const;
+
+    const std::vector<std::string>& getParts() const;
+
+    /**
+     * Returns name of file or directory this path is pointing to.
+     * If already at root, the whole root would be returned.
+     * Root returned "AS IS", otherwise slash at the end is removed.
+     * @return
+     */
+    std::string getName() const;
     
     /**
      * Adds directory to the end of the path. If path already ends with file, returns false
@@ -46,13 +56,13 @@ public:
      * If path is invalid, returns false
      * @return true if directory, false otherwise
      */
-    bool isDir();
+    bool isDir() const;
     
     /**
      * Checks if it is possible to navigate up
      * @return false if path is already at root, true otherwise
      */
-    bool canGoUp();
+    bool canGoUp() const;
     
     /**
      * If it is possible to navigate up, will change path to its parent directory.
@@ -60,6 +70,12 @@ public:
      */
     bool goUp();
     
+    /**
+     * Sets new root for the path. All previous information is deleted.
+     * @param root - new root
+     */
+    void setRoot(const std::string& root_);
+
 private:
     
     /**

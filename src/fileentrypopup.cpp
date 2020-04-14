@@ -47,8 +47,7 @@ void FileEntryPopup::updateActions(SpaceScanner* scanner)
 void FileEntryPopup::onRescan()
 {
     if(onRescanListener)
-        onRescanListener(currentEntryPath);
-    std::cout<<"rescan: "<<currentEntryPath.c_str()<< "\n";
+        onRescanListener(*currentEntryPath);
 }
 void FileEntryPopup::onDeleteDir()
 {
@@ -65,18 +64,20 @@ void FileEntryPopup::onProperties()
 
 void FileEntryPopup::onShow()
 {
-    PlatformUtils::show_file_in_file_manager(currentEntryPath.c_str());
+    PlatformUtils::show_file_in_file_manager(currentEntryPath->getPath().c_str());
 }
 
 void FileEntryPopup::onOpen()
 {
-    PlatformUtils::open_folder_in_file_manager(currentEntryPath.c_str());
+    PlatformUtils::open_folder_in_file_manager(currentEntryPath->getPath().c_str());
 }
 
-void FileEntryPopup::popupDir(std::string dir_path)
+void FileEntryPopup::popupDir(std::unique_ptr<FilePath> dir_path)
 {
+    //TODO make popupDir and popupFile one function since we can call isDir from path
+
     currentEntryPath = std::move(dir_path);
-    parseName();
+    currentEntryName = currentEntryPath->getName();
 
     QMenu menu(parent);
     auto title = menu.addAction(currentEntryName.c_str());
@@ -90,10 +91,10 @@ void FileEntryPopup::popupDir(std::string dir_path)
     menu.exec(QCursor::pos()+QPoint(10,10));
 }
 
-void FileEntryPopup::popupFile(std::string file_path)
+void FileEntryPopup::popupFile(std::unique_ptr<FilePath> file_path)
 {
     currentEntryPath = std::move(file_path);
-    parseName();
+    currentEntryName = currentEntryPath->getName();
 
     QMenu menu(parent);
 
@@ -105,20 +106,4 @@ void FileEntryPopup::popupFile(std::string file_path)
     menu.addAction(propertiesAct.get());
 
     menu.exec(QCursor::pos()+QPoint(10,10));
-}
-
-void FileEntryPopup::parseName()
-{
-    bool skipLast = false;
-    auto pos=currentEntryPath.find_last_of('/');
-    if(pos==currentEntryPath.length()-1 && pos>0)
-    {
-        pos=currentEntryPath.find_last_of('/',currentEntryPath.length()-2);
-        skipLast = true;
-    }
-    if(pos!=std::string::npos && (skipLast || pos!=0))
-        currentEntryName=currentEntryPath.substr(pos+1,
-                skipLast ? currentEntryPath.length()-pos-2 : std::string::npos);
-    else
-        currentEntryName=currentEntryPath;
 }

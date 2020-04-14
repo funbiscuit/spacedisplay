@@ -7,6 +7,11 @@
 
 FilePath::FilePath(const std::string& root_)
 {
+    setRoot(root_);
+}
+
+void FilePath::setRoot(const std::string& root_)
+{
     std::string root = root_;
     
     // replaces all incorrect slashes if any and adds slash at the end if it wasn't there
@@ -17,11 +22,11 @@ FilePath::FilePath(const std::string& root_)
         std::cerr << "Can't create path from empty root!\n";
         return;
     }
-    
+    parts.clear();
     parts.push_back(root);
 }
 
-std::string FilePath::getPath(bool addDirSlash)
+std::string FilePath::getPath(bool addDirSlash) const
 {
     if(parts.empty())
     {
@@ -39,7 +44,21 @@ std::string FilePath::getPath(bool addDirSlash)
     return path;
 }
 
-std::string FilePath::getRoot()
+std::string FilePath::getName() const
+{
+    if(parts.empty())
+        return "";
+    else if(parts.size()==1 || !isDir()) //root and file are returned as is
+        return parts.back();
+    else
+    {
+        std::string str = parts.back();
+        str.pop_back();//remove last slash
+        return str;
+    }
+}
+
+std::string FilePath::getRoot() const
 {
     if(parts.empty())
     {
@@ -48,6 +67,11 @@ std::string FilePath::getRoot()
     }
     
     return parts[0];
+}
+
+const std::vector<std::string>& FilePath::getParts() const
+{
+    return parts;
 }
 
 bool FilePath::addDir(const std::string& name)
@@ -85,12 +109,12 @@ bool FilePath::addFile(const std::string& name)
     return true;
 }
 
-bool FilePath::isDir()
+bool FilePath::isDir() const
 {
     return parts.empty() ? false : (parts.back().back() == PlatformUtils::filePathSeparator);
 }
 
-bool FilePath::canGoUp()
+bool FilePath::canGoUp() const
 {
     return parts.size()>1;
 }

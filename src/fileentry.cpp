@@ -3,7 +3,9 @@
 #include <cstring>
 
 #include "fileentry.h"
+#include "filepath.h"
 #include "fileentrypool.h"
+#include "platformutils.h"
 
 FileEntry::FileEntry(uint64_t id, std::unique_ptr<char[]> name, EntryType entryType)
 {
@@ -203,6 +205,48 @@ void FileEntry::on_child_size_changed(FileEntry* child, int64_t sizeChange) {
 std::unique_ptr<FileEntry> FileEntry::pop_children()
 {
     return std::move(firstChild);
+}
+
+FileEntry* FileEntry::findEntry(const FilePath* path)
+{
+    if(!path)
+        return nullptr;
+
+    auto& parts = path->getParts();
+    if(parts.empty())
+        return nullptr;
+
+    //provided path should have the same root as name of this child since this function
+    //should be called only from root entry
+    if(parts.front() != name.get())
+        return nullptr;
+
+    auto currentParent = this;
+    bool entryFound = true;
+    for(int i=1;i<parts.size();++i)
+    {
+        auto child = currentParent->firstChild.get();
+        auto& part = parts[i];
+        bool isPartDir = part.back() == PlatformUtils::filePathSeparator;
+        entryFound = false;
+        while(child)
+        {
+            auto len = strlen(child->name.get());
+
+            // part that is dir will have slash at the end so its length must be bigger by 1
+            if(((isPartDir && part.length() == (len+1)) || (!isPartDir && part.length() == len))
+               && strncmp(part.c_str(), child->name.get(), len) == 0)
+            {
+                entryFound = true;
+                currentParent = child;
+                break;
+            }
+
+            child = child->nextEntry.get();
+        }
+    }
+
+    return entryFound ? currentParent : nullptr;
 }
 
 FileEntry *FileEntry::find_child_dir(const char *name_) {

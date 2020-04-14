@@ -18,6 +18,7 @@ enum class ScannerStatus {
 };
 
 class FileEntry;
+class FilePath;
 class FileEntryView;
 class FileEntryPool;
 
@@ -39,7 +40,7 @@ public:
     void stop_scan();
     void reset_database();
 
-    void rescan_dir(const std::string& folder_path);
+    void rescan_dir(const FilePath& folder_path);
 
     /**
      * For windows this is a list of available drives (C:\\, D:\\ etc)
@@ -49,14 +50,14 @@ public:
     std::vector<std::string> get_available_roots();
 
     float get_scan_progress();
-    std::shared_ptr<FileEntryView> get_root_file(float minSizeRatio, uint16_t flags, const char* filepath, int depth);
-    void update_root_file(std::shared_ptr<FileEntryView>& root, float minSizeRatio, uint16_t flags, const char* filepath, int depth);
+    std::shared_ptr<FileEntryView> get_root_file(float minSizeRatio, uint16_t flags, const FilePath* filepath, int depth);
+    void update_root_file(std::shared_ptr<FileEntryView>& root, float minSizeRatio, uint16_t flags, const FilePath* filepath, int depth);
     bool is_running();
     bool is_loaded();
     bool can_refresh();
     bool has_changes();
 
-    const char* get_root_path();
+    const FilePath* getRootPath() const;
 
     uint64_t get_total_space();
     uint64_t get_free_space();
@@ -90,10 +91,9 @@ private:
 
     ScannerStatus scannerStatus;
     std::unique_ptr<FileEntry> rootFile;
+    std::unique_ptr<FilePath> rootPath;
     uint64_t fileCount=0;
     uint64_t totalSize=0;
-    
-    FileEntry* getEntryAt(const char* path);
 
     void worker_run();
     void update_entry_children(FileEntry* entry);

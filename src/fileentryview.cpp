@@ -483,6 +483,23 @@ void FileEntryView::update_copy(FileEntryViewPtr& copy, const FileEntry& entry, 
     copy->reconstruct_from(entry, options);
 }
 
+void FileEntryView::getPath(FilePath& root)
+{
+    if(parent)
+    {
+        parent->getPath(root);
+        if(is_dir())
+            root.addDir(name);
+        else
+            root.addFile(name);
+        return;
+    }
+    // if this entry doesn't have parent then root should be the path pointing to this entry
+    std::cout << "Two lines should be the same:\n";
+    std::cout << root.getName() <<"\n";
+    std::cout << name << "\n";
+}
+
 const char* FileEntryView::get_path(bool countRoot) {
     if(parent)
     {

@@ -6,6 +6,7 @@
 #include "mainwindow.h"
 #include "spacescanner.h"
 #include "fileentrypopup.h"
+#include "filepath.h"
 #include "resources.h"
 #include "resource_builder/resources.h"
 
@@ -14,9 +15,9 @@ SpaceView::SpaceView(MainWindow* parent) : QWidget(), parent(parent)
     setMouseTracking(true);
     entryPopup = Utils::make_unique<FileEntryPopup>(this);
 
-    entryPopup->onRescanListener = [this](const std::string& str)
+    entryPopup->onRescanListener = [this](const FilePath& path)
     {
-        rescanDir(str);
+        rescanDir(path);
         this->parent->updateAvailableActions();
         this->parent->updateStatusView();
     };
@@ -132,21 +133,14 @@ void SpaceView::mouseReleaseEvent(QMouseEvent *event)
             auto hovered = getHoveredEntry();
             if(hovered)
             {
-                std::string entryPath;
-                if(currentPath.length()>0)
-                {
-                    if(currentPath.back()!='/' && currentPath.back()!='\\')
-                        currentPath.append("/");
-                    entryPath = currentPath + hovered->get_path(false);
-                }
-                else
-                    entryPath = hovered->get_path();
+                auto path = Utils::make_unique<FilePath>(*currentPath);
+                hovered->getPath(*path);
 
                 entryPopup->updateActions(scanner);
                 if(hovered->is_dir())
-                    entryPopup->popupDir(entryPath);
+                    entryPopup->popupDir(std::move(path));
                 else
-                    entryPopup->popupFile(entryPath);
+                    entryPopup->popupFile(std::move(path));
             }
         } else
         {
@@ -176,6 +170,11 @@ void SpaceView::mouseMoveEvent(QMouseEvent *event)
     if(updateHoveredView(prevHovered))
         repaint();
 
+}
+
+FilePath* SpaceView::getCurrentPath()
+{
+    return currentPath.get();
 }
 
 FileEntryView* SpaceView::getHoveredEntry()
@@ -225,38 +224,26 @@ bool SpaceView::updateHoveredView(FileEntryView* prevHovered)
 
 void SpaceView::setScanner(SpaceScanner* _scanner)
 {
-    currentPath = _scanner->get_root_path();
-    historyPush();
     scanner=_scanner;
+    currentPath = Utils::make_unique<FilePath>(*(scanner->getRootPath()));
+    clearHistory();
     onScanUpdate();
 }
 
 void SpaceView::setTheme(std::shared_ptr<ColorTheme> theme)
 {
-    colorTheme = theme;
+    colorTheme = std::move(theme);
 }
 
 bool SpaceView::isAtRoot()
 {
     if(!scanner)
         return true;
-
-    auto rootPath = scanner->get_root_path();
-    auto rootLen = strlen(rootPath);
-    //already at root
-    if(currentPath.length() <= rootLen)
-        return true;
-
-    auto rel_path = currentPath.substr(rootLen);
-    while(rel_path[0]=='/')
-        rel_path = rel_path.substr(1);
-
-    return rel_path.length()==0;
+    return !currentPath->canGoUp();
 }
 
-void SpaceView::rescanDir(const std::string &dir_path)
+void SpaceView::rescanDir(const FilePath& dir_path)
 {
-    std::cout << "Rescan: "<<dir_path<<"\n";
     scanner->rescan_dir(dir_path);
 }
 
@@ -283,7 +270,8 @@ void SpaceView::historyPush()
     while(!pathHistory.empty() && pathHistoryPointer<pathHistory.size()-1)
         pathHistory.pop_back();
 
-    pathHistory.push_back(currentPath);
+    //TODO
+//    pathHistory.push_back(currentPath);
     pathHistoryPointer = pathHistory.size()-1;
 }
 
@@ -330,10 +318,10 @@ void SpaceView::allocateEntries()
 
         if(root)
             scanner->update_root_file(root, minArea/fullArea, fileEntryShowFlags,
-                                      currentPath.c_str(), currentDepth);
+                                      currentPath.get(), currentDepth);
         else
             root=scanner->get_root_file(minArea/fullArea, fileEntryShowFlags,
-                                        currentPath.c_str(), currentDepth);
+                                        currentPath.get(), currentDepth);
 
         if(root)
         {
@@ -440,27 +428,23 @@ uint64_t SpaceView::getHiddenSize()
     return scanned-root->get_size();
 }
 
+void SpaceView::navigateHome()
+{
+    while(currentPath->canGoUp())
+        currentPath->goUp();
+    historyPush();
+    onScanUpdate();
+}
+
 bool SpaceView::navigateUp()
 {
     if(isAtRoot())
         return false;
 
-    auto rootPath = scanner->get_root_path();
-    auto rootLen = strlen(rootPath);
-    auto newPath = Utils::get_parent_path(currentPath);
-
-    if(newPath.length()>=rootLen)
-    {
-        currentPath = newPath;
-        for(size_t i=0;i<rootLen;++i)
-            currentPath[i]=rootPath[i];
-
-        historyPush();
-        onScanUpdate();
-        return !isAtRoot();
-    }
-
-    return false;
+    currentPath->goUp();
+    historyPush();
+    onScanUpdate();
+    return !isAtRoot();
 }
 
 void SpaceView::navigateBack()
@@ -469,7 +453,8 @@ void SpaceView::navigateBack()
     {
         --pathHistoryPointer;
         std::cout << "Go back to: "<<pathHistory[pathHistoryPointer]<<"\n";
-        currentPath=pathHistory[pathHistoryPointer];
+        //TODO
+//        currentPath=pathHistory[pathHistoryPointer];
         onScanUpdate();
     }
 
@@ -481,7 +466,8 @@ void SpaceView::navigateForward()
     {
         ++pathHistoryPointer;
         std::cout << "Go forward to: "<<pathHistory[pathHistoryPointer]<<"\n";
-        currentPath=pathHistory[pathHistoryPointer];
+        //TODO
+//        currentPath=pathHistory[pathHistoryPointer];
         onScanUpdate();
     }
 }
@@ -532,7 +518,7 @@ void SpaceView::mousePressEvent(QMouseEvent *event) {
     {
         if(hoveredEntry && hoveredEntry->is_dir() && hoveredEntry->get_parent() != nullptr)
         {
-            currentPath = currentPath + hoveredEntry->get_path(false) + "/";
+            hoveredEntry->getPath(*currentPath);
             historyPush();
             event->accept();
             onScanUpdate();

@@ -218,7 +218,7 @@ void MainWindow::goUp()
 }
 void MainWindow::goHome()
 {
-    spaceWidget->setScanner(scanner.get());
+    spaceWidget->navigateHome();
     updateStatusView();
     updateAvailableActions();
 }
@@ -226,18 +226,15 @@ void MainWindow::refreshView()
 {
     disableActions(ActionMask::REFRESH);
 
+    auto path = spaceWidget->getCurrentPath();
+    if(!path)
+        return; //should not happen, but just in case
     if(spaceWidget->isAtRoot())
     {
-        std::string path = scanner->get_root_path();
-        spaceWidget->rescanDir(path);
         spaceWidget->clearHistory();
-
         goHome();
-    } else
-    {
-        auto path = spaceWidget->getCurrentPath();
-        spaceWidget->rescanDir(path);
     }
+    spaceWidget->rescanDir(*path);
     updateStatusView();
 }
 void MainWindow::lessDetail()
