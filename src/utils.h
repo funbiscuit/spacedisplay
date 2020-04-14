@@ -23,10 +23,6 @@ namespace Utils
     void tic();
     int toc(const char* message = nullptr);
 
-    std::string path_to_forward_slashes(std::string path);
-    std::string path_to_backslashes(std::string path);
-
-    std::string get_parent_path(std::string path);
     std::string format_size(int64_t size);
 
     //todo we don't need anything from C++14, just make_unique, so use this simple version with C++11

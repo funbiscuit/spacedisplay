@@ -14,15 +14,10 @@ class FilePath;
 class FileEntry {
 
 public:
-    enum EntryType{
-        DIRECTORY,
-        FILE
-    };
-    
-    FileEntry(uint64_t id, std::unique_ptr<char[]> name, EntryType entryType);
+    FileEntry(uint64_t id_, std::unique_ptr<char[]> name_, bool isDir_);
     ~FileEntry();
 
-    void reconstruct(uint64_t id_, std::unique_ptr<char[]> name_, EntryType entryType_);
+    void reconstruct(uint64_t id_, std::unique_ptr<char[]> name_, bool isDir_);
     
     void set_size(int64_t size);
 
@@ -73,11 +68,10 @@ private:
     
     void on_child_size_changed(FileEntry* child, int64_t sizeChange);
     
-    EntryType  entryType;
     FileEntry* parent;
     std::unique_ptr<FileEntry> firstChild;
     std::unique_ptr<FileEntry> nextEntry;
-    size_t childCount=0;
+    size_t childCount;
     bool isDir;
     uint64_t id;
     int64_t size;

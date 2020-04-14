@@ -8,7 +8,7 @@ FileEntryPool::FileEntryPool()
 {
 }
 
-std::unique_ptr<FileEntry> FileEntryPool::create_entry(uint64_t id, const std::string& name, FileEntry::EntryType entryType)
+std::unique_ptr<FileEntry> FileEntryPool::create_entry(uint64_t id, const std::string& name, bool isDir)
 {
     auto nameLen=name.length();
     std::unique_ptr<FileEntry> t;
@@ -18,7 +18,7 @@ std::unique_ptr<FileEntry> FileEntryPool::create_entry(uint64_t id, const std::s
         auto chars=Utils::make_unique_arr<char>(nameLen+1);
         memcpy(chars.get(), name.c_str(), (nameLen+1)*sizeof(char));
 
-        t = Utils::make_unique<FileEntry>(id, std::move(chars), entryType);
+        t = Utils::make_unique<FileEntry>(id, std::move(chars), isDir);
     }
     else
     {
@@ -39,7 +39,7 @@ std::unique_ptr<FileEntry> FileEntryPool::create_entry(uint64_t id, const std::s
         }
         memcpy(chars.get(), name.c_str(), (nameLen+1)*sizeof(char));
 
-        t->reconstruct(id, std::move(chars), entryType);
+        t->reconstruct(id, std::move(chars), isDir);
     }
 
 

@@ -78,7 +78,7 @@ void SpaceScanner::update_entry_children(FileEntry* entry)
     //TODO add check if iterator was constructed and we were able to open path
     for(FileIterator it(path); it.is_valid(); ++it)
     {
-        auto fe=entryPool->create_entry(fileCount, it.name, it.isDir ? FileEntry::DIRECTORY : FileEntry::FILE);
+        auto fe=entryPool->create_entry(fileCount, it.name, it.isDir);
         fe->set_size(it.size);
 
         std::lock_guard<std::mutex> lock_mtx(mtx);
@@ -270,7 +270,7 @@ bool SpaceScanner::create_root_entry(const std::string& path)
 
     if(PlatformUtils::can_scan_dir(path))
     {
-        rootFile=entryPool->create_entry(fileCount, path, FileEntry::DIRECTORY);
+        rootFile=entryPool->create_entry(fileCount, path, true);
         ++fileCount;
         return true;
     }
@@ -321,6 +321,8 @@ void SpaceScanner::rescan_dir(const FilePath& path)
 
     update_disk_space();//disk space might change since last update, so update it again
 
+    //TODO get number of entries that were deleted and subtract them from fileCount maybe?
+    // Then we need to use different counter for ids (do we need them at all?)
     entry->clear_entry(entryPool.get());
     scanQueue.push_back(entry);
     hasPendingChanges = true;

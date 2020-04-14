@@ -7,24 +7,26 @@
 #include "fileentrypool.h"
 #include "platformutils.h"
 
-FileEntry::FileEntry(uint64_t id, std::unique_ptr<char[]> name, EntryType entryType)
+FileEntry::FileEntry(uint64_t id_, std::unique_ptr<char[]> name_, bool isDir_) :
+        id(0), isDir(false), size(0), parent(nullptr), childCount(0)
 {
-    reconstruct(id, std::move(name), entryType);
+    reconstruct(id_, std::move(name_), isDir_);
 }
 
-void FileEntry::reconstruct(uint64_t id_, std::unique_ptr<char[]> name_, EntryType entryType_)
+void FileEntry::reconstruct(uint64_t id_, std::unique_ptr<char[]> name_, bool isDir_)
 {
     id = id_;
     size = 0;
     name = std::move(name_);
-    isDir = entryType_==DIRECTORY;
+    isDir = isDir_;
     parent = nullptr;
     childCount = 0;
-    entryType = entryType_;
 }
 
 FileEntry::~FileEntry() {
-    //if name is valid, it's okay for it to destroy here
+    //if name is valid, it's okay for it to destroy here but entry should be detached from main tree
+    //but even in such case there should be no leak because both firstChild and nextEntry are
+    //unique_ptr's so they will start destroying recursively
     if(firstChild)
         std::cerr << "Possible memory leak. Entry has children and was destroyed!\n";
     if(nextEntry)
@@ -86,13 +88,6 @@ void FileEntry::clear_entry(FileEntryPool* pool)
     if(firstChild)
         pool->cache_children(std::move(firstChild));
 }
-
-//void FileEntry::set_path(char *path) {
-//    if(this->path)
-//        delete(this->path);
-//
-//    this->path =path;
-//}
 
 void FileEntry::get_path(std::string& _path) {
 

@@ -13,10 +13,13 @@ class FileEntryPool {
 public:
     FileEntryPool();
 
-    std::unique_ptr<FileEntry> create_entry(uint64_t id, const std::string& name, FileEntry::EntryType entryType);
+    std::unique_ptr<FileEntry> create_entry(uint64_t id, const std::string& name, bool isDir);
 
     void cache_children(std::unique_ptr<FileEntry> firstChild);
 
+
+    // Very likely is that random crashes were happening because of nanosvg which corrupted memory. But maybe not.
+    // So using caching is better. Cleaning up might be important on exit but for now let OS take care of our mess.
     // these two functions are not very safe and using them a lot causes random crashes
     // so use only caching and let OS cleanup memory after us
     void delete_children(std::unique_ptr<FileEntry> firstChild);

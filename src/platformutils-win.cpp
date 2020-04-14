@@ -179,9 +179,7 @@ bool PlatformUtils::get_mount_space(const std::string& path, uint64_t& totalSpac
 
 void PlatformUtils::open_folder_in_file_manager(const char* folder_path)
 {
-    std::string path = Utils::path_to_backslashes(folder_path);// replace all "bad" slashes to explorer-friendly slashes
-
-    auto pars = string_format("/n,\"%s\"", path.c_str());
+    auto pars = string_format("/n,\"%s\"", folder_path);
     auto parsw = str2wstr(pars);
 
     std::wcout << L"Launch explorer with args: " << parsw << '\n';
@@ -191,9 +189,7 @@ void PlatformUtils::open_folder_in_file_manager(const char* folder_path)
 
 void PlatformUtils::show_file_in_file_manager(const char* file_path)
 {
-    std::string path = Utils::path_to_backslashes(file_path);// replace all "bad" slashes to explorer-friendly slashes
-
-    auto pars = string_format("/select,\"%s\"", path.c_str());
+    auto pars = string_format("/select,\"%s\"", file_path);
     auto parsw = str2wstr(pars);
 
     std::wcout << L"Launch explorer with args: " << parsw << '\n';

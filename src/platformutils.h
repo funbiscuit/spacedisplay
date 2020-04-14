@@ -74,6 +74,7 @@ namespace PlatformUtils
 
     /**
      * Opens folder in default file manager.
+     * Path should have correct slashes for this platform.
      * On Windows uses explorer
      * On Linux uses xdg-open to run default file manager
      * @param folder_path
@@ -82,6 +83,7 @@ namespace PlatformUtils
 
     /**
      * Selects file in default file manager.
+     * Path should have correct slashes for this platform.
      * On Windows uses explorer
      * On Linux tries to detect default file manager first.
      * Can detect Dolphin, Nautilus and Nemo and uses appropriate command to select file.

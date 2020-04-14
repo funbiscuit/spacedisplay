@@ -70,38 +70,6 @@ int Utils::toc(const char* message)
     return Utils::_prof_meas(false, message);
 }
 
-std::string Utils::path_to_forward_slashes(std::string path)
-{
-    std::replace(path.begin(), path.end(), '\\', '/');
-    return path;
-}
-
-std::string Utils::path_to_backslashes(std::string path)
-{
-    std::replace(path.begin(), path.end(), '/', '\\');
-    return path;
-}
-
-std::string Utils::get_parent_path(std::string path)
-{
-    std::string parent_path;
-
-    path=path_to_forward_slashes(path);
-
-    auto len = path.length();
-
-    if(path[len-1] == '/')
-        path.resize(len-1);
-
-    auto pos = path.find_last_of('/');
-    if(pos!=std::string::npos)
-        parent_path=path.substr(0,pos+1);
-    else
-        parent_path="";
-
-    return parent_path;
-}
-
 std::string Utils::format_size(int64_t size)
 {
     const float KB = 1024.f;
