@@ -4,11 +4,10 @@ project(spacedisplay LANGUAGES CXX)
 
 #compile resources
 find_package( PythonInterp 3.0 REQUIRED )
-set(RES_GEN_COMMAND ${PYTHON_EXECUTABLE}
+execute_process(COMMAND ${PYTHON_EXECUTABLE}
         ${PROJECT_SOURCE_DIR}/deps/resource-builder/resource-builder.py #path to python script that builds resources
-        ${PROJECT_SOURCE_DIR}/res   #work directory where resources are stored
-        )
-execute_process(COMMAND ${RES_GEN_COMMAND})
+        ${PROJECT_SOURCE_DIR}/res                                       #work directory where resources are stored
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 find_package (Threads REQUIRED)
 
@@ -25,7 +24,7 @@ endif()
 
 find_package(Qt5 COMPONENTS Core Widgets Svg REQUIRED)
 
-add_executable(spacedisplay "")
+add_executable(spacedisplay)
 
 target_compile_features(spacedisplay PUBLIC cxx_std_11)
 set_target_properties(spacedisplay PROPERTIES
