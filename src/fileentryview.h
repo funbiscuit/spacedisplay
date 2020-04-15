@@ -76,7 +76,7 @@ public:
     FileEntryView* update_hovered_element(float mouseX, float mouseY);
     std::string format_size() const;
     std::string get_tooltip() const;
-    std::string get_title();
+
 
     const std::vector<FileEntryViewPtr>&  get_children();
 
@@ -89,7 +89,14 @@ public:
 
     QPixmap getNamePixmap(QPainter &painter, const QColor& color);
     QPixmap getSizePixmap(QPainter &painter, const QColor& color);
-    QPixmap getTitlePixmap(QPainter &painter, const QColor& color);
+    /**
+     * If path is not nullptr then it will be used instead of entry name
+     * @param painter
+     * @param color
+     * @param path
+     * @return
+     */
+    QPixmap getTitlePixmap(QPainter &painter, const QColor& color, const char* path = nullptr);
 
     bool isHovered;
     bool isParentHovered;
@@ -131,7 +138,9 @@ private:
     void set_parent_hovered(bool hovered);
     void set_hovered(bool hovered);
 
-    void createPixmapCache(QPainter &painter, const QColor& color);
+    void createNamePixmap(QPainter &painter, const QColor& color);
+    void createSizePixmap(QPainter &painter, const QColor& color);
+    void createTitlePixmap(QPainter &painter, const QColor& color, const char* path = nullptr);
 
     QPixmap cachedNamePix;
     std::string cachedName;
@@ -140,6 +149,7 @@ private:
     std::string cachedSize;
     QColor cachedSizeColor;
     QPixmap cachedTitlePix;
+    std::string cachedTitle;
 
     Utils::RectI drawArea;
 

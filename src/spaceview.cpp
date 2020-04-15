@@ -333,7 +333,8 @@ void SpaceView::drawViewTitle(QPainter& painter, const QColor& bg, const FileEnt
         return;
 
     auto col = colorTheme->textFor(bg);
-    auto titlePix = file->getTitlePixmap(painter, col);
+    auto titlePix = file->getTitlePixmap(painter, col,
+            file->get_parent() ? nullptr : currentPath->getPath().c_str());
 
     QRect rt{textHeight / 2 + rect.x, rect.y,
              rect.w - textHeight, (textHeight * 3) / 2};
