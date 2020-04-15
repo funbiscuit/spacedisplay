@@ -1,4 +1,3 @@
-#ifdef __linux__
 #include "platformutils.h"
 #include "utils.h"
 
@@ -339,5 +338,3 @@ void PlatformUtils::show_file_in_file_manager(const char* file_path)
 
     system_async(command);
 }
-
-#endif

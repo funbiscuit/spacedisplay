@@ -54,7 +54,6 @@ public:
      */
     void getPath(FilePath& root);
 
-    const char* get_path(bool countRoot=true);
     int64_t get_size() {
         return size;
     }

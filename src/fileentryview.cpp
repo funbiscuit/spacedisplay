@@ -515,41 +515,10 @@ void FileEntryView::getPath(FilePath& root)
         return;
     }
     // if this entry doesn't have parent then root should be the path pointing to this entry
-    std::cout << "Two lines should be the same:\n";
-    std::cout << root.getName() <<"\n";
-    std::cout << name << "\n";
+//    std::cout << "Two lines should be the same:\n";
+//    std::cout << root.getName() <<"\n";
+//    std::cout << name << "\n";
 }
-
-const char* FileEntryView::get_path(bool countRoot) {
-    if(parent)
-    {
-        auto ppath=parent->get_path(countRoot);
-        auto pathLen=strlen(ppath);
-        auto path=new char[pathLen+name.length()+5];
-
-        if(pathLen == 0 || ppath[pathLen-1]=='/' || ppath[pathLen-1]=='\\')
-            sprintf(path,"%s%s",ppath, name.c_str());
-        else
-            sprintf(path,"%s/%s",ppath, name.c_str());
-
-        delete[](ppath);
-        return path;
-
-    }
-    else
-    {
-        auto path=new char[name.length()+2];
-        if(countRoot)
-            strcpy(path,name.c_str());
-        else
-            path[0] = '\0';
-
-        return path;
-    }
-
-//    return path;
-}
-
 
 const std::vector<FileEntryViewPtr>& FileEntryView::get_children() {
     return children;

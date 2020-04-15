@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3.2)
+cmake_minimum_required(VERSION 3.13...3.17)
 
 project(spacedisplay LANGUAGES CXX)
 
@@ -23,43 +23,30 @@ if( WIN32 )
     endif()
 endif()
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-#set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-
 find_package(Qt5 COMPONENTS Core Widgets Svg REQUIRED)
 
-include_directories(
-        ${PROJECT_SOURCE_DIR}/inc
-        ${PROJECT_SOURCE_DIR}/src
-        ${PROJECT_SOURCE_DIR}/res/build/include
-        ${PROJECT_SOURCE_DIR}/deps/pfd
-        ${PROJECT_SOURCE_DIR}/deps/stb
-        ${PROJECT_SOURCE_DIR}/deps/nanosvg/src
-)
+add_executable(spacedisplay "")
 
-file(GLOB all_SRCS
-        ${PROJECT_SOURCE_DIR}/src/*.cpp
-        ${PROJECT_SOURCE_DIR}/res/build/src/resources.cpp
+target_compile_features(spacedisplay PUBLIC cxx_std_11)
+set_target_properties(spacedisplay PROPERTIES
+        CXX_EXTENSIONS OFF
+        AUTOMOC ON)
+
+add_subdirectory(deps/pfd)
+
+add_subdirectory(src)
+add_subdirectory(res)
+
+target_include_directories(spacedisplay PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/stb
         )
 
-if(MSVC)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-endif()
+target_link_libraries(spacedisplay PRIVATE
+        Threads::Threads Qt5::Widgets Qt5::Svg portable_file_dialogs
+        )
 
 if( WIN32 )
-    add_executable(${PROJECT_NAME} ${all_SRCS}
-            ${PROJECT_SOURCE_DIR}/res/win-res.rc
-            ${PROJECT_SOURCE_DIR}/res/build/src/win.rc
-            )
-
-    ## On Windows disable console if not in debug mode
+    # On Windows disable console if not in debug mode
 #    if( NOT (CMAKE_BUILD_TYPE STREQUAL Debug) )
 #        if (MSVC)
 #            set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -67,18 +54,4 @@ if( WIN32 )
 #                    )
 #        endif()
 #    endif()
-
-    target_link_libraries(${PROJECT_NAME}
-            PRIVATE Qt5::Widgets
-            PRIVATE Qt5::Svg
-            )
-else()
-    file(GLOB all_OBJS ${PROJECT_SOURCE_DIR}/res/build/objs/*.o)
-    add_executable(${PROJECT_NAME} ${all_SRCS})
-    target_link_libraries(${PROJECT_NAME}
-            PRIVATE ${CMAKE_THREAD_LIBS_INIT}
-            PRIVATE ${all_OBJS}
-            PRIVATE Qt5::Widgets
-            PRIVATE Qt5::Svg
-            )
 endif()

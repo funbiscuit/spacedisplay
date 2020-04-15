@@ -1,4 +1,3 @@
-#ifdef _WIN32
 #include "platformutils.h"
 #include "utils.h"
 
@@ -212,5 +211,3 @@ std::string PlatformUtils::wstr2str(std::wstring const &wstr)
     WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), (LPSTR)ret.data(), (int)ret.size(), nullptr, nullptr);
     return ret;
 }
-
-#endif
