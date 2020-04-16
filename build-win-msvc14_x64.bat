@@ -10,7 +10,7 @@ if not exist "cmake-build-msvc14_x64-release\" mkdir cmake-build-msvc14_x64-rele
 if not exist "bin\" mkdir bin
 
 cd cmake-build-msvc14_x64-release
-%cmake_path% -G "Visual Studio 14 2015 Win64" ..
+%cmake_path% "-DQT_WIN_PATH=D:\Qt\5.14.2\msvc2015_64" -G "Visual Studio 14 2015 Win64" ..
 %cmake_path% --build . --config Release --target spacedisplay
 copy Release\spacedisplay.exe ..\bin\spacedisplay.exe
 cd ..

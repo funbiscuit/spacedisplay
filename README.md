@@ -99,11 +99,11 @@ After that you can launch `spacedisplay.exe` from explorer.
 
 ##### Visual Studio 
 
-_You will need to download `qt5` and provide path to visual studio prebuilt binaries in `qt5path.txt`.
-Visit http://www.qt.io to download open source distribution.
-See `qt5path.example.txt` for an example._
+_You will need to download `qt5` and provide path to visual studio prebuilt binaries when running Cmake.
+If you use sample build scripts, you'll have to edit the part "-DQT_WIN_PATH=<path_to_qt>" so it points to your
+installation_
 
-1. Download Cmake 3.7 or higher (for example, to `C:\cmake\cmake-3.7.2-win32-x86`), latest version recommended
+1. Download Cmake 3.13 or higher (for example, to `C:\cmake\cmake-3.13.5-win32-x86`), latest version recommended
 and write path to its cmake.exe in `cmake_win_path.txt` (see `cmake_win_path.example.txt` for an example)
 2. Start command prompt or PowerShell in project directory (using Shift + Right Mouse Click) and run `build-win-msvcXX_x64.bat` where XX is
 version of installed Visual Studio. If it's not 14 or 15, use existing `build-win-msvc14_x64.bat` as an example

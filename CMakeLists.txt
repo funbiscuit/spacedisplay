@@ -12,14 +12,10 @@ execute_process(COMMAND ${PYTHON_EXECUTABLE}
 find_package (Threads REQUIRED)
 
 if( WIN32 )
-    # In file qt5path.txt you should write path to your installed qt5. See qt5path.example.txt for an example
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/qt5path.txt")
-        file (STRINGS "qt5path.txt" QT5_PATH)
-        set (CMAKE_PREFIX_PATH ${QT5_PATH})
-    else()
-        message(FATAL_ERROR "qt5path.txt not found!\nRename qt5path.example.txt to qt5path.txt and "
-                "modify it so it points to your Qt5 installation")
-    endif()
+    set(QT_WIN_PATH "C:\\" CACHE STRING "Path to installed qt binaries")
+    set(WIN32_CONSOLE "On" CACHE STRING "Enable default windows console")
+    message(STATUS "Looking for installed Qt5 at the following path:\n" ${QT_WIN_PATH})
+    set(CMAKE_PREFIX_PATH ${QT_WIN_PATH})
 endif()
 
 find_package(Qt5 COMPONENTS Core Widgets Svg REQUIRED)
@@ -45,12 +41,15 @@ target_link_libraries(spacedisplay PRIVATE
         )
 
 if( WIN32 )
-    # On Windows disable console if not in debug mode
-#    if( NOT (CMAKE_BUILD_TYPE STREQUAL Debug) )
-#        if (MSVC)
-#            set_target_properties(${PROJECT_NAME} PROPERTIES
-#                    LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup"
-#                    )
-#        endif()
-#    endif()
+    # On Windows disable console if not needed
+    if(NOT ${WIN32_CONSOLE})
+        message(STATUS "Console is disabled")
+        if (MSVC) # msvc compiler
+            set_target_properties(spacedisplay PROPERTIES
+                    LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup"
+                    )
+        else() # gcc compiler
+            set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -mwindows")
+        endif()
+    endif()
 endif()
