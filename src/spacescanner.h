@@ -10,6 +10,8 @@
 #include <list>
 #include <memory>
 #include <thread>
+#include <atomic>
+
 
 enum class ScannerStatus {
     IDLE=0,
@@ -29,7 +31,14 @@ enum class ScannerError
     CANT_OPEN_DIR
 };
 
+
 class SpaceScanner {
+
+    struct ScannedEntry {
+        std::unique_ptr<FileEntry> entry;
+        bool addToQueue;
+        FileEntry* parent;
+    };
 
 public:
 
@@ -64,17 +73,21 @@ public:
 
 private:
     std::thread workerThread;
-    bool runWorker;
+    std::atomic<bool> runWorker;
+    // used to indicate that rootFile is valid
+    std::atomic<bool> rootAvailable;
 
     uint64_t totalSpace = 0;
     uint64_t freeSpace = 0;
-    std::mutex mtx;           // mutex for critical section
+    std::atomic<uint64_t> scannedSpace;
+    // mutex used to protect access to rootFile and scanQueue
+    std::mutex mtx;
     std::unique_ptr<FileEntryPool> entryPool;
 
     //edits to queue should be mutex protected
     std::list<FileEntry*> scanQueue;
 
-    bool hasPendingChanges = false;
+    std::atomic<bool> hasPendingChanges;
 
     std::vector<std::string> availableRoots;
     /**
@@ -88,14 +101,14 @@ private:
      */
     void update_disk_space();
 
-    ScannerStatus scannerStatus;
+    std::atomic<ScannerStatus> scannerStatus;
     std::unique_ptr<FileEntry> rootFile;
     std::unique_ptr<FilePath> rootPath;
     uint64_t fileCount=0;
     uint64_t totalSize=0;
 
     void worker_run();
-    void update_entry_children(FileEntry* entry);
+    void update_entry_children(FileEntry* entry, std::vector<ScannedEntry>& scannedEntries);
 
     /**
      * Creates root FileEntry at specified path. When called, existing root and all children should be already deleted

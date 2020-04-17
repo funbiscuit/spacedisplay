@@ -11,7 +11,7 @@
 #include <chrono>
 
 SpaceScanner::SpaceScanner() :
-        scannerStatus(ScannerStatus::IDLE), runWorker(false)
+        scannerStatus(ScannerStatus::IDLE), rootAvailable(false)
 {
     entryPool = Utils::make_unique<FileEntryPool>();
     //Start thread after everything is initialized
@@ -33,41 +33,66 @@ void SpaceScanner::worker_run()
     runWorker = true;
     while(runWorker)
     {
-        using namespace std::chrono;
-        //start scanning as soon as something is placed in queue
-        if(!scanQueue.empty())
-        {
-            auto start = high_resolution_clock::now();
-            while(!scanQueue.empty() && runWorker)
-            {
-                FileEntry* entry = nullptr;
-                {
-                    std::lock_guard<std::mutex> guard(mtx);
-                    if(!scanQueue.empty())
-                    {
-                        entry = scanQueue.front();
-                        scanQueue.pop_front();
-                    }
-                }
-                if(entry)
-                    update_entry_children(entry);
+        std::unique_lock<std::mutex> dbLock(mtx, std::defer_lock);
+        dbLock.lock();
 
-                if(scannerStatus==ScannerStatus::STOPPING)
-                    scanQueue.clear();
+        using namespace std::chrono;
+        while(scanQueue.empty() && runWorker && scannerStatus==ScannerStatus::IDLE)
+        {
+            dbLock.unlock();
+            std::this_thread::sleep_for(milliseconds(20));
+            dbLock.lock();
+        }
+
+        //scan queue is not empy at this point
+        auto start = high_resolution_clock::now();
+        // temporary queue for entries so we only lock mutex to add reasonable number of entries
+        // instead of locking for each entry
+        std::vector<ScannedEntry> scannedEntries;
+        while(!scanQueue.empty() && runWorker && scannerStatus==ScannerStatus::SCANNING)
+        {
+            auto entry = scanQueue.front();
+            scanQueue.pop_front();
+            dbLock.unlock();
+
+            update_entry_children(entry, scannedEntries);
+
+            dbLock.lock();
+
+            //just an arbitrary number so we push entries to tree only when we have enough of them
+            if(scannedEntries.size()<100 && !scanQueue.empty())
+                continue;
+
+            if(scannerStatus!=ScannerStatus::SCANNING)
+                break;
+
+            while(!scannedEntries.empty())
+            {
+                auto p = std::move(scannedEntries.back());
+                scannedEntries.pop_back();
+
+                if(p.addToQueue)
+                    scanQueue.push_front(p.entry.get());
+                p.parent->add_child(std::move(p.entry));
+                ++fileCount;
             }
 
-            auto stop   = high_resolution_clock::now();
-            auto mseconds = duration_cast<milliseconds>(stop - start).count();
-            std::cout << "Time taken: " << mseconds <<"ms, "<<fileCount<<" file(s) scanned\n";
-            scannerStatus = ScannerStatus::IDLE;
+            hasPendingChanges = true;
+
+            scannedSpace = rootFile->get_size();
         }
-        std::this_thread::sleep_for(milliseconds(20));
+        dbLock.unlock();
+
+        auto stop   = high_resolution_clock::now();
+        auto mseconds = duration_cast<milliseconds>(stop - start).count();
+        std::cout << "Time taken: " << mseconds <<"ms, "<<fileCount<<" file(s) scanned\n";
+        scannerStatus = ScannerStatus::IDLE;
     }
 
     std::cout << "End worker thread\n";
 }
 
-void SpaceScanner::update_entry_children(FileEntry* entry)
+void SpaceScanner::update_entry_children(FileEntry* entry, std::vector<ScannedEntry>& scannedEntries)
 {
     if(!entry->is_dir())
         return;
@@ -81,26 +106,22 @@ void SpaceScanner::update_entry_children(FileEntry* entry)
         auto fe=entryPool->create_entry(fileCount, it.name, it.isDir);
         fe->set_size(it.size);
 
-        std::lock_guard<std::mutex> lock_mtx(mtx);
-        auto fe_raw = fe.get();
-        entry->add_child(std::move(fe));
-        ++fileCount;
-
+        bool addToQueue = it.isDir;
         // this section is important for linux since not any path should be scanned (e.g. /proc or /sys)
-        if(it.isDir)
+        if(it.isDir && scannerStatus == ScannerStatus::SCANNING)
         {
             std::string newPath;
-            fe_raw->get_path(newPath);
-            if(newPath.back() != '/')
-                newPath.append("/");
-            if(!Utils::in_array(newPath, availableRoots) && !Utils::in_array(newPath, excludedMounts))
-                scanQueue.push_front(fe_raw);
-            else
+            fe->get_path(newPath);
+            if(newPath.back() != PlatformUtils::filePathSeparator)
+                newPath.push_back(PlatformUtils::filePathSeparator);
+            if(Utils::in_array(newPath, availableRoots) || Utils::in_array(newPath, excludedMounts))
+            {
+                addToQueue = false;
                 std::cout<<"Skip scan of: "<<newPath<<"\n";
+            }
         }
+        scannedEntries.push_back({std::move(fe), addToQueue, entry});
     }
-
-    hasPendingChanges = true;
 }
 
 std::vector<std::string> SpaceScanner::get_available_roots()
@@ -115,12 +136,14 @@ void SpaceScanner::reset_database()
     stop_scan();
     std::lock_guard<std::mutex> lock_mtx(mtx);
     fileCount=0;
+    scannedSpace = 0;
     entryPool->cache_children(std::move(rootFile));
+    rootAvailable=false;
 }
 
 bool SpaceScanner::can_refresh()
 {
-    return rootFile!= nullptr && !is_running();
+    return rootAvailable && !is_running();
 }
 
 bool SpaceScanner::is_running()
@@ -130,7 +153,7 @@ bool SpaceScanner::is_running()
 
 bool SpaceScanner::is_loaded()
 {
-    return rootFile!= nullptr;
+    return rootAvailable;
 }
 
 bool SpaceScanner::has_changes()
@@ -142,7 +165,7 @@ void SpaceScanner::updateEntryView(FileEntryViewPtr& view, float minSizeRatio, u
 {
     std::lock_guard<std::mutex> lock_mtx(mtx);
     hasPendingChanges=false;
-    if(rootFile!= nullptr)
+    if(rootFile)
     {
         FileEntryView::ViewOptions options;
         int64_t fullSpace=0;
@@ -186,7 +209,7 @@ float SpaceScanner::get_scan_progress()
     std::lock_guard<std::mutex> lock_mtx(mtx);
     if(scannerStatus==ScannerStatus::SCANNING && (totalSpace-freeSpace)>0)
     {
-        if(rootFile!=nullptr)
+        if(rootFile)
         {
             float a=float(rootFile->get_size())/float(totalSpace-freeSpace);
             return a>1.f ? 1.f : a;
@@ -211,6 +234,7 @@ void SpaceScanner::stop_scan()
 
 void SpaceScanner::update_disk_space()
 {
+    // Should be called with locked mutex
     if(!rootFile)
         return;
 
@@ -221,6 +245,7 @@ void SpaceScanner::update_disk_space()
 
 bool SpaceScanner::create_root_entry(const std::string& path)
 {
+    // Should be called with locked mutex
     if(rootFile)
     {
         std::cerr << "rootFile should be destroyed (cached) before creating new one\n";
@@ -230,6 +255,7 @@ bool SpaceScanner::create_root_entry(const std::string& path)
     if(PlatformUtils::can_scan_dir(path))
     {
         rootFile=entryPool->create_entry(fileCount, path, true);
+        rootAvailable = true;
         ++fileCount;
         return true;
     }
@@ -246,21 +272,21 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     //we can't have multiple roots (so reset db)
     reset_database();
 
-    scannerStatus=ScannerStatus::SCANNING;
     auto newRootPath = Utils::make_unique<FilePath>(path);
 
+    std::lock_guard<std::mutex> lock_mtx(mtx);
     if(!create_root_entry(newRootPath->getRoot()))
     {
         scannerStatus=ScannerStatus::IDLE;
         std::cout<<"Can't open "<<newRootPath->getRoot()<<"\n";
         return ScannerError::CANT_OPEN_DIR;
     }
+    scannerStatus=ScannerStatus::SCANNING;
 
     rootPath = std::move(newRootPath);
     
     update_disk_space();//this will load all info about disk space (available, used, total)
 
-    std::lock_guard<std::mutex> lock_mtx(mtx);
     scanQueue.push_back(rootFile.get());
     hasPendingChanges = true;
 
@@ -269,6 +295,7 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
 
 void SpaceScanner::rescan_dir(const FilePath& path)
 {
+    std::lock_guard<std::mutex> lock_mtx(mtx);
     auto entry = rootFile->findEntry(&path);
     
     if(!entry)
@@ -276,13 +303,12 @@ void SpaceScanner::rescan_dir(const FilePath& path)
 
     scannerStatus=ScannerStatus::SCANNING;
 
-    std::lock_guard<std::mutex> lock_mtx(mtx);
-
     update_disk_space();//disk space might change since last update, so update it again
 
     //TODO get number of entries that were deleted and subtract them from fileCount maybe?
     // Then we need to use different counter for ids (do we need them at all?)
     entry->clear_entry(entryPool.get());
+    scannedSpace=rootFile->get_size();
     scanQueue.push_back(entry);
     hasPendingChanges = true;
 }
@@ -294,10 +320,10 @@ uint64_t SpaceScanner::get_total_space()
 
 uint64_t SpaceScanner::get_scanned_space()
 {
-    if(!rootFile)
+    if(!rootAvailable)
         return 0;
 
-    auto scanned = rootFile->get_size();
+    auto scanned = scannedSpace.load();
     if(scanned+freeSpace>totalSpace)
         scanned=totalSpace-freeSpace;
     return scanned;
