@@ -27,7 +27,7 @@ public:
 
     bool isDark();
 
-    QIcon createIcon(ResourceBuilder::ResourceId id);
+    QIcon createIcon(ResourceBuilder::ResId id);
 
     QColor tint(const QColor& src, float factor);
 

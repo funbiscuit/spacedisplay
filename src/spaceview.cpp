@@ -24,7 +24,7 @@ SpaceView::SpaceView(MainWindow* parent) : QWidget(), parent(parent)
 
     auto& r = Resources::get();
     bgIcon = r.get_vector_pixmap(
-            ResourceBuilder::RES___ICONS_SVG_APPICON_BW_SVG,
+            ResourceBuilder::ResId::__ICONS_SVG_APPICON_BW_SVG,
             256);
 
 }

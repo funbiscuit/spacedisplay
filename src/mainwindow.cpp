@@ -280,18 +280,18 @@ void MainWindow::setTheme(bool isDark, bool updateIcons)
     if(updateIcons)
     {
         using namespace ResourceBuilder;
-        std::vector<std::pair<ResourceId, QAction*>> iconPairs={
-                std::make_pair(RES___ICONS_SVG_NEW_SCAN_SVG,newAct.get()),
-                std::make_pair(RES___ICONS_SVG_REFRESH_SVG,rescanAct.get()),
-                std::make_pair(RES___ICONS_SVG_ARROW_BACK_SVG,backAct.get()),
-                std::make_pair(RES___ICONS_SVG_ARROW_FORWARD_SVG,forwardAct.get()),
-                std::make_pair(RES___ICONS_SVG_FOLDER_NAVIGATE_UP_SVG,upAct.get()),
-                std::make_pair(RES___ICONS_SVG_HOME_SVG,homeAct.get()),
-                std::make_pair(RES___ICONS_SVG_ZOOM_OUT_SVG,lessDetailAct.get()),
-                std::make_pair(RES___ICONS_SVG_ZOOM_IN_SVG,moreDetailAct.get()),
-                std::make_pair(RES___ICONS_SVG_SPACE_FREE_SVG,toggleFreeAct.get()),
-                std::make_pair(RES___ICONS_SVG_SPACE_UNKNOWN_SVG,toggleUnknownAct.get()),
-                std::make_pair(RES___ICONS_SVG_SMOOTH_MODE_SVG,themeAct.get()),
+        std::vector<std::pair<ResId, QAction*>> iconPairs={
+                std::make_pair(ResId::__ICONS_SVG_NEW_SCAN_SVG,newAct.get()),
+                std::make_pair(ResId::__ICONS_SVG_REFRESH_SVG,rescanAct.get()),
+                std::make_pair(ResId::__ICONS_SVG_ARROW_BACK_SVG,backAct.get()),
+                std::make_pair(ResId::__ICONS_SVG_ARROW_FORWARD_SVG,forwardAct.get()),
+                std::make_pair(ResId::__ICONS_SVG_FOLDER_NAVIGATE_UP_SVG,upAct.get()),
+                std::make_pair(ResId::__ICONS_SVG_HOME_SVG,homeAct.get()),
+                std::make_pair(ResId::__ICONS_SVG_ZOOM_OUT_SVG,lessDetailAct.get()),
+                std::make_pair(ResId::__ICONS_SVG_ZOOM_IN_SVG,moreDetailAct.get()),
+                std::make_pair(ResId::__ICONS_SVG_SPACE_FREE_SVG,toggleFreeAct.get()),
+                std::make_pair(ResId::__ICONS_SVG_SPACE_UNKNOWN_SVG,toggleUnknownAct.get()),
+                std::make_pair(ResId::__ICONS_SVG_SMOOTH_MODE_SVG,themeAct.get()),
         };
         for(auto& pair : iconPairs)
         {
@@ -394,17 +394,17 @@ void MainWindow::createActions()
     aboutAct->setStatusTip("Show the application's About box");
     connect(aboutAct, &QAction::triggered, this, &MainWindow::about);
 
-    const QIcon newIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_NEW_SCAN_SVG);
-    const QIcon rescanIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_REFRESH_SVG);
-    const QIcon backIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ARROW_BACK_SVG);
-    const QIcon forwardIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ARROW_FORWARD_SVG);
-    const QIcon upIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_FOLDER_NAVIGATE_UP_SVG);
-    const QIcon homeIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_HOME_SVG);
-    const QIcon lessIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ZOOM_OUT_SVG);
-    const QIcon moreIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_ZOOM_IN_SVG);
-    const QIcon freeIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SPACE_FREE_SVG);
-    const QIcon unknownIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SPACE_UNKNOWN_SVG);
-    const QIcon themeIcon = colorTheme->createIcon(ResourceBuilder::RES___ICONS_SVG_SMOOTH_MODE_SVG);
+    const QIcon newIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_NEW_SCAN_SVG);
+    const QIcon rescanIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_REFRESH_SVG);
+    const QIcon backIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_ARROW_BACK_SVG);
+    const QIcon forwardIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_ARROW_FORWARD_SVG);
+    const QIcon upIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_FOLDER_NAVIGATE_UP_SVG);
+    const QIcon homeIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_HOME_SVG);
+    const QIcon lessIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_ZOOM_OUT_SVG);
+    const QIcon moreIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_ZOOM_IN_SVG);
+    const QIcon freeIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_SPACE_FREE_SVG);
+    const QIcon unknownIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_SPACE_UNKNOWN_SVG);
+    const QIcon themeIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_SMOOTH_MODE_SVG);
 
     newAct = Utils::make_unique<QAction>(newIcon, "&New Scan", this);
     newAct->setShortcuts(QKeySequence::New);

@@ -3,5 +3,5 @@
     "./icons/svg/*.svg"
   ],
   "output" : "build",
-  "project_name" : "spacedisplay"
+  "project_name" : "SpacedisplayRes"
 }

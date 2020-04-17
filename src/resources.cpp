@@ -38,12 +38,12 @@ QImage Resources::tint(const QImage& src, const QColor& color, qreal strength)
     return res;
 }
 
-QPixmap Resources::get_vector_pixmap(ResourceBuilder::ResourceId id, int width)
+QPixmap Resources::get_vector_pixmap(ResourceBuilder::ResId id, int width)
 {
     return get_vector_pixmap(id,width,QColor(Qt::white),0.0);
 }
 
-QPixmap Resources::get_vector_pixmap(ResourceBuilder::ResourceId id, int width, const QColor& color, qreal strength)
+QPixmap Resources::get_vector_pixmap(ResourceBuilder::ResId id, int width, const QColor& color, qreal strength)
 {
     auto data=ResourceBuilder::get_resource_data(id);
     auto size=ResourceBuilder::get_resource_size(id);

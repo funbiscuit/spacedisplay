@@ -18,15 +18,17 @@ int main(int argc, char *argv[])
 //    parser.addPositionalArgument("file", "The file to open.");
 //    parser.process(app);
 
+    {
+        using namespace ResourceBuilder;
+        auto& r = Resources::get();
 
-    auto& r = Resources::get();
+        QIcon appIcon(r.get_vector_pixmap(ResId::__ICONS_SVG_APPICON_SVG, 16));
+        //add other sizes
+        for(int sz=32;sz<=256;sz*=2)
+            appIcon.addPixmap(r.get_vector_pixmap(ResId::__ICONS_SVG_APPICON_SVG, sz));
 
-    QIcon appIcon(r.get_vector_pixmap(ResourceBuilder::RES___ICONS_SVG_APPICON_SVG,16));
-    //add other sizes
-    for(int sz=32;sz<=256;sz*=2)
-        appIcon.addPixmap(r.get_vector_pixmap(ResourceBuilder::RES___ICONS_SVG_APPICON_SVG,sz));
-
-    QApplication::setWindowIcon(appIcon);
+        QApplication::setWindowIcon(appIcon);
+    }
 
     MainWindow mainWin;
     mainWin.show();

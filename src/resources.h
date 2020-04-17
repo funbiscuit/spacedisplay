@@ -21,8 +21,8 @@ public:
     static Resources& get();
 
     //qt uses implicit sharing so its safe and efficient to pass pixmap by value
-    QPixmap get_vector_pixmap(ResourceBuilder::ResourceId id, int width, const QColor& color, qreal strength=1.0);
-    QPixmap get_vector_pixmap(ResourceBuilder::ResourceId id, int width);
+    QPixmap get_vector_pixmap(ResourceBuilder::ResId id, int width, const QColor& color, qreal strength=1.0);
+    QPixmap get_vector_pixmap(ResourceBuilder::ResId id, int width);
 
 private:
 

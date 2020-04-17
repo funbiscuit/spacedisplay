@@ -77,7 +77,7 @@ bool ColorTheme::isDark()
     return style == CustomStyle::DARK;
 }
 
-QIcon ColorTheme::createIcon(ResourceBuilder::ResourceId id)
+QIcon ColorTheme::createIcon(ResourceBuilder::ResId id)
 {
     auto& r = Resources::get();
 
