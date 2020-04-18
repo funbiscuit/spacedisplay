@@ -13,9 +13,9 @@ class FileEntryPool {
 public:
     FileEntryPool();
 
-    std::unique_ptr<FileEntry> create_entry(uint64_t id, const std::string& name, bool isDir);
+    std::unique_ptr<FileEntry> create_entry(const std::string& name, bool isDir);
 
-    void cache_children(std::unique_ptr<FileEntry> firstChild);
+    int64_t cache_children(std::unique_ptr<FileEntry> firstChild);
 
 
     // Very likely is that random crashes were happening because of nanosvg which corrupted memory. But maybe not.

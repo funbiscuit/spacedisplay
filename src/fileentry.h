@@ -14,10 +14,10 @@ class FilePath;
 class FileEntry {
 
 public:
-    FileEntry(uint64_t id_, std::unique_ptr<char[]> name_, bool isDir_);
+    FileEntry(std::unique_ptr<char[]> name_, bool isDir_);
     ~FileEntry();
 
-    void reconstruct(uint64_t id_, std::unique_ptr<char[]> name_, bool isDir_);
+    void reconstruct(std::unique_ptr<char[]> name_, bool isDir_);
     
     void set_size(int64_t size);
 
@@ -44,8 +44,6 @@ public:
      */
     std::unique_ptr<FileEntry> pop_children();
 
-    FileEntry* find_child_dir(const char *name_);
-
     /**
      * Tries to find entry in tree starting from this entry (including it) by given FilePath
      * @param path - path to entry that should be found
@@ -58,7 +56,7 @@ public:
         return std::move(nextEntry);
     }
 
-    void clear_entry(FileEntryPool* pool);
+    int64_t clear_entry(FileEntryPool* pool);
     
     bool is_dir() const {
         return isDir;
@@ -71,9 +69,7 @@ private:
     FileEntry* parent;
     std::unique_ptr<FileEntry> firstChild;
     std::unique_ptr<FileEntry> nextEntry;
-    size_t childCount;
     bool isDir;
-    uint64_t id;
     int64_t size;
     //not using std::string to reduce memory consumption (there are might be millions of entries so each byte counts)
     std::unique_ptr<char[]> name;

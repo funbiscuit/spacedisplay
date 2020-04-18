@@ -7,20 +7,18 @@
 #include "fileentrypool.h"
 #include "platformutils.h"
 
-FileEntry::FileEntry(uint64_t id_, std::unique_ptr<char[]> name_, bool isDir_) :
-        id(0), isDir(false), size(0), parent(nullptr), childCount(0)
+FileEntry::FileEntry(std::unique_ptr<char[]> name_, bool isDir_) :
+        isDir(false), size(0), parent(nullptr)
 {
-    reconstruct(id_, std::move(name_), isDir_);
+    reconstruct(std::move(name_), isDir_);
 }
 
-void FileEntry::reconstruct(uint64_t id_, std::unique_ptr<char[]> name_, bool isDir_)
+void FileEntry::reconstruct(std::unique_ptr<char[]> name_, bool isDir_)
 {
-    id = id_;
     size = 0;
     name = std::move(name_);
     isDir = isDir_;
     parent = nullptr;
-    childCount = 0;
 }
 
 FileEntry::~FileEntry() {
@@ -63,14 +61,13 @@ void FileEntry::add_child(std::unique_ptr<FileEntry> child) {
         child->nextEntry = std::move(firstChild);
         firstChild=std::move(child);
     }
-    childCount++;
     size+=childSize;
 
     if(parent)
         parent->on_child_size_changed(this, childSize);
 }
 
-void FileEntry::clear_entry(FileEntryPool* pool)
+int64_t FileEntry::clear_entry(FileEntryPool* pool)
 {
     int64_t childrenSize =0;
     auto ch=firstChild.get();
@@ -85,8 +82,12 @@ void FileEntry::clear_entry(FileEntryPool* pool)
 
     size -= childrenSize;
 
+    int64_t cachedEntries = 0;
+
     if(firstChild)
-        pool->cache_children(std::move(firstChild));
+        cachedEntries = pool->cache_children(std::move(firstChild));
+
+    return cachedEntries;
 }
 
 void FileEntry::get_path(std::string& _path) {
@@ -242,42 +243,4 @@ FileEntry* FileEntry::findEntry(const FilePath* path)
     }
 
     return entryFound ? currentParent : nullptr;
-}
-
-FileEntry *FileEntry::find_child_dir(const char *name_) {
-    auto child=firstChild.get();
-
-    size_t n=strlen(name_);
-
-    while(n>0 && name_[0] == '/')
-    {
-        name_ = name_ + sizeof(char);
-        --n;
-    }
-
-
-    while (child != nullptr)
-    {
-        if(!child->is_dir())
-        {
-            child=child->nextEntry.get();
-            continue;
-        }
-
-        size_t cn=strlen(child->name.get());
-        if(strncmp(child->name.get(), name_, cn) == 0 && (n == cn || name_[cn] == '/'))
-        {
-            if(n>cn+1)
-            {
-                name_= name_ + cn + 1;
-                return child->find_child_dir(name_);
-            }
-            else
-                return child;
-        }
-
-        child=child->nextEntry.get();
-    }
-
-    return child;
 }

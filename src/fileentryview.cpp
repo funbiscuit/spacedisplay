@@ -29,7 +29,6 @@ FileEntryView::~FileEntryView() {
 
 void FileEntryView::init_from(const FileEntry& entry)
 {
-    id=entry.id;
     size=entry.size;
     name=entry.name.get();
     isHovered=false;

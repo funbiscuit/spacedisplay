@@ -154,7 +154,6 @@ private:
 
     FileEntryView* parent{};
     std::vector<FileEntryViewPtr> children;
-    uint64_t id = 0;
     int64_t size = 0;
     std::string name;
     EntryType  entryType = EntryType::FILE;
