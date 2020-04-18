@@ -59,16 +59,18 @@ void SpaceScanner::worker_run()
 
             dbLock.lock();
 
-            //just an arbitrary number so we push entries to tree only when we have enough of them
-            if(scannedEntries.size()<100 && !scanQueue.empty())
-                continue;
-
             if(scannerStatus!=ScannerStatus::SCANNING)
                 break;
 
-            auto prevCount = fileCount;
-            //don't spend too much time here for adding entries since GUI thread might be waiting for new data
-            while(!scannedEntries.empty() && (fileCount-prevCount<200))
+            // Presorting entries by size so we can insert them much quicker
+            if(scannedEntries.size()>10)
+            {
+                std::sort(scannedEntries.begin(), scannedEntries.end(), [](ScannedEntry& e1, ScannedEntry& e2)
+                {
+                    return e1.entry->get_size() > e2.entry->get_size();
+                });
+            }
+            while(!scannedEntries.empty())
             {
                 auto p = std::move(scannedEntries.back());
                 scannedEntries.pop_back();
