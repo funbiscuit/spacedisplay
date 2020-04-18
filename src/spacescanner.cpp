@@ -108,8 +108,10 @@ void SpaceScanner::update_entry_children(FileEntry* entry, std::vector<ScannedEn
         // this section is important for linux since not any path should be scanned (e.g. /proc or /sys)
         if(it.isDir && scannerStatus == ScannerStatus::SCANNING)
         {
-            std::string newPath;
-            fe->get_path(newPath);
+            std::string newPath = path;
+            if(newPath.back() != PlatformUtils::filePathSeparator)
+                newPath.push_back(PlatformUtils::filePathSeparator);
+            newPath.append(it.name);
             if(newPath.back() != PlatformUtils::filePathSeparator)
                 newPath.push_back(PlatformUtils::filePathSeparator);
             if(Utils::in_array(newPath, availableRoots) || Utils::in_array(newPath, excludedMounts))
