@@ -124,6 +124,23 @@ Run the binary `spacedisplay`. Select desired device, click start and wait until
 Each rectangle represents file (if it is blue) or directory (if it is yellow).
 If rectangle is big enough, it will display file/directory name and its size.
 
+Performance
+----------
+
+SpaceDisplay is written with speed in mind so it should be quite fast.
+First scan might seem slow but it is mainly because OS is not that fast accessing information about files.
+It is also much slower to scan an HDD than an SSD.
+After the first run OS caches information about files in memory so subsequent scans are much faster.
+It might take minutes for first scan of HDD but after that new scan will take just a few seconds.
+Here are some test results with time in seconds that takes to fully scan partition that I made on my PC.
+
+|   Platform  | Files | SpaceDisplay | File Manager |
+|:-----------:|-------|:------------:|:------------:|
+|  Windows 10 | 369K  |     2.6s     |      22s     |
+| Manjaro KDE | 300K  |     0.8s     |     2.3s     |
+
+SpaceDisplay is also lightweight in terms of memory usage. To scan 1 million files it uses about 160MB of RAM.
+
 Acknowledgements
 ----------------
 Space Display uses following open source software:
