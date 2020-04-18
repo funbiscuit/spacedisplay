@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13...3.17)
+cmake_minimum_required(VERSION 3.8...3.17)
 
 project(spacedisplay LANGUAGES CXX)
 
@@ -20,7 +20,7 @@ endif()
 
 find_package(Qt5 COMPONENTS Core Widgets Svg REQUIRED)
 
-add_executable(spacedisplay)
+add_executable(spacedisplay src/main.cpp)
 
 target_compile_features(spacedisplay PUBLIC cxx_std_11)
 set_target_properties(spacedisplay PROPERTIES
@@ -37,7 +37,8 @@ target_include_directories(spacedisplay PRIVATE
         )
 
 target_link_libraries(spacedisplay PRIVATE
-        Threads::Threads Qt5::Widgets Qt5::Svg portable_file_dialogs
+        Threads::Threads Qt5::Widgets Qt5::Svg
+        portable_file_dialogs SpacedisplayRes::SpacedisplayRes
         )
 
 if( WIN32 )
