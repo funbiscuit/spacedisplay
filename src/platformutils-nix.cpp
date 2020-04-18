@@ -29,8 +29,6 @@ namespace PlatformUtils
 
     std::string exec(const char* cmd);
 
-    void open_folder_in_file_manager(const char* folder_path);
-
     FileManager parse_fm_desktop_file(const std::string &path);
 
     FileManager get_default_manager();
@@ -181,8 +179,9 @@ void PlatformUtils::get_mount_points(std::vector<std::string>& availableMounts, 
             auto mount=str.substr(mntStart,mntEnd-mntStart);
             mount = regex_replace(mount, std::regex("\\\\040"), " ");
 
-            if(mount[mount.length()-1] != '/')
-                mount.append("/");
+            //include closing slash if it isn't there
+            if(mount.back() != PlatformUtils::filePathSeparator)
+                mount.push_back(PlatformUtils::filePathSeparator);
             if(Utils::in_array(part, partitions))
             {
                 availableMounts.push_back(mount);
