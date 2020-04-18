@@ -96,15 +96,9 @@ void FileEntry::get_path(std::string& _path) {
     {
         parent->get_path(_path);
 
-        if(_path.back()=='/' || _path.back()=='\\')
-        {
-            _path.append(name.get());
-        }
-        else
-        {
-            _path.append("/");
-            _path.append(name.get());
-        }
+        if(_path.back()!=PlatformUtils::filePathSeparator)
+            _path.push_back(PlatformUtils::filePathSeparator);
+        _path.append(name.get());
     }
     else
         _path = name.get();

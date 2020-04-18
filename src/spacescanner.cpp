@@ -66,7 +66,9 @@ void SpaceScanner::worker_run()
             if(scannerStatus!=ScannerStatus::SCANNING)
                 break;
 
-            while(!scannedEntries.empty())
+            auto prevCount = fileCount;
+            //don't spend too much time here for adding entries since GUI thread might be waiting for new data
+            while(!scannedEntries.empty() && (fileCount-prevCount<200))
             {
                 auto p = std::move(scannedEntries.back());
                 scannedEntries.pop_back();
@@ -75,9 +77,8 @@ void SpaceScanner::worker_run()
                     scanQueue.push_front(p.entry.get());
                 p.parent->add_child(std::move(p.entry));
                 ++fileCount;
+                hasPendingChanges = true;
             }
-
-            hasPendingChanges = true;
 
             scannedSpace = rootFile->get_size();
         }
