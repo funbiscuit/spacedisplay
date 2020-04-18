@@ -185,7 +185,7 @@ void SpaceScanner::updateEntryView(FileEntryViewPtr& view, float minSizeRatio, u
         }
 
         auto file = rootFile->findEntry(filepath);
-        if(file)
+        if(file != rootFile.get())
         {
             fullSpace=0;
             //we don't show unknown and free space if child is opened
