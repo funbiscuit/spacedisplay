@@ -58,14 +58,15 @@ void FileEntryView::reconstruct_from(const FileEntry& entry, const ViewOptions& 
             if(childCount>=MAX_CHILD_COUNT)
                 break;
 
-            if(child->get_size()<options.minSize)
+            auto childSize = child->get_size();
+            if(childSize<options.minSize)
                 break;
 
             auto nextChild = child->nextEntry.get();
 
             //TODO if unknown space is less than free space, but they are both bigger than biggest child
             // it will still be included first (this is not critical)
-            if(unknownSpace>child->size)
+            if(unknownSpace>childSize)
             {
                 FileEntryViewPtr newChild;
                 if(childCount<existingChildCount)
@@ -84,7 +85,7 @@ void FileEntryView::reconstruct_from(const FileEntry& entry, const ViewOptions& 
                 ++childCount;
                 unknownSpace = 0;
             }
-            if(freeSpace>child->size)
+            if(freeSpace>childSize)
             {
                 FileEntryViewPtr newChild;
                 if(childCount<existingChildCount)

@@ -236,8 +236,6 @@ void SpaceScanner::update_disk_space()
         return;
 
     PlatformUtils::get_mount_space(rootFile->get_name(), totalSpace, freeSpace);
-
-    std::cout<<"Total: "<<totalSpace<<", free: "<<freeSpace<<"\n";
 }
 
 bool SpaceScanner::create_root_entry(const std::string& path)

@@ -447,7 +447,6 @@ void SpaceView::navigateBack()
     {
         --pathHistoryPointer;
         currentPath=Utils::make_unique<FilePath>(*pathHistory[pathHistoryPointer]);
-        std::cout << "Go back to: "<<currentPath->getPath()<<"\n";
         onScanUpdate();
     }
 
@@ -463,7 +462,6 @@ void SpaceView::navigateForward()
         // the same goes to navigateBack
         ++pathHistoryPointer;
         currentPath=Utils::make_unique<FilePath>(*pathHistory[pathHistoryPointer]);
-        std::cout << "Go forward to: "<<currentPath->getPath()<<"\n";
         onScanUpdate();
     }
 }
