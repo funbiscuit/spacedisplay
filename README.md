@@ -3,7 +3,57 @@ Space Display
 
 Almost cross-platform (no macOS support yet) way to analyze used disk space.
 
-`spacedisplay` uses Qt5 so it is required to run it.
+Screenshots
+-----------
+
+Light theme in Windows 10:  
+![Windows-Light-Theme](images/win-light.png)
+
+Dark theme in Manjaro KDE:  
+![Linux-Dark-Theme](images/linux-dark.png)
+
+
+Basic usage
+-----------
+
+Run the binary `spacedisplay`. Right click on empty space (or click new icon) and select desired device.
+Wait until scan is finished.
+Each rectangle represents file (if it is blue) or directory (if it is yellow).
+If rectangle is big enough, it will display file/directory name and its size. You can navigate by clicking
+on any directory and by using navigation buttons in toolbar. From directory context menu you can
+rescan it or open in default file manager. You can also show files in file manager from their context menu.
+
+Controls
+--------
+Mouse wheel - increase/decrease depth of displayed structure  
+Left mouse click - go to clicked directory  
+Right mouse click - context menu  
+F5 - rescan current view  
+Alt+Left and Alt+Right (or mouse buttons back and forward) - navigate back/forward  
+Ctrl+N - start a new scan
+
+
+Performance
+----------
+
+SpaceDisplay is written with speed in mind so it should be quite fast (even faster than default file manager).
+First scan might seem slow but it is mainly because OS is not that fast accessing information about files.
+It is also much slower to scan an HDD than an SSD.
+After the first run OS caches information about files in memory so subsequent scans are much faster.
+It might take minutes for first scan of HDD but after that new scan will take just a few seconds.
+Here are some test results with time in seconds that takes to fully scan partition that I made on my PC.
+
+|   Platform  | Files | SpaceDisplay | File Manager |
+|:-----------:|-------|:------------:|:------------:|
+|  Windows 10 | 389K  |     2.4s     |      24s     |
+| Manjaro KDE | 300K  |     0.8s     |     2.3s     |
+
+In tests above default file manager is Explorer in Windows and Dolphin in Manjaro KDE.
+
+SpaceDisplay is also lightweight in terms of memory usage.  
+To scan 500k files it uses about 84MB of RAM in 64bit version and 67MB in 32bit version.
+Numbers are measured in Windows 10 while scanning drive C:\ with 505k files.
+
 
 Requirements
 ------------
@@ -116,30 +166,6 @@ Qt5Widgets.dll
 platforms/qwindows.dll
 styles/qwindowsvistastyle.dll
 ~~~
-
-Basic usage
------------
-
-Run the binary `spacedisplay`. Select desired device, click start and wait until it finishes scanning.
-Each rectangle represents file (if it is blue) or directory (if it is yellow).
-If rectangle is big enough, it will display file/directory name and its size.
-
-Performance
-----------
-
-SpaceDisplay is written with speed in mind so it should be quite fast.
-First scan might seem slow but it is mainly because OS is not that fast accessing information about files.
-It is also much slower to scan an HDD than an SSD.
-After the first run OS caches information about files in memory so subsequent scans are much faster.
-It might take minutes for first scan of HDD but after that new scan will take just a few seconds.
-Here are some test results with time in seconds that takes to fully scan partition that I made on my PC.
-
-|   Platform  | Files | SpaceDisplay | File Manager |
-|:-----------:|-------|:------------:|:------------:|
-|  Windows 10 | 369K  |     2.6s     |      22s     |
-| Manjaro KDE | 300K  |     0.8s     |     2.3s     |
-
-SpaceDisplay is also lightweight in terms of memory usage. To scan 1 million files it uses about 160MB of RAM.
 
 Acknowledgements
 ----------------
