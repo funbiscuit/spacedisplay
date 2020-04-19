@@ -49,13 +49,15 @@ void SpaceScanner::worker_run()
         // temporary queue for entries so we only lock mutex to add reasonable number of entries
         // instead of locking for each entry
         std::vector<ScannedEntry> scannedEntries;
+        FilePath path("/");
         while(!scanQueue.empty() && runWorker && scannerStatus==ScannerStatus::SCANNING)
         {
             auto entry = scanQueue.front();
             scanQueue.pop_front();
+            entry->getPath(path);
             dbLock.unlock();
 
-            update_entry_children(entry, scannedEntries);
+            scanChildrenAt(path, scannedEntries);
 
             dbLock.lock();
 
@@ -70,18 +72,24 @@ void SpaceScanner::worker_run()
                     return e1.entry->get_size() > e2.entry->get_size();
                 });
             }
-            while(!scannedEntries.empty())
+
+            //if between two locks our structure changed, our previous pointer might be invalid
+            //so we need to find again entry, for which children were scanned
+            entry = rootFile->findEntry(&path);
+            if(entry)
             {
-                auto p = std::move(scannedEntries.back());
-                scannedEntries.pop_back();
+                while(!scannedEntries.empty())
+                {
+                    auto p = std::move(scannedEntries.back());
+                    scannedEntries.pop_back();
 
-                if(p.addToQueue)
-                    scanQueue.push_front(p.entry.get());
-                p.parent->add_child(std::move(p.entry));
-                ++fileCount;
-                hasPendingChanges = true;
+                    if(p.addToQueue)
+                        scanQueue.push_front(p.entry.get());
+                    entry->add_child(std::move(p.entry));
+                    ++fileCount;
+                    hasPendingChanges = true;
+                }
             }
-
             scannedSpace = rootFile->get_size();
         }
         dbLock.unlock();
@@ -95,13 +103,12 @@ void SpaceScanner::worker_run()
     std::cout << "End worker thread\n";
 }
 
-void SpaceScanner::update_entry_children(FileEntry* entry, std::vector<ScannedEntry>& scannedEntries)
+void SpaceScanner::scanChildrenAt(const FilePath& path, std::vector<ScannedEntry>& scannedEntries)
 {
-    std::string path;
-    entry->get_path(path);
+    auto pathStr = path.getPath();
 
     //TODO add check if iterator was constructed and we were able to open path
-    for(FileIterator it(path); it.is_valid(); ++it)
+    for(FileIterator it(pathStr); it.is_valid(); ++it)
     {
         auto fe=entryPool->create_entry(it.name, it.isDir);
         fe->set_size(it.size);
@@ -110,7 +117,7 @@ void SpaceScanner::update_entry_children(FileEntry* entry, std::vector<ScannedEn
         // this section is important for linux since not any path should be scanned (e.g. /proc or /sys)
         if(it.isDir && scannerStatus == ScannerStatus::SCANNING)
         {
-            std::string newPath = path;
+            std::string newPath = pathStr;
             if(newPath.back() != PlatformUtils::filePathSeparator)
                 newPath.push_back(PlatformUtils::filePathSeparator);
             newPath.append(it.name);
@@ -122,7 +129,7 @@ void SpaceScanner::update_entry_children(FileEntry* entry, std::vector<ScannedEn
                 std::cout<<"Skip scan of: "<<newPath<<"\n";
             }
         }
-        scannedEntries.push_back({std::move(fe), addToQueue, entry});
+        scannedEntries.push_back({std::move(fe), addToQueue});
     }
 }
 

@@ -37,7 +37,6 @@ class SpaceScanner {
     struct ScannedEntry {
         std::unique_ptr<FileEntry> entry;
         bool addToQueue;
-        FileEntry* parent;
     };
 
 public:
@@ -108,7 +107,14 @@ private:
     uint64_t totalSize=0;
 
     void worker_run();
-    void update_entry_children(FileEntry* entry, std::vector<ScannedEntry>& scannedEntries);
+
+    /**
+     * Performs a scan at given path, creates entry for each child and populates scannedEntries vector
+     * Scan is not recursive, only direct children are scanned
+     * @param path - FilePath where to perform scan
+     * @param scannedEntries - vector reference where to add scanned children
+     */
+    void scanChildrenAt(const FilePath& path, std::vector<ScannedEntry>& scannedEntries);
 
     /**
      * Creates root FileEntry at specified path. When called, existing root and all children should be already deleted
