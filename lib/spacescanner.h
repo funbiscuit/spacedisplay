@@ -37,6 +37,7 @@ class SpaceScanner {
     struct ScannedEntry {
         std::unique_ptr<FileEntry> entry;
         bool addToQueue;
+        std::unique_ptr<FilePath> path;
     };
 
 public:
@@ -84,7 +85,7 @@ private:
     std::unique_ptr<FileEntryPool> entryPool;
 
     //edits to queue should be mutex protected
-    std::list<FileEntry*> scanQueue;
+    std::list<std::unique_ptr<FilePath>> scanQueue;
 
     std::atomic<bool> hasPendingChanges;
 

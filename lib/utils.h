@@ -19,9 +19,9 @@ namespace Utils
     };
 
 
-    int _prof_meas(bool star, const char* message = nullptr);
+    int _prof_meas(bool star, const char* message = nullptr, int threshold = 0);
     void tic();
-    int toc(const char* message = nullptr);
+    int toc(const char* message = nullptr, int threshold = 0);
 
     std::string format_size(int64_t size);
 

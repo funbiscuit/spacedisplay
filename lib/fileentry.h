@@ -31,6 +31,10 @@ public:
         return size;
     }
 
+    uint16_t getNameCrc16() {
+        return nameCrc;
+    }
+
     /**
      * Adds child to children of this entry.
      * Adds to relevant place so all children are sorted by size (in decreasing order)

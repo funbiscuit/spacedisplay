@@ -49,15 +49,14 @@ void SpaceScanner::worker_run()
         // temporary queue for entries so we only lock mutex to add reasonable number of entries
         // instead of locking for each entry
         std::vector<ScannedEntry> scannedEntries;
-        FilePath path("/");
+
         while(!scanQueue.empty() && runWorker && scannerStatus==ScannerStatus::SCANNING)
         {
-            auto entry = scanQueue.front();
+            auto entryPath = std::move(scanQueue.front());
             scanQueue.pop_front();
-            entry->getPath(path);
             dbLock.unlock();
 
-            scanChildrenAt(path, scannedEntries);
+            scanChildrenAt(*entryPath, scannedEntries);
 
             dbLock.lock();
 
@@ -75,7 +74,7 @@ void SpaceScanner::worker_run()
 
             //if between two locks our structure changed, our previous pointer might be invalid
             //so we need to find again entry, for which children were scanned
-            entry = rootFile->findEntry(&path);
+            auto entry = rootFile->findEntry(entryPath.get());
             if(entry)
             {
                 while(!scannedEntries.empty())
@@ -84,7 +83,7 @@ void SpaceScanner::worker_run()
                     scannedEntries.pop_back();
 
                     if(p.addToQueue)
-                        scanQueue.push_front(p.entry.get());
+                        scanQueue.push_front(std::move(p.path));
                     entry->add_child(std::move(p.entry));
                     ++fileCount;
                     hasPendingChanges = true;
@@ -114,6 +113,7 @@ void SpaceScanner::scanChildrenAt(const FilePath& path, std::vector<ScannedEntry
         fe->set_size(it.size);
 
         bool addToQueue = it.isDir;
+        std::unique_ptr<FilePath> entryPath;
         // this section is important for linux since not any path should be scanned (e.g. /proc or /sys)
         if(it.isDir && scannerStatus == ScannerStatus::SCANNING)
         {
@@ -128,8 +128,13 @@ void SpaceScanner::scanChildrenAt(const FilePath& path, std::vector<ScannedEntry
                 addToQueue = false;
                 std::cout<<"Skip scan of: "<<newPath<<"\n";
             }
+            else
+            {
+                entryPath = Utils::make_unique<FilePath>(path);
+                entryPath->addDir(it.name, fe->getNameCrc16());
+            }
         }
-        scannedEntries.push_back({std::move(fe), addToQueue});
+        scannedEntries.push_back({std::move(fe), addToQueue, std::move(entryPath)});
     }
 }
 
@@ -294,7 +299,7 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     
     update_disk_space();//this will load all info about disk space (available, used, total)
 
-    scanQueue.push_back(rootFile.get());
+    scanQueue.push_back(Utils::make_unique<FilePath>(*rootPath));
     hasPendingChanges = true;
 
     return ScannerError::NONE;
@@ -315,7 +320,7 @@ void SpaceScanner::rescan_dir(const FilePath& path)
     //decrease file count by number of cached entries
     fileCount -= entry->clear_entry(entryPool.get());
     scannedSpace=rootFile->get_size();
-    scanQueue.push_back(entry);
+    scanQueue.push_back(Utils::make_unique<FilePath>(path));
     hasPendingChanges = true;
 }
 

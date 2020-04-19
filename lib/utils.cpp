@@ -41,7 +41,7 @@ void hex_to_rgbi_tint(int hex_color, int (&rgb)[3], float tint_factor)
         i = i + int(float(255 - i) * tint_factor);
 }
 
-int Utils::_prof_meas(bool start, const char* message)
+int Utils::_prof_meas(bool start, const char* message, int threshold)
 {
     static auto begin = std::chrono::high_resolution_clock::now();
 
@@ -51,6 +51,8 @@ int Utils::_prof_meas(bool start, const char* message)
     {
         auto end = std::chrono::high_resolution_clock::now();
         auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin).count();
+        if(dur<threshold)
+            return int(dur);
         if(message)
             std::cout << message << ": "<<dur<<"ms\n";
         else
@@ -65,9 +67,9 @@ void Utils::tic()
     Utils::_prof_meas(true);
 }
 
-int Utils::toc(const char* message)
+int Utils::toc(const char* message, int threshold)
 {
-    return Utils::_prof_meas(false, message);
+    return Utils::_prof_meas(false, message, threshold);
 }
 
 std::string Utils::format_size(int64_t size)
