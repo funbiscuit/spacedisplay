@@ -9,39 +9,17 @@ execute_process(COMMAND ${PYTHON_EXECUTABLE}
         ${PROJECT_SOURCE_DIR}/res                                       #work directory where resources are stored
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-find_package (Threads REQUIRED)
-
-if( WIN32 )
-    set(QT_WIN_PATH "C:\\" CACHE STRING "Path to installed qt binaries")
-    set(WIN32_CONSOLE "On" CACHE STRING "Enable default windows console")
-    message(STATUS "Looking for installed Qt5 at the following path:\n" ${QT_WIN_PATH})
-    set(CMAKE_PREFIX_PATH ${QT_WIN_PATH})
-endif()
-
-find_package(Qt5 COMPONENTS Core Widgets Svg REQUIRED)
-
 add_executable(spacedisplay src/main.cpp)
-
-target_compile_features(spacedisplay PUBLIC cxx_std_11)
-set_target_properties(spacedisplay PROPERTIES
-        CXX_EXTENSIONS OFF
-        AUTOMOC ON)
 
 add_subdirectory(deps/pfd)
 
-add_subdirectory(src)
+add_subdirectory(lib)
 add_subdirectory(res)
 
-target_include_directories(spacedisplay PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/stb
-        )
-
-target_link_libraries(spacedisplay PRIVATE
-        Threads::Threads Qt5::Widgets Qt5::Svg
-        portable_file_dialogs SpacedisplayRes::SpacedisplayRes
-        )
+target_link_libraries(spacedisplay PRIVATE spacedisplay_lib)
 
 if( WIN32 )
+    set(WIN32_CONSOLE "On" CACHE STRING "Enable default windows console")
     # On Windows disable console if not needed
     if(NOT ${WIN32_CONSOLE})
         message(STATUS "Console is disabled")
