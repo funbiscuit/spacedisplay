@@ -133,24 +133,9 @@ void FilePath::normalize(std::string& path, bool keepTrailingSlash)
 {
     // make all slashes correct for this platform
     std::replace(path.begin(), path.end(), PlatformUtils::invertedFilePathSeparator, PlatformUtils::filePathSeparator);
-    
-    char prevChar = '\0';
-    
-    auto it = path.begin();
-    
-    // remove all repeating slashes
-    while (it != path.end())
-    {
-        char c = *it;
-        if(prevChar == c && c == PlatformUtils::filePathSeparator)
-            it=path.erase(it);
-        else
-            ++it;
-        prevChar = c;
-    }
-    
-    if(!keepTrailingSlash && prevChar == PlatformUtils::filePathSeparator)
+
+    if(!keepTrailingSlash && path.back() == PlatformUtils::filePathSeparator)
         path.pop_back();
-    else if(keepTrailingSlash && prevChar != PlatformUtils::filePathSeparator)
+    else if(keepTrailingSlash && path.back() != PlatformUtils::filePathSeparator)
         path.push_back(PlatformUtils::filePathSeparator);
 }

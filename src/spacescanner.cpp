@@ -260,7 +260,7 @@ bool SpaceScanner::create_root_entry(const std::string& path)
         return true;
     }
 
-    return true;
+    return false;
 }
 
 ScannerError SpaceScanner::scan_dir(const std::string &path)

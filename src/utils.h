@@ -42,6 +42,13 @@ namespace Utils
      */
     std::string select_folder(const std::string& title);
 
+    /**
+     * Show's user some message text
+     * @param title of message box
+     * @param text in message box
+     */
+    void message_box(const std::string& title, const std::string& text);
+
      /**
       * Checks if given value is inside the array
       * @tparam T type of value

@@ -219,9 +219,19 @@ bool SpaceView::updateHoveredView(FileEntryView* prevHovered)
 void SpaceView::setScanner(SpaceScanner* _scanner)
 {
     scanner=_scanner;
-    currentPath = Utils::make_unique<FilePath>(*(scanner->getRootPath()));
     clearHistory();
-    historyPush();
+    if(scanner)
+    {
+        currentPath = Utils::make_unique<FilePath>(*(scanner->getRootPath()));
+        historyPush();
+    }
+    else
+    {
+        currentPath.reset();
+        hoveredEntry = nullptr;
+        tooltipEntry = nullptr;
+        root = nullptr;
+    }
     onScanUpdate();
 }
 

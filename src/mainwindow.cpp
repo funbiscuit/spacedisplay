@@ -9,6 +9,7 @@
 #include "resource_builder/resources.h"
 #include "resources.h"
 #include "colortheme.h"
+#include "platformutils.h"
 
 
 MainWindow::ActionMask operator|(MainWindow::ActionMask lhs, MainWindow::ActionMask rhs)
@@ -152,8 +153,8 @@ void MainWindow::newScan()
         auto path = Utils::select_folder("Choose a directory to scan");
         if(!path.empty())
         {
-            if(path.back() != '/' && path.back() != '\\')
-                path.append("/");
+            if(path.back() != PlatformUtils::filePathSeparator)
+                path.push_back(PlatformUtils::filePathSeparator);
             startScan(path);
         }
     });
@@ -192,9 +193,16 @@ void MainWindow::startScan(const std::string& path)
     toggleFreeAct->setChecked(false);
     spaceWidget->setShowUnknownSpace(isRootScanned);
     spaceWidget->setShowFreeSpace(false);
-    scanner->scan_dir(path);
-    spaceWidget->setScanner(scanner.get());
-    onScanUpdate();
+    if(scanner->scan_dir(path) == ScannerError::NONE)
+    {
+        spaceWidget->setScanner(scanner.get());
+        onScanUpdate();
+    } else
+    {
+        spaceWidget->setScanner(nullptr);
+        onScanUpdate();
+        Utils::message_box("Can't open path for scanning:", path);
+    }
 }
 
 void MainWindow::goBack()
