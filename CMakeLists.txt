@@ -16,6 +16,8 @@ add_subdirectory(deps/pfd)
 add_subdirectory(lib)
 add_subdirectory(res)
 
+add_subdirectory(tests)
+
 target_link_libraries(spacedisplay PRIVATE spacedisplay_lib)
 
 if( WIN32 )

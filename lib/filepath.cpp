@@ -12,6 +12,11 @@ FilePath::FilePath(const std::string& root_)
 
 void FilePath::setRoot(const std::string& root_)
 {
+    if(root_.empty())
+    {
+        std::cerr << "Can't create path from empty root!\n";
+        return;
+    }
     std::string root = root_;
     
     // replaces all incorrect slashes if any and adds slash at the end if it wasn't there
