@@ -37,10 +37,7 @@ void SpaceView::paintEvent(QPaintEvent *event)
 
     if(root)
     {
-        auto fm = painter.fontMetrics();
-
-        textHeight = fm.height();
-        painter.fillRect(0, 0, width, height, colorTheme->background);
+        textHeight = painter.fontMetrics().height();
 //        Utils::tic();
         drawView(painter, root, currentDepth, true);
 //        Utils::toc();
@@ -50,7 +47,7 @@ void SpaceView::paintEvent(QPaintEvent *event)
         painter.drawPixmap(x0,y0, bgIcon);
         auto col = colorTheme->background;
         col.setAlpha(150);
-        painter.fillRect(0, 0, width, height, col);
+        painter.fillRect(x0, y0, bgIcon.width(), bgIcon.height(), col);
     }
 }
 
