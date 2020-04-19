@@ -91,6 +91,7 @@ void SpaceScanner::worker_run()
             }
             scannedSpace = rootFile->get_size();
         }
+        scanQueue.clear();
         dbLock.unlock();
 
         auto stop   = high_resolution_clock::now();
@@ -239,7 +240,6 @@ void SpaceScanner::stop_scan()
         std::lock_guard<std::mutex> lock_mtx(mtx);
         if(scannerStatus!=ScannerStatus::STOPPING && scannerStatus!=ScannerStatus::IDLE)
             scannerStatus=ScannerStatus::STOPPING;
-        scanQueue.clear();
     }
     //wait until everything is stopped
     while(scannerStatus!=ScannerStatus::IDLE)
