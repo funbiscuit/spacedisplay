@@ -24,6 +24,7 @@ add_library(spacedisplay_lib STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/spaceview.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/statusview.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
+        ${PROJECT_SOURCE_DIR}/deps/crc/crc_16.c
         )
 
 
@@ -36,6 +37,7 @@ set_target_properties(spacedisplay_lib PROPERTIES
 target_include_directories(spacedisplay_lib
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
         PRIVATE ${PROJECT_SOURCE_DIR}/deps/stb
+        PRIVATE ${PROJECT_SOURCE_DIR}/deps/crc
         )
 
 target_link_libraries(spacedisplay_lib PRIVATE

@@ -14,8 +14,9 @@ public:
      * At the end file can be appended (then nothing else could be appended, until file is popped)
      * String will be normalized (all slashes replaced with platform specific slashes)
      * @param root - root for constructed path (e.g. `D:\`, `/` or `/home/user`)
+     * @param crc - crc of given string
      */
-    explicit FilePath(const std::string& root);
+    explicit FilePath(const std::string& root, uint16_t crc = 0);
     
     /**
      * Returns correct path to this file or directory
@@ -28,6 +29,7 @@ public:
     std::string getRoot() const;
 
     const std::vector<std::string>& getParts() const;
+    const std::vector<uint16_t>& getCrs() const;
 
     /**
      * Returns name of file or directory this path is pointing to.
@@ -40,16 +42,18 @@ public:
     /**
      * Adds directory to the end of the path. If path already ends with file, returns false
      * @param name of the directory
+     * @param crc - crc of given string
      * @return true on success, false otherwise
      */
-    bool addDir(const std::string& name);
+    bool addDir(const std::string& name, uint16_t crc = 0);
     
     /**
      * Adds file to the end of the path. If path already ends with file, exception is thrown.
      * After file is added, nothing else can be added.
      * @param name of the directory
+     * @param crc - crc of given string
      */
-    bool addFile(const std::string& name);
+    bool addFile(const std::string& name, uint16_t crc = 0);
     
     /**
      * Checks if current path is pointing to directory or not
@@ -73,8 +77,9 @@ public:
     /**
      * Sets new root for the path. All previous information is deleted.
      * @param root - new root
+     * @param crc - crc of given string
      */
-    void setRoot(const std::string& root_);
+    void setRoot(const std::string& root_, uint16_t crc = 0);
 
 private:
     
@@ -88,6 +93,7 @@ private:
      */
     std::vector<std::string> parts;
 
+    std::vector<uint16_t> partCrcs;
     
     /**
      * Converts all slashes to platform correct ones, removes unnecessary slashes.

@@ -7,6 +7,10 @@
 #include "fileentrypool.h"
 #include "platformutils.h"
 
+extern "C" {
+#include <crc.h>
+}
+
 FileEntry::FileEntry(std::unique_ptr<char[]> name_, bool isDir_) :
         isDir(false), size(0), parent(nullptr)
 {
@@ -17,6 +21,7 @@ void FileEntry::reconstruct(std::unique_ptr<char[]> name_, bool isDir_)
 {
     size = 0;
     name = std::move(name_);
+    nameCrc = crc16(name.get(), strlen(name.get()));
     isDir = isDir_;
     parent = nullptr;
 }
@@ -102,6 +107,20 @@ void FileEntry::get_path(std::string& _path) {
     }
     else
         _path = name.get();
+}
+
+void FileEntry::getPath(FilePath& _path) {
+
+    if(parent)
+    {
+        parent->getPath(_path);
+        if(isDir)
+            _path.addDir(name.get(), nameCrc);
+        else
+            _path.addFile(name.get(), nameCrc);
+    }
+    else
+        _path.setRoot(name.get(), nameCrc);
 }
 
 void FileEntry::on_child_size_changed(FileEntry* child, int64_t sizeChange) {
@@ -205,6 +224,7 @@ FileEntry* FileEntry::findEntry(const FilePath* path)
     auto& parts = path->getParts();
     if(parts.empty())
         return nullptr;
+    auto& partCrcs = path->getCrs();
 
     //provided path should have the same root as name of this child since this function
     //should be called only from root entry
@@ -218,14 +238,17 @@ FileEntry* FileEntry::findEntry(const FilePath* path)
         auto child = currentParent->firstChild.get();
         auto& part = parts[i];
         bool isPartDir = part.back() == PlatformUtils::filePathSeparator;
+        // part that is dir will have slash at the end so its length will be bigger by 1
+        auto partLen = isPartDir ? (part.length()-1) : part.length();
+        auto partCrc = partCrcs[i];
+
         entryFound = false;
         while(child)
         {
-            auto len = strlen(child->name.get());
-
-            // part that is dir will have slash at the end so its length must be bigger by 1
-            if(((isPartDir && part.length() == (len+1)) || (!isPartDir && part.length() == len))
-               && strncmp(part.c_str(), child->name.get(), len) == 0)
+            //when crcs match in about 99.9% cases names will match either
+            if(partCrc == child->nameCrc
+               && strncmp(part.c_str(), child->name.get(), partLen) == 0
+               && child->name[partLen] == '\0')
             {
                 entryFound = true;
                 currentParent = child;

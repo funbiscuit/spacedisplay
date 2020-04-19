@@ -26,6 +26,7 @@ public:
     }
     
     void get_path(std::string& _path);
+    void getPath(FilePath& _path);
     int64_t get_size() {
         return size;
     }
@@ -70,6 +71,7 @@ private:
     std::unique_ptr<FileEntry> firstChild;
     std::unique_ptr<FileEntry> nextEntry;
     bool isDir;
+    uint16_t nameCrc; //actually 8bits would be enough, but it doesn't matter for object size
     int64_t size;
     //not using std::string to reduce memory consumption (there are might be millions of entries so each byte counts)
     std::unique_ptr<char[]> name;

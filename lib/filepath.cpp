@@ -4,13 +4,16 @@
 #include "filepath.h"
 #include "platformutils.h"
 
+extern "C" {
+#include <crc.h>
+}
 
-FilePath::FilePath(const std::string& root_)
+FilePath::FilePath(const std::string& root_, uint16_t crc)
 {
     setRoot(root_);
 }
 
-void FilePath::setRoot(const std::string& root_)
+void FilePath::setRoot(const std::string& root_, uint16_t crc)
 {
     if(root_.empty())
     {
@@ -28,7 +31,11 @@ void FilePath::setRoot(const std::string& root_)
         return;
     }
     parts.clear();
+    partCrcs.clear();
     parts.push_back(root);
+    if(crc == 0)
+        crc = crc16((char*)root.c_str(), root.length());
+    partCrcs.push_back(crc);
 }
 
 std::string FilePath::getPath(bool addDirSlash) const
@@ -79,7 +86,12 @@ const std::vector<std::string>& FilePath::getParts() const
     return parts;
 }
 
-bool FilePath::addDir(const std::string& name)
+const std::vector<uint16_t>& FilePath::getCrs() const
+{
+    return partCrcs;
+}
+
+bool FilePath::addDir(const std::string& name, uint16_t crc)
 {
     if(name.empty())
     {
@@ -95,10 +107,14 @@ bool FilePath::addDir(const std::string& name)
     // every part that is a directory should have slash at the end
     if(parts.back().back() != PlatformUtils::filePathSeparator)
         parts.back().push_back(PlatformUtils::filePathSeparator);
+
+    if(crc == 0)
+        crc = crc16((char*)name.c_str(), name.length());
+    partCrcs.push_back(crc);
     return true;
 }
 
-bool FilePath::addFile(const std::string& name)
+bool FilePath::addFile(const std::string& name, uint16_t crc)
 {
     if(name.empty())
     {
@@ -111,6 +127,9 @@ bool FilePath::addFile(const std::string& name)
         return false;
     }
     parts.push_back(name);
+    if(crc == 0)
+        crc = crc16((char*)name.c_str(), name.length());
+    partCrcs.push_back(crc);
     return true;
 }
 

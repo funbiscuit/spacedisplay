@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8...3.17)
 
-project(spacedisplay LANGUAGES CXX)
+project(spacedisplay LANGUAGES C CXX)
 
 #compile resources
 find_package( PythonInterp 3.0 REQUIRED )
