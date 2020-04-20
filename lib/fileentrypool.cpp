@@ -18,7 +18,8 @@ std::unique_ptr<FileEntry> FileEntryPool::create_entry(const std::string& name, 
         auto chars=Utils::make_unique_arr<char>(nameLen+1);
         memcpy(chars.get(), name.c_str(), (nameLen+1)*sizeof(char));
 
-        t = Utils::make_unique<FileEntry>(std::move(chars), isDir);
+        // using manual creation because constructor of FileEntry is private
+        t = std::unique_ptr<FileEntry>(new FileEntry(std::move(chars), isDir));
     }
     else
     {

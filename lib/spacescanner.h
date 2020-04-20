@@ -22,7 +22,6 @@ enum class ScannerStatus {
 class FileEntry;
 class FilePath;
 class FileEntryView;
-class FileEntryPool;
 
 enum class ScannerError
 {
@@ -82,7 +81,6 @@ private:
     std::atomic<uint64_t> scannedSpace;
     // mutex used to protect access to rootFile and scanQueue
     std::mutex mtx;
-    std::unique_ptr<FileEntryPool> entryPool;
 
     //edits to queue should be mutex protected
     std::list<std::unique_ptr<FilePath>> scanQueue;

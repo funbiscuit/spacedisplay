@@ -6,10 +6,13 @@
 #include "filepath.h"
 #include "fileentrypool.h"
 #include "platformutils.h"
+#include "utils.h"
 
 extern "C" {
 #include <crc.h>
 }
+
+std::unique_ptr<FileEntryPool> FileEntry::entryPool;
 
 FileEntry::FileEntry(std::unique_ptr<char[]> name_, bool isDir_) :
         isDir(false), size(0), parent(nullptr)
@@ -21,9 +24,26 @@ void FileEntry::reconstruct(std::unique_ptr<char[]> name_, bool isDir_)
 {
     size = 0;
     name = std::move(name_);
-    nameCrc = crc16(name.get(), strlen(name.get()));
+    nameCrc = crc16(name.get(), (uint16_t) strlen(name.get()));
     isDir = isDir_;
     parent = nullptr;
+}
+
+std::unique_ptr<FileEntry> FileEntry::createEntry(const std::string& name_, bool isDir_)
+{
+    // it should be safe to initialize here since entries should be created only from this function
+    // so no entry methods could be called before this initialization
+    //TODO probably should make thread safe
+    if(!entryPool)
+        entryPool = Utils::make_unique<FileEntryPool>();
+    return entryPool->create_entry(name_, isDir_);
+}
+
+int64_t FileEntry::deleteEntryChain(std::unique_ptr<FileEntry> firstEntry)
+{
+    if(firstEntry)
+        return entryPool->cache_children(std::move(firstEntry));
+    return 0;
 }
 
 FileEntry::~FileEntry() {
@@ -72,7 +92,7 @@ void FileEntry::add_child(std::unique_ptr<FileEntry> child) {
         parent->on_child_size_changed(this, childSize);
 }
 
-int64_t FileEntry::clear_entry(FileEntryPool* pool)
+int64_t FileEntry::deleteChildren()
 {
     int64_t childrenSize =0;
     auto ch=firstChild.get();
@@ -87,12 +107,7 @@ int64_t FileEntry::clear_entry(FileEntryPool* pool)
 
     size -= childrenSize;
 
-    int64_t cachedEntries = 0;
-
-    if(firstChild)
-        cachedEntries = pool->cache_children(std::move(firstChild));
-
-    return cachedEntries;
+    return FileEntry::deleteEntryChain(std::move(firstChild));
 }
 
 void FileEntry::get_path(std::string& _path) {

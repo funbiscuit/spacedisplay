@@ -3,7 +3,6 @@
 #include "fileentry.h"
 #include "filepath.h"
 #include "fileentryview.h"
-#include "fileentrypool.h"
 #include "platformutils.h"
 
 #include <fstream>
@@ -13,7 +12,6 @@
 SpaceScanner::SpaceScanner() :
         scannerStatus(ScannerStatus::IDLE), rootAvailable(false)
 {
-    entryPool = Utils::make_unique<FileEntryPool>();
     //Start thread after everything is initialized
     workerThread=std::thread(&SpaceScanner::worker_run, this);
 }
@@ -110,7 +108,7 @@ void SpaceScanner::scanChildrenAt(const FilePath& path, std::vector<ScannedEntry
     //TODO add check if iterator was constructed and we were able to open path
     for(FileIterator it(pathStr); it.is_valid(); ++it)
     {
-        auto fe=entryPool->create_entry(it.name, it.isDir);
+        auto fe=FileEntry::createEntry(it.name, it.isDir);
         fe->set_size(it.size);
 
         bool addToQueue = it.isDir;
@@ -152,7 +150,7 @@ void SpaceScanner::reset_database()
     std::lock_guard<std::mutex> lock_mtx(mtx);
     fileCount=0;
     scannedSpace = 0;
-    entryPool->cache_children(std::move(rootFile));
+    FileEntry::deleteEntryChain(std::move(rootFile));
     rootAvailable=false;
 }
 
@@ -266,7 +264,7 @@ bool SpaceScanner::create_root_entry(const std::string& path)
 
     if(PlatformUtils::can_scan_dir(path))
     {
-        rootFile=entryPool->create_entry(path, true);
+        rootFile=FileEntry::createEntry(path, true);
         rootAvailable = true;
         fileCount=1;
         return true;
@@ -318,7 +316,7 @@ void SpaceScanner::rescan_dir(const FilePath& path)
     update_disk_space();//disk space might change since last update, so update it again
 
     //decrease file count by number of cached entries
-    fileCount -= entry->clear_entry(entryPool.get());
+    fileCount -= entry->deleteChildren();
     scannedSpace=rootFile->get_size();
     scanQueue.push_back(Utils::make_unique<FilePath>(path));
     hasPendingChanges = true;

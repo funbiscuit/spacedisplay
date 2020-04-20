@@ -13,12 +13,22 @@ class FilePath;
 
 class FileEntry {
 
-public:
     FileEntry(std::unique_ptr<char[]> name_, bool isDir_);
+public:
     ~FileEntry();
 
     void reconstruct(std::unique_ptr<char[]> name_, bool isDir_);
-    
+
+    static std::unique_ptr<FileEntry> createEntry(const std::string& name_, bool isDir_);
+
+    /**
+     * Deletes (or caches) all entries (and their children) in chain
+     * entry->nextEntry->nextEntry and so on
+     * @param firstEntry
+     * @@return number of deleted (or cached) entries
+     */
+    static int64_t deleteEntryChain(std::unique_ptr<FileEntry> firstEntry);
+
     void set_size(int64_t size);
 
     const char* get_name() {
@@ -61,16 +71,22 @@ public:
         return std::move(nextEntry);
     }
 
-    int64_t clear_entry(FileEntryPool* pool);
+    int64_t deleteChildren();
     
     bool is_dir() const {
         return isDir;
     }
 
 private:
-    
+
     void on_child_size_changed(FileEntry* child, int64_t sizeChange);
-    
+
+    /**
+     * Pool for creating and caching entries.
+     * Entries should not be destroyed
+     */
+    static std::unique_ptr<FileEntryPool> entryPool;
+
     FileEntry* parent;
     std::unique_ptr<FileEntry> firstChild;
     std::unique_ptr<FileEntry> nextEntry;
