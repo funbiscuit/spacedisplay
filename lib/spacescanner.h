@@ -22,6 +22,7 @@ enum class ScannerStatus {
 class FileEntry;
 class FilePath;
 class FileEntryView;
+class FileDB;
 
 enum class ScannerError
 {
@@ -40,7 +41,6 @@ public:
     ScannerError scan_dir(const std::string &path);
 
     void stop_scan();
-    void reset_database();
 
     void rescan_dir(const FilePath& folder_path);
 
@@ -60,26 +60,15 @@ public:
 
     const FilePath* getRootPath() const;
 
-    uint64_t get_total_space();
-    uint64_t get_free_space();
-    uint64_t get_scanned_space();
+    void getSpace(uint64_t& used, uint64_t& available, uint64_t& total) const;
 
 private:
     std::thread workerThread;
     std::atomic<bool> runWorker;
-    // used to indicate that rootFile is valid
-    std::atomic<bool> rootAvailable;
-
-    uint64_t totalSpace = 0;
-    uint64_t freeSpace = 0;
-    std::atomic<uint64_t> scannedSpace;
-    // mutex used to protect access to rootFile and scanQueue
-    std::mutex mtx;
+    std::mutex scanMtx;
 
     //edits to queue should be mutex protected
     std::list<std::unique_ptr<FilePath>> scanQueue;
-
-    std::atomic<bool> hasPendingChanges;
 
     std::vector<std::string> availableRoots;
     /**
@@ -94,10 +83,7 @@ private:
     void update_disk_space();
 
     std::atomic<ScannerStatus> scannerStatus;
-    std::unique_ptr<FileEntry> rootFile;
-    std::unique_ptr<FilePath> rootPath;
-    uint64_t fileCount=0;
-    uint64_t totalSize=0;
+    std::unique_ptr<FileDB> db;
 
     void worker_run();
 
@@ -110,13 +96,6 @@ private:
     void scanChildrenAt(const FilePath& path,
             std::vector<std::unique_ptr<FileEntry>>& scannedEntries
             );
-
-    /**
-     * Creates root FileEntry at specified path. When called, existing root and all children should be already deleted
-     * @param path - global path to root dir
-     * @return true if rootFile is created, false if unsuccessful
-     */
-    bool create_root_entry(const std::string& path);
 };
 
 

@@ -14,6 +14,7 @@ add_library(spacedisplay_lib STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/mainapp.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/colortheme.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/fileentry.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/filedb.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/fileentrypool.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/fileentrypopup.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/fileentryview.cpp

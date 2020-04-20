@@ -15,7 +15,7 @@ extern "C" {
 std::unique_ptr<FileEntryPool> FileEntry::entryPool;
 
 FileEntry::FileEntry(std::unique_ptr<char[]> name_, bool isDir_) :
-        isDir(false), size(0), parent(nullptr)
+        isDir(false), size(0), parent(nullptr), nameCrc(0)
 {
     reconstruct(std::move(name_), isDir_);
 }
@@ -44,16 +44,6 @@ int64_t FileEntry::deleteEntryChain(std::unique_ptr<FileEntry> firstEntry)
     if(firstEntry)
         return entryPool->cache_children(std::move(firstEntry));
     return 0;
-}
-
-FileEntry::~FileEntry() {
-    //if name is valid, it's okay for it to destroy here but entry should be detached from main tree
-    //but even in such case there should be no leak because both firstChild and nextEntry are
-    //unique_ptr's so they will start destroying recursively
-    if(firstChild)
-        std::cerr << "Possible memory leak. Entry has children and was destroyed!\n";
-    if(nextEntry)
-        std::cerr << "Possible memory leak. Entry has next entry and was destroyed!\n";
 }
 
 void FileEntry::set_size(int64_t size_) {
@@ -108,20 +98,6 @@ int64_t FileEntry::deleteChildren()
     size -= childrenSize;
 
     return FileEntry::deleteEntryChain(std::move(firstChild));
-}
-
-void FileEntry::get_path(std::string& _path) {
-
-    if(parent)
-    {
-        parent->get_path(_path);
-
-        if(_path.back()!=PlatformUtils::filePathSeparator)
-            _path.push_back(PlatformUtils::filePathSeparator);
-        _path.append(name.get());
-    }
-    else
-        _path = name.get();
 }
 
 void FileEntry::getPath(FilePath& _path) {

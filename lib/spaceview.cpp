@@ -418,15 +418,12 @@ void SpaceView::leaveEvent(QEvent *event)
     repaint();
 }
 
-uint64_t SpaceView::getHiddenSize()
+uint64_t SpaceView::getDisplayedUsed()
 {
-    if(!root || !scanner || isAtRoot())
+    if(!root || !scanner)
         return 0;
 
-    auto scanned = (int64_t) scanner->get_scanned_space();
-    if(scanned<=root->get_size())
-        return 0;
-    return scanned-root->get_size();
+    return (uint64_t)root->get_size();
 }
 
 void SpaceView::navigateHome()

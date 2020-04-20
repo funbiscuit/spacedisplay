@@ -79,7 +79,7 @@ public:
      */
     bool canDecreaseDetail();
 
-    uint64_t getHiddenSize();
+    uint64_t getDisplayedUsed();
 
     void setShowFreeSpace(bool showFree);
     void setShowUnknownSpace(bool showUnknown);

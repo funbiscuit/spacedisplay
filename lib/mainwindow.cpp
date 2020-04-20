@@ -95,12 +95,16 @@ void MainWindow::onScanUpdate()
 
 void MainWindow::updateStatusView()
 {
-    auto total=(float)scanner->get_total_space();
-    auto free=(float)scanner->get_free_space();
-    auto scannedHidden=(float)spaceWidget->getHiddenSize();
-    auto scannedVisible=(float)scanner->get_scanned_space();
-    float unknown= total - free - scannedVisible;
-    scannedVisible-=scannedHidden;
+    uint64_t used, available, total;
+    scanner->getSpace(used, available, total);
+
+    uint64_t scannedHidden=0;
+    auto displayedUsed = spaceWidget->getDisplayedUsed();
+    if(displayedUsed<used && !spaceWidget->isAtRoot())
+        scannedHidden = used-displayedUsed;
+
+    auto unknown= total - available - used;
+    auto scannedVisible = used - scannedHidden;
 
     bool isAtRoot = spaceWidget->isAtRoot();
 
@@ -108,19 +112,18 @@ void MainWindow::updateStatusView()
     statusView->showFree= toggleFreeAct->isChecked() && isAtRoot;
     statusView->showUnknown= toggleUnknownAct->isChecked() && isAtRoot;
     statusView->scanOpened=scanner->is_loaded();
-    statusView->set_progress(!scanner->is_loaded() || scanner->can_refresh(), scanner->get_scan_progress());
-    statusView->set_sizes(isAtRoot, scannedVisible, scannedHidden, free, unknown);
+    statusView->set_progress(!scanner->is_loaded() || scanner->can_refresh(),
+            scanner->get_scan_progress());
+    statusView->set_sizes(isAtRoot, (float) scannedVisible,(float) scannedHidden,
+            (float) available,(float) unknown);
     statusView->repaint();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    if(scanner->is_running())
-    {
-        scanner->stop_scan();
-    }
+    scanner->stop_scan();
     //maybe not really needed since system will free all memory by itself
-    scanner->reset_database();
+    //scanner->reset_database();
 
     writeSettings();
     event->accept();

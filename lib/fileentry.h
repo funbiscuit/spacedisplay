@@ -15,7 +15,6 @@ class FileEntry {
 
     FileEntry(std::unique_ptr<char[]> name_, bool isDir_);
 public:
-    ~FileEntry();
 
     void reconstruct(std::unique_ptr<char[]> name_, bool isDir_);
 
@@ -31,17 +30,13 @@ public:
 
     void set_size(int64_t size);
 
-    const char* get_name() {
-        return name.get();
-    }
-    
-    void get_path(std::string& _path);
     void getPath(FilePath& _path);
-    int64_t get_size() {
+
+    int64_t get_size() const {
         return size;
     }
 
-    uint16_t getNameCrc16() {
+    uint16_t getNameCrc16() const{
         return nameCrc;
     }
 
@@ -75,6 +70,10 @@ public:
     
     bool is_dir() const {
         return isDir;
+    }
+
+    bool isRoot() const {
+        return parent == nullptr;
     }
 
 private:
