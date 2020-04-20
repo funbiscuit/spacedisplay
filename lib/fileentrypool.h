@@ -4,7 +4,6 @@
 
 #include <unordered_map>
 #include <memory>
-#include "fileentry.h"
 
 class FileEntry;
 

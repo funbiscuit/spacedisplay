@@ -33,12 +33,6 @@ enum class ScannerError
 
 class SpaceScanner {
 
-    struct ScannedEntry {
-        std::unique_ptr<FileEntry> entry;
-        bool addToQueue;
-        std::unique_ptr<FilePath> path;
-    };
-
 public:
 
     SpaceScanner();
@@ -113,7 +107,9 @@ private:
      * @param path - FilePath where to perform scan
      * @param scannedEntries - vector reference where to add scanned children
      */
-    void scanChildrenAt(const FilePath& path, std::vector<ScannedEntry>& scannedEntries);
+    void scanChildrenAt(const FilePath& path,
+            std::vector<std::unique_ptr<FileEntry>>& scannedEntries
+            );
 
     /**
      * Creates root FileEntry at specified path. When called, existing root and all children should be already deleted

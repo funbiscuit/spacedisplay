@@ -3,6 +3,7 @@
 #include <iostream>
 #include "fileentrypool.h"
 #include "utils.h"
+#include "fileentry.h"
 
 FileEntryPool::FileEntryPool()
 {

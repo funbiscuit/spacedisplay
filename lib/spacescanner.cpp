@@ -46,7 +46,7 @@ void SpaceScanner::worker_run()
         auto start = high_resolution_clock::now();
         // temporary queue for entries so we only lock mutex to add reasonable number of entries
         // instead of locking for each entry
-        std::vector<ScannedEntry> scannedEntries;
+        std::vector<std::unique_ptr<FileEntry>> scannedEntries;
 
         while(!scanQueue.empty() && runWorker && scannerStatus==ScannerStatus::SCANNING)
         {
@@ -55,6 +55,8 @@ void SpaceScanner::worker_run()
             dbLock.unlock();
 
             scanChildrenAt(*entryPath, scannedEntries);
+            // after scan, all new paths, that should be scanned, will be added to queue
+            // so we should add all new entries to database, otherwise we will not be able to scan
 
             dbLock.lock();
 
@@ -64,9 +66,10 @@ void SpaceScanner::worker_run()
             // Presorting entries by size so we can insert them much quicker
             if(scannedEntries.size()>10)
             {
-                std::sort(scannedEntries.begin(), scannedEntries.end(), [](ScannedEntry& e1, ScannedEntry& e2)
+                std::sort(scannedEntries.begin(), scannedEntries.end(),
+                        [](const std::unique_ptr<FileEntry>& e1, const std::unique_ptr<FileEntry>& e2)
                 {
-                    return e1.entry->get_size() > e2.entry->get_size();
+                    return e1->get_size() > e2->get_size();
                 });
             }
 
@@ -77,12 +80,8 @@ void SpaceScanner::worker_run()
             {
                 while(!scannedEntries.empty())
                 {
-                    auto p = std::move(scannedEntries.back());
+                    entry->add_child(std::move(scannedEntries.back()));
                     scannedEntries.pop_back();
-
-                    if(p.addToQueue)
-                        scanQueue.push_front(std::move(p.path));
-                    entry->add_child(std::move(p.entry));
                     ++fileCount;
                     hasPendingChanges = true;
                 }
@@ -101,16 +100,13 @@ void SpaceScanner::worker_run()
     std::cout << "End worker thread\n";
 }
 
-void SpaceScanner::scanChildrenAt(const FilePath& path, std::vector<ScannedEntry>& scannedEntries)
+void SpaceScanner::scanChildrenAt(const FilePath& path, std::vector<std::unique_ptr<FileEntry>>& scannedEntries)
 {
     auto pathStr = path.getPath();
 
     //TODO add check if iterator was constructed and we were able to open path
     for(FileIterator it(pathStr); it.is_valid(); ++it)
     {
-        auto fe=FileEntry::createEntry(it.name, it.isDir);
-        fe->set_size(it.size);
-
         bool addToQueue = it.isDir;
         std::unique_ptr<FilePath> entryPath;
         // this section is important for linux since not any path should be scanned (e.g. /proc or /sys)
@@ -127,13 +123,16 @@ void SpaceScanner::scanChildrenAt(const FilePath& path, std::vector<ScannedEntry
                 addToQueue = false;
                 std::cout<<"Skip scan of: "<<newPath<<"\n";
             }
-            else
-            {
-                entryPath = Utils::make_unique<FilePath>(path);
-                entryPath->addDir(it.name, fe->getNameCrc16());
-            }
         }
-        scannedEntries.push_back({std::move(fe), addToQueue, std::move(entryPath)});
+        auto fe=FileEntry::createEntry(it.name, it.isDir);
+        fe->set_size(it.size);
+        if(addToQueue)
+        {
+            entryPath = Utils::make_unique<FilePath>(path);
+            entryPath->addDir(it.name, fe->getNameCrc16());
+            scanQueue.push_front(std::move(entryPath));
+        }
+        scannedEntries.push_back(std::move(fe));
     }
 }
 
@@ -211,9 +210,9 @@ void SpaceScanner::updateEntryView(FileEntryViewPtr& view, float minSizeRatio, u
         options.minSize = int64_t(float(fullSpace)*minSizeRatio);
         options.nestLevel = depth;
         if(view)
-            FileEntryView::updateView(view, *file, options);
+            FileEntryView::updateView(view, file, options);
         else
-            view= FileEntryView::createView(*file, options);
+            view= FileEntryView::createView(file, options);
     }
 }
 

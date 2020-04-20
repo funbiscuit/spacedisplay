@@ -8,10 +8,10 @@
 #include <vector>
 #include <string>
 #include "utils.h"
-#include "fileentry.h"
 #include "filepath.h"
 
 class FileEntryView;
+class FileEntry;
 
 /**
  * This class is intended to be used only inside shared pointer object!
@@ -41,8 +41,8 @@ public:
     FileEntryView(const FileEntryView&) = delete;
     ~FileEntryView();
 
-    static FileEntryViewPtr createView(const FileEntry& entry, const ViewOptions& options);
-    static void updateView(FileEntryViewPtr& copy, const FileEntry& entry, const ViewOptions& options);
+    static FileEntryViewPtr createView(const FileEntry* entry, const ViewOptions& options);
+    static void updateView(FileEntryViewPtr& copy, const FileEntry* entry, const ViewOptions& options);
 
     const char* get_name();
 
@@ -117,11 +117,11 @@ private:
      * @param nestLevel amount of nesting to copy (0 - only entry copied, 1 - entry+children, etc)
      * @param minSize minimum size of entry that should be copied. All other entries will not be copied
      */
-    FileEntryView(const FileEntry& entry, const ViewOptions& options);
+    FileEntryView(const FileEntry* entry, const ViewOptions& options);
     explicit FileEntryView();
 
-    void reconstruct_from(const FileEntry& entry, const ViewOptions& options);
-    void init_from(const FileEntry& entry);
+    void reconstruct_from(const FileEntry* entry, const ViewOptions& options);
+    void init_from(const FileEntry* entry);
 
     /**
      * Allocates children of this view inside specified rectangle

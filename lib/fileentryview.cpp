@@ -17,7 +17,7 @@ FileEntryView::FileEntryView() : drawArea{}, isHovered(false), isParentHovered(f
 }
 
 
-FileEntryView::FileEntryView(const FileEntry& entry, const ViewOptions& options) : FileEntryView()
+FileEntryView::FileEntryView(const FileEntry* entry, const ViewOptions& options) : FileEntryView()
 {
     reconstruct_from(entry, options);
 }
@@ -27,20 +27,20 @@ FileEntryView::~FileEntryView() {
 
 }
 
-void FileEntryView::init_from(const FileEntry& entry)
+void FileEntryView::init_from(const FileEntry* entry)
 {
-    size=entry.size;
-    name=entry.name.get();
+    size=entry->size;
+    name=entry->name.get();
     isHovered=false;
     isParentHovered=false;
-    entryType=entry.is_dir() ? EntryType::DIRECTORY : EntryType::FILE;
+    entryType=entry->is_dir() ? EntryType::DIRECTORY : EntryType::FILE;
     drawArea.x=0;
     drawArea.y=0;
     drawArea.w=0;
     drawArea.h=0;
 }
 
-void FileEntryView::reconstruct_from(const FileEntry& entry, const ViewOptions& options)
+void FileEntryView::reconstruct_from(const FileEntry* entry, const ViewOptions& options)
 {
     init_from(entry);
     parent= nullptr;
@@ -50,7 +50,7 @@ void FileEntryView::reconstruct_from(const FileEntry& entry, const ViewOptions& 
 
     if(options.nestLevel>0)
     {
-        auto child=entry.firstChild.get();
+        auto child=entry->firstChild.get();
         size_t childCount = 0;
         size_t existingChildCount = children.size();
         while (child!= nullptr)
@@ -114,11 +114,11 @@ void FileEntryView::reconstruct_from(const FileEntry& entry, const ViewOptions& 
 
             if(childCount<existingChildCount)
             {
-                updateView(children[childCount], *child, newOptions);
+                updateView(children[childCount], child, newOptions);
                 children[childCount]->parent = this;
             } else
             {
-                auto newChild = createView(*child, newOptions);
+                auto newChild = createView(child, newOptions);
                 newChild->parent = this;
                 children.push_back(newChild);
             }
@@ -493,12 +493,12 @@ void FileEntryView::set_child_rect(const FileEntryViewPtr& child, Utils::RectI &
     }
 }
 
-FileEntryViewPtr FileEntryView::createView(const FileEntry& entry, const ViewOptions& options)
+FileEntryViewPtr FileEntryView::createView(const FileEntry* entry, const ViewOptions& options)
 {
     return FileEntryViewPtr(new FileEntryView(entry, options));
 }
 
-void FileEntryView::updateView(FileEntryViewPtr& copy, const FileEntry& entry, const ViewOptions& options)
+void FileEntryView::updateView(FileEntryViewPtr& copy, const FileEntry* entry, const ViewOptions& options)
 {
     copy->reconstruct_from(entry, options);
 }
