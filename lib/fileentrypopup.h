@@ -7,13 +7,12 @@
 #include <functional>
 #include <string>
 
-#include "filepath.h"
-
 QT_BEGIN_NAMESPACE
 class QWidget;
 QT_END_NAMESPACE
 
 class SpaceScanner;
+class FilePath;
 
 class FileEntryPopup : public QObject
 {

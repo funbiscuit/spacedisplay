@@ -5,6 +5,7 @@
 #include <iostream>
 #include "fileentrypopup.h"
 #include "spacescanner.h"
+#include "filepath.h"
 #include "utils.h"
 #include "platformutils.h"
 

@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cmath>
 
+#include "filepath.h"
 #include "fileentry.h"
 #include "fileentryview.h"
 

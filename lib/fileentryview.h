@@ -8,9 +8,9 @@
 #include <vector>
 #include <string>
 #include "utils.h"
-#include "filepath.h"
 
 class FileEntryView;
+class FilePath;
 class FileEntry;
 
 /**
