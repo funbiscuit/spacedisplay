@@ -175,6 +175,6 @@ Qt5, LGPLv3, http://www.qt.io
 
 resource-builder, MIT license, https://github.com/funbiscuit/resource-builder
 
-stb, public domain, https://github.com/nothings/stb
+crc, public domain, https://github.com/panzi/CRC-and-checksum-functions
 
 portable file dialogs, WTFPL, https://github.com/samhocevar/portable-file-dialogs
