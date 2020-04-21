@@ -12,6 +12,7 @@ class FileEntryPool {
 
 public:
     FileEntryPool();
+    ~FileEntryPool();
 
     std::unique_ptr<FileEntry> create_entry(const std::string& name, bool isDir);
 

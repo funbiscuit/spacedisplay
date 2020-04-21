@@ -8,6 +8,12 @@
 FileEntryPool::FileEntryPool()
 {
 }
+FileEntryPool::~FileEntryPool()
+{
+    //TODO check if we should call this on exit
+    std::cout << "Cleaning up cache:\n";
+    cleanup_cache();
+}
 
 std::unique_ptr<FileEntry> FileEntryPool::create_entry(const std::string& name, bool isDir)
 {

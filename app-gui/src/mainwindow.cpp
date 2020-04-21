@@ -122,10 +122,6 @@ void MainWindow::updateStatusView()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    scanner->stop_scan();
-    //maybe not really needed since system will free all memory by itself
-    //scanner->reset_database();
-
     writeSettings();
     event->accept();
 }
@@ -169,10 +165,7 @@ void MainWindow::newScan()
 
 void MainWindow::startScan(const std::string& path)
 {
-    if(scanner->is_running())
-    {
-        scanner->stop_scan();
-    }
+    scanner->stop_scan();
 
     auto parts = scanner->get_available_roots();
     isRootScanned = false;

@@ -20,11 +20,9 @@ SpaceScanner::SpaceScanner() :
 SpaceScanner::~SpaceScanner()
 {
     runWorker = false;
+    scannerStatus=ScannerStatus::STOPPING;
     workerThread.join();
     db->clearDb();
-    //TODO check if we should call this on exit
-//    std::cout << "Cleaning up cache:\n";
-//    entryPool->cleanup_cache();
 }
 
 void SpaceScanner::worker_run()
@@ -37,7 +35,7 @@ void SpaceScanner::worker_run()
         scanLock.lock();
 
         using namespace std::chrono;
-        while(scanQueue.empty() && runWorker && scannerStatus==ScannerStatus::IDLE)
+        while(scanQueue.empty() && scannerStatus==ScannerStatus::IDLE)
         {
             scanLock.unlock();
             std::this_thread::sleep_for(milliseconds(20));
@@ -50,7 +48,7 @@ void SpaceScanner::worker_run()
         // instead of locking for each entry
         std::vector<std::unique_ptr<FileEntry>> scannedEntries;
 
-        while(!scanQueue.empty() && runWorker && scannerStatus==ScannerStatus::SCANNING)
+        while(!scanQueue.empty() && scannerStatus==ScannerStatus::SCANNING)
         {
             auto entryPath = std::move(scanQueue.front());
             scanQueue.pop_front();
