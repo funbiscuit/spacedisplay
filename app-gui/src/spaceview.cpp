@@ -32,6 +32,8 @@ SpaceView::SpaceView(MainWindow* parent) : QWidget(), parent(parent)
 
 }
 
+SpaceView::~SpaceView() {}
+
 void SpaceView::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);

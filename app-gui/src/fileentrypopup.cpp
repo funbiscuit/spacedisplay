@@ -35,6 +35,8 @@ FileEntryPopup::FileEntryPopup(QWidget* _parent) : parent(_parent)
 
 }
 
+FileEntryPopup::~FileEntryPopup() {}
+
 void FileEntryPopup::updateActions(SpaceScanner* scanner)
 {
     if(scanner)
