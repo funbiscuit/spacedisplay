@@ -5,13 +5,14 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "fileentryview.h"
 
 class SpaceScanner;
 class FileEntryPopup;
 class MainWindow;
 class ColorTheme;
 class FilePath;
+class FileViewDB;
+class FileEntryView;
 
 
 class SpaceView : public QWidget
@@ -110,13 +111,15 @@ protected:
 
     int currentDepth = 5;
     std::unique_ptr<FilePath> currentPath;
-    FileEntryViewPtr root=nullptr;
+    std::unique_ptr<FileViewDB> viewDB;
+    //TODO probably should store paths to entries instead of raw pointers
     FileEntryView* hoveredEntry=nullptr;
     FileEntryView* tooltipEntry = nullptr;
     SpaceScanner* scanner= nullptr;
 
     int textHeight = 0;
-    uint16_t fileEntryShowFlags = FileEntryView::INCLUDE_UNKNOWN_SPACE;
+    bool showAvailable = false;
+    bool showUnknown = true;
 
     void mousePressEvent(QMouseEvent *event) override;
 
@@ -131,12 +134,14 @@ protected:
 
     void allocateEntries();
 
+    void cleanupEntryPointers();
+
     bool updateHoveredView(FileEntryView* prevHovered = nullptr);
 
-    void drawView(QPainter& painter, const FileEntryViewPtr &file, int nestLevel, bool forceFill);
-    void drawViewTitle(QPainter& painter, const QColor& bg, const FileEntryViewPtr &file);
-    void drawViewText(QPainter& painter, const QColor& bg, const FileEntryViewPtr &file);
-    bool drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryViewPtr &file, bool fillDir);
+    void drawView(QPainter& painter, const FileEntryView& file, int nestLevel, bool forceFill);
+    void drawViewTitle(QPainter& painter, const QColor& bg, const FileEntryView& file);
+    void drawViewText(QPainter& painter, const QColor& bg, const FileEntryView& file);
+    bool drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryView& file, bool fillDir);
 
 };
 

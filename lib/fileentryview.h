@@ -44,7 +44,7 @@ public:
     static FileEntryViewPtr createView(const FileEntry* entry, const ViewOptions& options);
     static void updateView(FileEntryViewPtr& copy, const FileEntry* entry, const ViewOptions& options);
 
-    const char* get_name();
+    const char* getName() const;
 
     /**
      * Writes path to this entry to provided local root.
@@ -52,32 +52,32 @@ public:
      * Then provided root should have path to {dir3}. And returned path will be {root}/dir2/dir1/{entry name}
      * @param root - FilePath to local root. 
      */
-    void getPath(FilePath& root);
+    void getPath(FilePath& root) const;
 
-    int64_t get_size() {
+    int64_t get_size() const{
         return size;
     }
 
-    FileEntryView* get_parent() {
+    FileEntryView* get_parent() const{
         return parent;
     }
 
-    EntryType get_type()
+    EntryType get_type() const
     {
         return entryType;
     }
 
-    Utils::RectI get_draw_area()
+    Utils::RectI get_draw_area() const
     {
         return drawArea;
     }
 
-    FileEntryView* update_hovered_element(float mouseX, float mouseY);
+    FileEntryView* update_hovered_element(int mouseX, int mouseY);
     std::string format_size() const;
     std::string get_tooltip() const;
 
 
-    const std::vector<FileEntryViewPtr>&  get_children();
+    const std::vector<FileEntryViewPtr>&  get_children() const;
 
     bool is_dir() const{
         return entryType==EntryType::DIRECTORY;
@@ -86,8 +86,8 @@ public:
         return entryType==EntryType::FILE;
     }
 
-    QPixmap getNamePixmap(QPainter &painter, const QColor& color);
-    QPixmap getSizePixmap(QPainter &painter, const QColor& color);
+    QPixmap getNamePixmap(QPainter &painter, const QColor& color) const;
+    QPixmap getSizePixmap(QPainter &painter, const QColor& color) const;
     /**
      * If path is not nullptr then it will be used instead of entry name
      * @param painter
@@ -95,7 +95,7 @@ public:
      * @param path
      * @return
      */
-    QPixmap getTitlePixmap(QPainter &painter, const QColor& color, const char* path = nullptr);
+    QPixmap getTitlePixmap(QPainter &painter, const QColor& color, const char* path = nullptr) const;
 
     bool isHovered;
     bool isParentHovered;
@@ -137,18 +137,18 @@ private:
     void set_parent_hovered(bool hovered);
     void set_hovered(bool hovered);
 
-    void createNamePixmap(QPainter &painter, const QColor& color);
-    void createSizePixmap(QPainter &painter, const QColor& color);
-    void createTitlePixmap(QPainter &painter, const QColor& color, const char* path = nullptr);
+    void createNamePixmap(QPainter &painter, const QColor& color) const;
+    void createSizePixmap(QPainter &painter, const QColor& color) const;
+    void createTitlePixmap(QPainter &painter, const QColor& color, const char* path = nullptr) const;
 
-    QPixmap cachedNamePix;
-    std::string cachedName;
-    QColor cachedNameColor;
-    QPixmap cachedSizePix;
-    std::string cachedSize;
-    QColor cachedSizeColor;
-    QPixmap cachedTitlePix;
-    std::string cachedTitle;
+    mutable QPixmap cachedNamePix;
+    mutable std::string cachedName;
+    mutable QColor cachedNameColor;
+    mutable QPixmap cachedSizePix;
+    mutable std::string cachedSize;
+    mutable QColor cachedSizeColor;
+    mutable QPixmap cachedTitlePix;
+    mutable std::string cachedTitle;
 
     Utils::RectI drawArea;
 

@@ -9,6 +9,7 @@
 #include "resource_builder/resources.h"
 #include "resources.h"
 #include "colortheme.h"
+#include "utils.h"
 #include "platformutils.h"
 
 

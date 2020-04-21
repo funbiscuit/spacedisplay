@@ -114,6 +114,31 @@ void FileEntry::getPath(FilePath& _path) {
         _path.setRoot(name.get(), nameCrc);
 }
 
+int64_t FileEntry::get_size() const
+{
+    return size;
+}
+
+uint16_t FileEntry::getNameCrc16() const
+{
+    return nameCrc;
+}
+
+const char* FileEntry::getName() const
+{
+    return name.get();
+}
+
+const FileEntry* FileEntry::getFirstChild() const
+{
+    return firstChild.get();
+}
+
+const FileEntry* FileEntry::getNext() const
+{
+    return nextEntry.get();
+}
+
 void FileEntry::on_child_size_changed(FileEntry* child, int64_t sizeChange) {
     size+=sizeChange;
     

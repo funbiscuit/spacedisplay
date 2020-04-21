@@ -30,8 +30,8 @@ FileEntryView::~FileEntryView() {
 
 void FileEntryView::init_from(const FileEntry* entry)
 {
-    size=entry->size;
-    name=entry->name.get();
+    size=entry->get_size();
+    name=entry->getName();
     isHovered=false;
     isParentHovered=false;
     entryType=entry->is_dir() ? EntryType::DIRECTORY : EntryType::FILE;
@@ -51,7 +51,7 @@ void FileEntryView::reconstruct_from(const FileEntry* entry, const ViewOptions& 
 
     if(options.nestLevel>0)
     {
-        auto child=entry->firstChild.get();
+        auto child=entry->getFirstChild();
         size_t childCount = 0;
         size_t existingChildCount = children.size();
         while (child!= nullptr)
@@ -63,7 +63,7 @@ void FileEntryView::reconstruct_from(const FileEntry* entry, const ViewOptions& 
             if(childSize<options.minSize)
                 break;
 
-            auto nextChild = child->nextEntry.get();
+            auto nextChild = child->getNext();
 
             //TODO if unknown space is less than free space, but they are both bigger than biggest child
             // it will still be included first (this is not critical)
@@ -154,7 +154,7 @@ std::string FileEntryView::get_tooltip() const
     return str;
 }
 
-FileEntryView* FileEntryView::update_hovered_element(float mouseX, float mouseY)
+FileEntryView* FileEntryView::update_hovered_element(int mouseX, int mouseY)
 {
     FileEntryView* hoveredEntry = nullptr;
     if(drawArea.x<=mouseX && drawArea.y<=mouseY &&
@@ -249,7 +249,7 @@ void FileEntryView::allocate_view(Utils::RectI rect, int titleHeight)
     }
 }
 
-const char* FileEntryView::get_name() {
+const char* FileEntryView::getName() const{
     switch(entryType)
     {
         case EntryType::AVAILABLE_SPACE:
@@ -382,27 +382,27 @@ void FileEntryView::allocate_children(size_t start, size_t end, Utils::RectI &re
     }
 }
 
-QPixmap FileEntryView::getNamePixmap(QPainter &painter, const QColor& color)
+QPixmap FileEntryView::getNamePixmap(QPainter &painter, const QColor& color) const
 {
     createNamePixmap(painter, color);
     return  cachedNamePix;
 }
 
-QPixmap FileEntryView::getSizePixmap(QPainter &painter, const QColor& color)
+QPixmap FileEntryView::getSizePixmap(QPainter &painter, const QColor& color) const
 {
     createSizePixmap(painter, color);
     return  cachedSizePix;
 }
 
-QPixmap FileEntryView::getTitlePixmap(QPainter &painter, const QColor& color, const char* path)
+QPixmap FileEntryView::getTitlePixmap(QPainter &painter, const QColor& color, const char* path) const
 {
     createTitlePixmap(painter, color, path);
     return  cachedTitlePix;
 }
 
-void FileEntryView::createNamePixmap(QPainter &painter, const QColor& color)
+void FileEntryView::createNamePixmap(QPainter &painter, const QColor& color) const
 {
-    std::string textName = get_name();
+    std::string textName = getName();
 
     if(cachedName != textName || cachedNameColor != color)
     {
@@ -418,7 +418,7 @@ void FileEntryView::createNamePixmap(QPainter &painter, const QColor& color)
     }
 }
 
-void FileEntryView::createSizePixmap(QPainter &painter, const QColor& color)
+void FileEntryView::createSizePixmap(QPainter &painter, const QColor& color) const
 {
     std::string textSize = format_size();
 
@@ -436,7 +436,7 @@ void FileEntryView::createSizePixmap(QPainter &painter, const QColor& color)
     }
 }
 
-void FileEntryView::createTitlePixmap(QPainter &painter, const QColor& color, const char* path)
+void FileEntryView::createTitlePixmap(QPainter &painter, const QColor& color, const char* path) const
 {
     if(name.empty())
         return;
@@ -504,7 +504,7 @@ void FileEntryView::updateView(FileEntryViewPtr& copy, const FileEntry* entry, c
     copy->reconstruct_from(entry, options);
 }
 
-void FileEntryView::getPath(FilePath& root)
+void FileEntryView::getPath(FilePath& root) const
 {
     if(parent)
     {
@@ -521,7 +521,7 @@ void FileEntryView::getPath(FilePath& root)
 //    std::cout << name << "\n";
 }
 
-const std::vector<FileEntryViewPtr>& FileEntryView::get_children() {
+const std::vector<FileEntryViewPtr>& FileEntryView::get_children() const {
     return children;
 }
 //

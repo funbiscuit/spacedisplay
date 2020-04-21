@@ -3,17 +3,16 @@
 #include "fileentry.h"
 #include "filepath.h"
 #include "filedb.h"
-#include "fileentryview.h"
 #include "platformutils.h"
+#include "utils.h"
 
-#include <fstream>
 #include <iostream>
 #include <chrono>
 
 SpaceScanner::SpaceScanner() :
-        scannerStatus(ScannerStatus::IDLE)
+        scannerStatus(ScannerStatus::IDLE), runWorker(false)
 {
-    db = Utils::make_unique<FileDB>();
+    db = std::make_shared<FileDB>();
     //Start thread after everything is initialized
     workerThread=std::thread(&SpaceScanner::worker_run, this);
 }
@@ -128,6 +127,11 @@ std::vector<std::string> SpaceScanner::get_available_roots()
     return availableRoots;
 }
 
+std::shared_ptr<FileDB> SpaceScanner::getFileDB()
+{
+    return db;
+}
+
 bool SpaceScanner::can_refresh()
 {
     return db->isReady() && !is_running();
@@ -146,49 +150,6 @@ bool SpaceScanner::is_loaded()
 bool SpaceScanner::has_changes()
 {
     return db->hasChanges();
-}
-
-void SpaceScanner::updateEntryView(FileEntryViewPtr& view, float minSizeRatio, uint16_t flags, const FilePath* filepath, int depth)
-{
-    if(!filepath || !db->isReady())
-        return;
-    FileEntryView::ViewOptions options;
-    options.nestLevel = depth;
-
-    uint64_t totalSpace, usedSpace, freeSpace, unknownSpace;
-
-    db->getSpace(usedSpace, freeSpace, totalSpace);
-    unknownSpace = totalSpace - freeSpace - usedSpace; //db guarantees this to be >=0
-    totalSpace = 0; //we will calculate it manually depending on what is included
-
-    if((flags & FileEntryView::INCLUDE_AVAILABLE_SPACE) != 0)
-    {
-        options.freeSpace = freeSpace;
-        totalSpace+=freeSpace;
-    }
-    if((flags & FileEntryView::INCLUDE_UNKNOWN_SPACE) != 0)
-    {
-        options.unknownSpace = unknownSpace;
-        totalSpace+=unknownSpace;
-    }
-
-    db->processEntry(*filepath, [&view, &totalSpace, &minSizeRatio, &options](const FileEntry& entry){
-        if(!entry.isRoot())
-        {
-            totalSpace=0;
-            //we don't show unknown and free space if child is viewed
-            options.freeSpace = 0;
-            options.unknownSpace = 0;
-        }
-
-        totalSpace+=entry.get_size();
-
-        options.minSize = int64_t(float(totalSpace)*minSizeRatio);
-        if(view)
-            FileEntryView::updateView(view, &entry, options);
-        else
-            view= FileEntryView::createView(&entry, options);
-    });
 }
 
 float SpaceScanner::get_scan_progress()

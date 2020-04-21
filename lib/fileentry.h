@@ -7,7 +7,6 @@
 #include <vector>
 #include <memory>
 
-class FileEntryView;
 class FileEntryPool;
 class FilePath;
 
@@ -32,13 +31,15 @@ public:
 
     void getPath(FilePath& _path);
 
-    int64_t get_size() const {
-        return size;
-    }
+    int64_t get_size() const;
 
-    uint16_t getNameCrc16() const{
-        return nameCrc;
-    }
+    const char* getName() const;
+
+    const FileEntry* getFirstChild() const;
+
+    const FileEntry* getNext() const;
+
+    uint16_t getNameCrc16() const;
 
     /**
      * Adds child to children of this entry.
@@ -97,7 +98,6 @@ private:
 
 
     friend class FileEntryPool;
-    friend class FileEntryView;
 };
 
 

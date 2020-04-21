@@ -7,11 +7,14 @@
 #include "spacescanner.h"
 #include "fileentrypopup.h"
 #include "filepath.h"
+#include "fileviewdb.h"
+#include "fileentryview.h"
 #include "resources.h"
-#include "resource_builder/resources.h"
 
 SpaceView::SpaceView(MainWindow* parent) : QWidget(), parent(parent)
 {
+    viewDB = Utils::make_unique<FileViewDB>();
+
     setMouseTracking(true);
     entryPopup = Utils::make_unique<FileEntryPopup>(this);
 
@@ -35,11 +38,13 @@ void SpaceView::paintEvent(QPaintEvent *event)
     int width = size().width();
     int height = size().height();
 
-    if(root)
+    if(viewDB && viewDB->isReady())
     {
         textHeight = painter.fontMetrics().height();
 //        Utils::tic();
-        drawView(painter, root, currentDepth, true);
+        viewDB->processEntry([this, &painter] (const FileEntryView& root){
+            drawView(painter, root, currentDepth, true);
+        });
 //        Utils::toc();
     } else {
         int x0=(width-bgIcon.width())/2;
@@ -51,19 +56,19 @@ void SpaceView::paintEvent(QPaintEvent *event)
     }
 }
 
-void SpaceView::drawView(QPainter& painter, const FileEntryViewPtr &file, int nestLevel, bool forceFill)
+void SpaceView::drawView(QPainter& painter, const FileEntryView& file, int nestLevel, bool forceFill)
 {
     QColor bg;
-    if(!drawViewBg(painter, bg, file, forceFill || file->get_type() != FileEntryView::EntryType::DIRECTORY))
+    if(!drawViewBg(painter, bg, file, forceFill || file.get_type() != FileEntryView::EntryType::DIRECTORY))
         return;
 
 
-    if(nestLevel>0 && file->get_type() == FileEntryView::EntryType::DIRECTORY && !file->get_children().empty())
+    if(nestLevel>0 && file.get_type() == FileEntryView::EntryType::DIRECTORY && !file.get_children().empty())
     {
         drawViewTitle(painter, bg, file);
-        for(const auto& child : file->get_children())
+        for(const auto& child : file.get_children())
         {
-            drawView(painter, child, nestLevel - 1, false);
+            drawView(painter, *child, nestLevel - 1, false);
         }
     } else
     {
@@ -71,9 +76,9 @@ void SpaceView::drawView(QPainter& painter, const FileEntryViewPtr &file, int ne
     }
 }
 
-bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryViewPtr &file, bool fillDir)
+bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryView& file, bool fillDir)
 {
-    auto rect=file->get_draw_area();
+    auto rect=file.get_draw_area();
 
     if(rect.w<5 || rect.h<5)
         return false;
@@ -82,7 +87,7 @@ bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryVie
 
     QColor fillColor, strokeColor;
 
-    switch(file->get_type())
+    switch(file.get_type())
     {
         case FileEntryView::EntryType::AVAILABLE_SPACE:
             fillColor=colorTheme->viewFreeFill;
@@ -102,7 +107,7 @@ bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryVie
             break;
     }
 
-    if(file->isHovered && (!fillDir || file->get_type() != FileEntryView::EntryType::DIRECTORY))
+    if(file.isHovered && (!fillDir || file.get_type() != FileEntryView::EntryType::DIRECTORY))
     {
         fillColor = colorTheme->tint(fillColor, 0.7f);
         strokeColor = colorTheme->tint(strokeColor, 0.5f);
@@ -110,7 +115,7 @@ bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryVie
 
     bg_out = fillColor;
 
-    if(fillDir || file->isParentHovered)
+    if(fillDir || file.isParentHovered)
         painter.setBrush(QBrush(fillColor));
     else
         painter.setBrush(Qt::NoBrush);
@@ -125,7 +130,7 @@ void SpaceView::mouseReleaseEvent(QMouseEvent *event)
 {
     if(event->button() == Qt::RightButton && parent)
     {
-        if(scanner && root)
+        if(scanner && viewDB->isReady())
         {
             auto hovered = getHoveredEntry();
             if(hovered)
@@ -181,9 +186,8 @@ FileEntryView* SpaceView::getHoveredEntry()
 
 bool SpaceView::updateHoveredView(FileEntryView* prevHovered)
 {
-    if(root)
-        hoveredEntry = root->update_hovered_element(mouseX, mouseY);
-    else
+    hoveredEntry = viewDB->getHoveredView(mouseX, mouseY);
+    if(!hoveredEntry)
         return false;
 
     bool updated = prevHovered!=hoveredEntry;
@@ -220,17 +224,17 @@ void SpaceView::setScanner(SpaceScanner* _scanner)
 {
     scanner=_scanner;
     clearHistory();
+    cleanupEntryPointers();
     if(scanner)
     {
         currentPath = Utils::make_unique<FilePath>(*(scanner->getRootPath()));
+        viewDB->setFileDB(scanner->getFileDB());
         historyPush();
     }
     else
     {
         currentPath.reset();
-        hoveredEntry = nullptr;
-        tooltipEntry = nullptr;
-        root = nullptr;
+        viewDB->setFileDB(nullptr);
     }
     onScanUpdate();
 }
@@ -252,21 +256,15 @@ void SpaceView::rescanDir(const FilePath& dir_path)
     scanner->rescan_dir(dir_path);
 }
 
-void SpaceView::setShowFreeSpace(bool showFree)
+void SpaceView::setShowFreeSpace(bool showAvailable_)
 {
-    if(showFree)
-        fileEntryShowFlags |= FileEntryView::INCLUDE_AVAILABLE_SPACE;
-    else
-        fileEntryShowFlags &= ~FileEntryView::INCLUDE_AVAILABLE_SPACE;
+    showAvailable = showAvailable_;
     onScanUpdate();
 }
 
-void SpaceView::setShowUnknownSpace(bool showUnknown)
+void SpaceView::setShowUnknownSpace(bool showUnknown_)
 {
-    if(showUnknown)
-        fileEntryShowFlags |= FileEntryView::INCLUDE_UNKNOWN_SPACE;
-    else
-        fileEntryShowFlags &= ~FileEntryView::INCLUDE_UNKNOWN_SPACE;
+    showUnknown = showUnknown_;
     onScanUpdate();
 }
 
@@ -288,6 +286,17 @@ void SpaceView::clearHistory()
 void SpaceView::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
+
+    auto sz = size();
+
+    Utils::RectI rect{};
+    int padding=0;
+    rect.x=padding;
+    rect.y=padding;
+    rect.w=sz.width()-2*padding-1;
+    rect.h=sz.height()-2*padding-1;
+
+    viewDB->setViewArea(rect);
     allocateEntries();
 }
 
@@ -300,48 +309,38 @@ void SpaceView::onScanUpdate()
 
 void SpaceView::allocateEntries()
 {
-    auto sz = size();
-
-    Utils::RectI rect{};
-    int padding=0;
-    rect.x=padding;
-    rect.y=padding;
-    rect.w=sz.width()-2*padding-1;
-    rect.h=sz.height()-2*padding-1;
-
-    if(scanner!=nullptr)
+    if(viewDB->isReady() && currentPath)
     {
-        auto fullArea=float(rect.w*rect.h);
-        float minArea=7.f*7.f;//minimum area of displayed object
-
-        if(hoveredEntry)
-        {
-            hoveredEntry->unhover();
-            hoveredEntry= nullptr;
-        }
-
-        scanner->updateEntryView(root, minArea / fullArea, fileEntryShowFlags,
-                                 currentPath.get(), currentDepth);
-
-        if(root)
-        {
-            //extra padding
-            root->allocate_view(rect, (textHeight * 3) / 2);
-        }
+        viewDB->setViewDepth(currentDepth);
+        viewDB->setViewPath(*currentPath);
+        viewDB->setTextHeight(textHeight);
+        //after update all stored pointers will become invalid, so reset them first
+        cleanupEntryPointers();
+        viewDB->update(showUnknown, showAvailable);
 
         updateHoveredView();
     }
 }
 
-void SpaceView::drawViewTitle(QPainter& painter, const QColor& bg, const FileEntryViewPtr &file)
+void SpaceView::cleanupEntryPointers()
 {
-    Utils::RectI rect=file->get_draw_area();
+    if(hoveredEntry)
+    {
+        hoveredEntry->unhover();
+        hoveredEntry= nullptr;
+    }
+    tooltipEntry = nullptr;
+}
+
+void SpaceView::drawViewTitle(QPainter& painter, const QColor& bg, const FileEntryView& file)
+{
+    Utils::RectI rect=file.get_draw_area();
     if(rect.w < textHeight || rect.h < textHeight)
         return;
 
     auto col = colorTheme->textFor(bg);
-    auto titlePix = file->getTitlePixmap(painter, col,
-            file->get_parent() ? nullptr : currentPath->getPath().c_str());
+    auto titlePix = file.getTitlePixmap(painter, col,
+            file.get_parent() ? nullptr : currentPath->getPath().c_str());
 
     QRect rt{textHeight / 2 + rect.x, rect.y,
              rect.w - textHeight, (textHeight * 3) / 2};
@@ -352,9 +351,9 @@ void SpaceView::drawViewTitle(QPainter& painter, const QColor& bg, const FileEnt
     painter.setClipping(false);
 }
 
-void SpaceView::drawViewText(QPainter &painter, const QColor& bg, const FileEntryViewPtr &file)
+void SpaceView::drawViewText(QPainter &painter, const QColor& bg, const FileEntryView& file)
 {
-    auto rect=file->get_draw_area();
+    auto rect=file.get_draw_area();
     if(rect.w < textHeight || rect.h < textHeight)
         return;
     //Strategy:
@@ -365,8 +364,8 @@ void SpaceView::drawViewText(QPainter &painter, const QColor& bg, const FileEntr
 
     auto col = colorTheme->textFor(bg);
 
-    auto namePix = file->getNamePixmap(painter, col);
-    auto sizePix = file->getSizePixmap(painter, col);
+    auto namePix = file.getNamePixmap(painter, col);
+    auto sizePix = file.getSizePixmap(painter, col);
 
     int lineHeight = painter.fontMetrics().height();
     bool showSize = true;
@@ -420,10 +419,7 @@ void SpaceView::leaveEvent(QEvent *event)
 
 uint64_t SpaceView::getDisplayedUsed()
 {
-    if(!root || !scanner)
-        return 0;
-
-    return (uint64_t)root->get_size();
+    return viewDB->getFilesSize();
 }
 
 void SpaceView::navigateHome()
@@ -484,12 +480,12 @@ bool SpaceView::canNavigateForward()
 
 bool SpaceView::canIncreaseDetail()
 {
-    return root && currentDepth<MAX_DEPTH;
+    return viewDB->isReady() && currentDepth<MAX_DEPTH;
 }
 
 bool SpaceView::canDecreaseDetail()
 {
-    return root && currentDepth>MIN_DEPTH;
+    return viewDB->isReady() && currentDepth>MIN_DEPTH;
 }
 
 void SpaceView::increaseDetail()

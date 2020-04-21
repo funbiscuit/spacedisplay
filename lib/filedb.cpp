@@ -9,12 +9,6 @@ void FileDB::setSpace(uint64_t totalSpace_, uint64_t availableSpace_)
 {
     totalSpace = totalSpace_;
     availableSpace = availableSpace_;
-
-    std::atomic<FileEntry*> sdd;
-
-    std::cout << fileCount.is_lock_free() <<"\n";
-    std::cout << rootValid.is_lock_free() <<"\n";
-    std::cout << sdd.is_lock_free() <<"\n";
 }
 
 bool FileDB::addEntries(const FilePath &path, std::vector<std::unique_ptr<FileEntry>> entries)

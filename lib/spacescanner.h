@@ -21,7 +21,6 @@ enum class ScannerStatus {
 
 class FileEntry;
 class FilePath;
-class FileEntryView;
 class FileDB;
 
 enum class ScannerError
@@ -51,8 +50,9 @@ public:
      */
     std::vector<std::string> get_available_roots();
 
+    std::shared_ptr<FileDB> getFileDB();
+
     float get_scan_progress();
-    void updateEntryView(std::shared_ptr<FileEntryView>& view, float minSizeRatio, uint16_t flags, const FilePath* filepath, int depth);
     bool is_running();
     bool is_loaded();
     bool can_refresh();
@@ -83,7 +83,7 @@ private:
     void update_disk_space();
 
     std::atomic<ScannerStatus> scannerStatus;
-    std::unique_ptr<FileDB> db;
+    std::shared_ptr<FileDB> db;
 
     void worker_run();
 
