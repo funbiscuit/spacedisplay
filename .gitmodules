@@ -1,9 +1,6 @@
 [submodule "deps/resource-builder"]
 	path = deps/resource-builder
 	url = https://github.com/funbiscuit/resource-builder.git
-[submodule "deps/stb"]
-	path = deps/stb
-	url = https://github.com/nothings/stb.git
 [submodule "deps/pfd"]
 	path = deps/pfd
 	url = https://github.com/samhocevar/portable-file-dialogs.git
