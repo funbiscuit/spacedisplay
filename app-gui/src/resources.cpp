@@ -5,8 +5,6 @@
 #include "resources.h"
 #include "resource_builder/resources.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsObject>
 #include <QtSvg/qsvgrenderer.h>

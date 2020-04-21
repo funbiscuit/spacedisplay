@@ -6,10 +6,10 @@
 #include "spaceview.h"
 #include "statusview.h"
 #include "spacescanner.h"
-#include "resource_builder/resources.h"
 #include "resources.h"
 #include "colortheme.h"
 #include "utils.h"
+#include "utils-gui.h"
 #include "platformutils.h"
 
 
@@ -154,7 +154,7 @@ void MainWindow::newScan()
     connect(browseAction, &QAction::triggered, this, [this]()
     {
         std::cout<<"browse\n";
-        auto path = Utils::select_folder("Choose a directory to scan");
+        auto path = UtilsGui::select_folder("Choose a directory to scan");
         if(!path.empty())
         {
             if(path.back() != PlatformUtils::filePathSeparator)
@@ -205,7 +205,7 @@ void MainWindow::startScan(const std::string& path)
     {
         spaceWidget->setScanner(nullptr);
         onScanUpdate();
-        Utils::message_box("Can't open path for scanning:", path);
+        UtilsGui::message_box("Can't open path for scanning:", path);
     }
 }
 
