@@ -11,13 +11,12 @@ find_package(Qt5 COMPONENTS Core Widgets Svg REQUIRED)
 
 
 add_library(spacedisplay_lib STATIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/fileentry.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/filedb.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/fileentrypool.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/filepath.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/spacescanner.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
-        ${PROJECT_SOURCE_DIR}/deps/crc/crc_16.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/fileentry.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/filedb.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/fileentrypool.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/filepath.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/spacescanner.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/utils.cpp
         )
 
 
@@ -27,14 +26,14 @@ set_target_properties(spacedisplay_lib PROPERTIES
 
 
 target_include_directories(spacedisplay_lib
-        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-        PRIVATE ${PROJECT_SOURCE_DIR}/deps/crc
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
         )
 
-target_link_libraries(spacedisplay_lib PRIVATE Threads::Threads)
+target_link_libraries(spacedisplay_lib PRIVATE
+        Threads::Threads CRC::CRC)
 
 if(WIN32)
-    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/platformutils-win.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/platformutils-win.cpp)
 else()
-    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/platformutils-nix.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/platformutils-nix.cpp)
 endif()
