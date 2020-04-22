@@ -49,21 +49,18 @@ void FileEntryView::reconstruct_from(const FileEntry* entry, const ViewOptions& 
     auto unknownSpace = options.unknownSpace;
     auto freeSpace = options.freeSpace;
 
-    if(options.nestLevel>0)
+    if(options.nestLevel > 0)
     {
-        auto child=entry->getFirstChild();
         size_t childCount = 0;
         size_t existingChildCount = children.size();
-        while (child!= nullptr)
-        {
+        entry->forEach([this, &options, &childCount, &existingChildCount, &unknownSpace, &freeSpace](const FileEntry& child)->bool {
+
             if(childCount>=MAX_CHILD_COUNT)
-                break;
+                return false;
 
-            auto childSize = child->get_size();
+            auto childSize = child.get_size();
             if(childSize<options.minSize)
-                break;
-
-            auto nextChild = child->getNext();
+                return false;
 
             //TODO if unknown space is less than free space, but they are both bigger than biggest child
             // it will still be included first (this is not critical)
@@ -115,19 +112,17 @@ void FileEntryView::reconstruct_from(const FileEntry* entry, const ViewOptions& 
 
             if(childCount<existingChildCount)
             {
-                updateView(children[childCount], child, newOptions);
+                updateView(children[childCount], &child, newOptions);
                 children[childCount]->parent = this;
             } else
             {
-                auto newChild = createView(child, newOptions);
+                auto newChild = createView(&child, newOptions);
                 newChild->parent = this;
                 children.push_back(newChild);
             }
-
             ++childCount;
-
-            child=nextChild;
-        }
+            return true;
+        });
 
         while(existingChildCount>childCount)
         {

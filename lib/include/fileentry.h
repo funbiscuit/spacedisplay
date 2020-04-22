@@ -6,6 +6,9 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <functional>
+#include <set>
+#include <unordered_map>
 
 class FileEntryPool;
 class FilePath;
@@ -35,11 +38,21 @@ public:
 
     const char* getName() const;
 
-    const FileEntry* getFirstChild() const;
-
-    const FileEntry* getNext() const;
-
     uint16_t getNameCrc16() const;
+
+    /**
+     * Executes provided function for each child until all children are processed
+     * If function returns false, processing is stopped
+     * @param func
+     * @return false if entry doesn't have children, true otherwise
+     */
+    bool forEach(const std::function<bool(const FileEntry&)>& func) const;
+
+    /**
+     * Recalculates crc of path to this entry given path crc of entry parent
+     * @param parentPathCrc
+     */
+    void updatePathCrc(uint16_t parentPathCrc);
 
     /**
      * Adds child to children of this entry.
@@ -47,25 +60,6 @@ public:
      * @param child
      */
     void add_child(std::unique_ptr<FileEntry> child);
-
-    /**
-     * Removes all children of this entry and returns pointer to the first one
-     * Use child->next to access all others
-     * @return
-     */
-    std::unique_ptr<FileEntry> pop_children();
-
-    /**
-     * Tries to find entry in tree starting from this entry (including it) by given FilePath
-     * @param path - path to entry that should be found
-     * @return pointer to entry if it was found, nullptr otherwise
-     */
-    FileEntry* findEntry(const FilePath* path);
-
-    std::unique_ptr<FileEntry> pop_next()
-    {
-        return std::move(nextEntry);
-    }
 
     int64_t deleteChildren();
     
@@ -79,7 +73,23 @@ public:
 
 private:
 
+    void _addChild(std::unique_ptr<FileEntry> child, bool addCrc);
+
     void on_child_size_changed(FileEntry* child, int64_t sizeChange);
+
+    struct EntryBin {
+        uint64_t size;
+        // entries are in chain (all entries in chain have the same size)
+        // to access next one use firstEntry->next
+        std::unique_ptr<FileEntry> firstEntry;
+        explicit EntryBin(uint64_t size, std::unique_ptr<FileEntry> p = nullptr) :
+                size(size), firstEntry(std::move(p)) {}
+
+        bool operator< (const EntryBin& right) const {
+            // use ordering in decreasing order
+            return size > right.size;
+        }
+    };
 
     /**
      * Pool for creating and caching entries.
@@ -88,16 +98,23 @@ private:
     static std::unique_ptr<FileEntryPool> entryPool;
 
     FileEntry* parent;
-    std::unique_ptr<FileEntry> firstChild;
+
+    //used only inside EntryBin to point to the next entry with the same size
     std::unique_ptr<FileEntry> nextEntry;
+    std::set<EntryBin> children;
+
     bool isDir;
     uint16_t nameCrc;
+
+    // path crc is xor of all names in path (without trailing slashes, except root)
+    uint16_t pathCrc;
     int64_t size;
     //not using std::string to reduce memory consumption (there are might be millions of entries so each byte counts)
     std::unique_ptr<char[]> name;
 
 
     friend class FileEntryPool;
+    friend class FileDB;
 };
 
 

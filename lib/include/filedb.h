@@ -6,6 +6,7 @@
 #include <functional>
 #include <mutex>
 #include <atomic>
+#include <unordered_map>
 
 class FileEntry;
 class FilePath;
@@ -107,7 +108,17 @@ private:
     std::unique_ptr<FileEntry> rootFile;
     std::unique_ptr<FilePath> rootPath;
 
+    //map key is crc of entry path, map value is vector of all children with the same crc of their name
+    std::unordered_map<uint16_t, std::vector<FileEntry*>> entriesMap;
+
     void _clearDb();
+    FileEntry* _findEntry(const FilePath& path) const;
+
+    /**
+     * Deletes all items from entriesMap for this entry and all children (recursively)
+     * @param entry
+     */
+    void _cleanupEntryCrc(const FileEntry& entry);
 
 };
 

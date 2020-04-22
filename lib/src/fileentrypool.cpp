@@ -56,22 +56,7 @@ std::unique_ptr<FileEntry> FileEntryPool::create_entry(const std::string& name, 
 
 int64_t FileEntryPool::cache_children(std::unique_ptr<FileEntry> firstChild)
 {
-    Utils::tic();
-    auto count = _cache_children(std::move(firstChild));
-    std::cout << "Moved " <<count<< " child entries to cache\n";
-    Utils::toc("Spent for caching");
-    return count;
-}
-
-void FileEntryPool::delete_children(std::unique_ptr<FileEntry> firstChild)
-{
-    //don't delete, use caching
-    //TODO delete may be okay on exit
-
-    Utils::tic();
-    auto count = _delete_children(std::move(firstChild));
-    std::cout << "Deleted " <<count<< " child entries\n";
-    Utils::toc("Spent for deleting");
+    return _cache_children(std::move(firstChild));
 }
 
 void FileEntryPool::cleanup_cache()
@@ -87,33 +72,15 @@ void FileEntryPool::cleanup_cache()
     Utils::toc("Spent for deleting cache");
 }
 
-uint64_t FileEntryPool::_delete_children(std::unique_ptr<FileEntry> firstChild)
-{
-    uint64_t count = 0;
-    while(firstChild)
-    {
-        auto ch = firstChild->pop_children();
-        auto next = firstChild->pop_next();
-
-        if(ch)
-            count += _delete_children(std::move(ch));
-
-        ++count;
-        firstChild = std::move(next);
-    }
-    return count;
-}
 
 uint64_t FileEntryPool::_cache_children(std::unique_ptr<FileEntry> firstChild)
 {
     uint64_t count = 0;
     while(firstChild)
     {
-        auto ch = firstChild->pop_children();
-        auto next = firstChild->pop_next();
-
-        if(ch)
-            count += _cache_children(std::move(ch));
+        firstChild->parent = nullptr;
+        auto next = std::move(firstChild->nextEntry);
+        count += firstChild->deleteChildren();
 
         //we don't really destroy anything since it will take a lot of time even for few thousands entries
         //instead we're moving all entries and their names to cache. next time we need to construct entry,
