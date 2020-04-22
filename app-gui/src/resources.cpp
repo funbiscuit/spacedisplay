@@ -10,6 +10,7 @@
 #include <QtSvg/qsvgrenderer.h>
 #include <iostream>
 #include <memory>
+#include <cmath>
 
 
 Resources& Resources::get()
