@@ -1,0 +1,8 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Application
+Name=Space Display
+Comment=Simple tool for analyzing used disk space
+Exec=spacedisplay
+Icon=spacedisplay
+Categories=Utility;

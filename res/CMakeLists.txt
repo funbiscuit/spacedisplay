@@ -13,3 +13,11 @@ add_subdirectory(build)
 if( WIN32 )
     target_sources(SpacedisplayRes INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/win-res.rc)
 endif()
+
+if( NOT WIN32 )
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/spacedisplay.desktop
+            DESTINATION share/applications/)
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/icons/svg/appicon.svg
+            DESTINATION share/icons/hicolor/scalable/apps
+            RENAME spacedisplay.svg)
+endif()
