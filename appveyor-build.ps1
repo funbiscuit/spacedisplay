@@ -22,7 +22,8 @@ for($i = 0; $i -lt $vc_arch.length; $i++){
     for($k = 0; $k -lt $cmd_var.length; $k++) {
         $cs = $cmd_sfx[$k]
         $cv = $cmd_var[$k]
-        mkdir "build$cs-$vc"
+        # create build dir if it was not restored from cache
+        if(!(test-path "build$cs-$vc")){ mkdir "build$cs-$vc" }
         cd "build$cs-$vc"
         cmake -DQT_WIN_PATH="$qt_path" -DWIN32_CONSOLE="$cv" -G "Visual Studio 15 2017$vc_gen_sfx" ..
         cmake --build . --config Release
