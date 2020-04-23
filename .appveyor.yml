@@ -91,7 +91,7 @@ deploy:
   provider: GitHub
   auth_token:
     secure: 6xHQBZVK+RtxmddurGPIg7Kx5vecSN1vVxwbv35EQmsIey4DXDXYhwAW/yLXbNLJ
-  artifact: SpaceDisplay-msvc15-x64 SpaceDisplay-msvc15-x86 SpaceDisplay-cmd-msvc15-x64 SpaceDisplay-cmd-msvc15-x86 SpaceDisplay-x86_64.AppImage
+  artifact: SpaceDisplay-msvc15-x64, SpaceDisplay-msvc15-x86, SpaceDisplay-cmd-msvc15-x64, SpaceDisplay-cmd-msvc15-x86, SpaceDisplay-x86_64.AppImage
   draft: false
   prerelease: true
   tag: $(APPVEYOR_REPO_TAG_NAME)
