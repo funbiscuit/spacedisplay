@@ -1,7 +1,6 @@
-.idea
-*build*
-res/build
-bin
-bind
-qt5path.txt
+.idea/
+*build*/
+res/build/
+bin/
+bind/
 cmake_win_path.txt
