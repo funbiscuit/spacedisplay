@@ -45,20 +45,20 @@ for:
       - md bin_msvc15_x86\styles
       # copy executable and dll's for msvc15-x64
       - copy build_msvc15_x64\app-gui\Release\spacedisplay_gui.exe bin_msvc15_x64\spacedisplay.exe
-      - copy $env:QT_DIR_WIN_64\bin\Qt5Core.dll bin_msvc15_x64\Qt5Core.dll
-      - copy $env:QT_DIR_WIN_64\bin\Qt5Gui.dll bin_msvc15_x64\Qt5Gui.dll
-      - copy $env:QT_DIR_WIN_64\bin\Qt5Svg.dll bin_msvc15_x64\Qt5Svg.dll
-      - copy $env:QT_DIR_WIN_64\bin\Qt5Widgets.dll bin_msvc15_x64\Qt5Widgets.dll
-      - copy $env:QT_DIR_WIN_64\plugins\platforms\qwindows.dll bin_msvc15_x64\platforms\qwindows.dll
-      - copy $env:QT_DIR_WIN_64\plugins\styles\qwindowsvistastyle.dll bin_msvc15_x64\styles\qwindowsvistastyle.dll
+      - copy %QT_DIR_WIN_64%\bin\Qt5Core.dll bin_msvc15_x64\Qt5Core.dll
+      - copy %QT_DIR_WIN_64%\bin\Qt5Gui.dll bin_msvc15_x64\Qt5Gui.dll
+      - copy %QT_DIR_WIN_64%\bin\Qt5Svg.dll bin_msvc15_x64\Qt5Svg.dll
+      - copy %QT_DIR_WIN_64%\bin\Qt5Widgets.dll bin_msvc15_x64\Qt5Widgets.dll
+      - copy %QT_DIR_WIN_64%\plugins\platforms\qwindows.dll bin_msvc15_x64\platforms\qwindows.dll
+      - copy %QT_DIR_WIN_64%\plugins\styles\qwindowsvistastyle.dll bin_msvc15_x64\styles\qwindowsvistastyle.dll
       # copy executable and dll's for msvc15-x86
       - copy build_msvc15_x86\app-gui\Release\spacedisplay_gui.exe bin_msvc15_x86\spacedisplay.exe
-      - copy $env:QT_DIR_WIN_32\bin\Qt5Core.dll bin_msvc15_x86\Qt5Core.dll
-      - copy $env:QT_DIR_WIN_32\bin\Qt5Gui.dll bin_msvc15_x86\Qt5Gui.dll
-      - copy $env:QT_DIR_WIN_32\bin\Qt5Svg.dll bin_msvc15_x86\Qt5Svg.dll
-      - copy $env:QT_DIR_WIN_32\bin\Qt5Widgets.dll bin_msvc15_x86\Qt5Widgets.dll
-      - copy $env:QT_DIR_WIN_32\plugins\platforms\qwindows.dll bin_msvc15_x86\platforms\qwindows.dll
-      - copy $env:QT_DIR_WIN_32\plugins\styles\qwindowsvistastyle.dll bin_msvc15_x86\styles\qwindowsvistastyle.dll
+      - copy %QT_DIR_WIN_32%\bin\Qt5Core.dll bin_msvc15_x86\Qt5Core.dll
+      - copy %QT_DIR_WIN_32%\bin\Qt5Gui.dll bin_msvc15_x86\Qt5Gui.dll
+      - copy %QT_DIR_WIN_32%\bin\Qt5Svg.dll bin_msvc15_x86\Qt5Svg.dll
+      - copy %QT_DIR_WIN_32%\bin\Qt5Widgets.dll bin_msvc15_x86\Qt5Widgets.dll
+      - copy %QT_DIR_WIN_32%\plugins\platforms\qwindows.dll bin_msvc15_x86\platforms\qwindows.dll
+      - copy %QT_DIR_WIN_32%\plugins\styles\qwindowsvistastyle.dll bin_msvc15_x86\styles\qwindowsvistastyle.dll
 
     artifacts:
       - path: bin_msvc15_x64
