@@ -34,7 +34,7 @@ for($i = 0; $i -lt $vc_arch.length; $i++){
         mkdir "bin$cs-$vc\styles"
 
         # copy executable and dll's
-        copy "build$cs-$vc\Release\spacedisplay_gui.exe" "bin$cs-$vc\spacedisplay.exe"
+        copy "build$cs-$vc\app-gui\Release\spacedisplay_gui.exe" "bin$cs-$vc\spacedisplay.exe"
         for($j = 0; $j -lt $qt_dlls.length; $j++){
             $dll = $qt_dlls[$j]
             copy "$qt_path\bin\$dll" "bin$cs-$vc\$dll"
