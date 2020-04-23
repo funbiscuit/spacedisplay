@@ -8,7 +8,6 @@
 
 class SpaceScanner;
 class FileEntryPopup;
-class MainWindow;
 class ColorTheme;
 class FilePath;
 class FileViewDB;
@@ -19,8 +18,8 @@ class SpaceView : public QWidget
 {
 Q_OBJECT
 public:
-    explicit SpaceView(MainWindow* parent);
-    ~SpaceView();
+    SpaceView();
+    ~SpaceView() override;
 
     void setScanner(SpaceScanner* _scanner);
     void setTheme(std::shared_ptr<ColorTheme> theme);
@@ -29,6 +28,24 @@ public:
 
     bool isAtRoot();
     void rescanDir(const FilePath& dir_path);
+
+    /**
+     * Sets callback that will be called when any action occurs.
+     * For example, user navigates to different directory or presses rescan dir
+     * menu item.
+     * @param callback
+     * @return
+     */
+    void setOnActionCallback(std::function<void(void)> callback);
+
+    /**
+     * Sets callback that will be called when this view requests new scan dialog
+     * This happens when user opens context menu in empty space
+     * menu item.
+     * @param callback
+     * @return
+     */
+    void setOnNewScanRequestCallback(std::function<void(void)> callback);
 
     FilePath* getCurrentPath();
 
@@ -89,7 +106,6 @@ public:
     void clearHistory();
 
 protected:
-    MainWindow* parent;
     const int MIN_DEPTH =1;
     const int MAX_DEPTH =9;
     std::shared_ptr<ColorTheme> colorTheme;
@@ -121,6 +137,9 @@ protected:
     int textHeight = 0;
     bool showAvailable = false;
     bool showUnknown = true;
+
+    std::function<void(void)> onActionCallback;
+    std::function<void(void)> onNewScanRequestCallback;
 
     void mousePressEvent(QMouseEvent *event) override;
 

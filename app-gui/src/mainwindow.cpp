@@ -41,7 +41,7 @@ bool operator!(MainWindow::ActionMask mask)
 }
 
 MainWindow::MainWindow()
-        : spaceWidget(new SpaceView(this)), statusView(new StatusView)
+        : spaceWidget(new SpaceView), statusView(new StatusView)
 {
     auto p = palette();
     //at start create theme with default colors and then switch to appropriate custom theme
@@ -66,6 +66,14 @@ MainWindow::MainWindow()
 
     layout->addWidget(spaceWidget,1);
     layout->addWidget(statusView,0);
+
+    spaceWidget->setOnActionCallback([this](){
+        updateAvailableActions();
+        updateStatusView();
+    });
+    spaceWidget->setOnNewScanRequestCallback([this](){
+        newScan();
+    });
 
     createActions();
 //    createStatusBar();

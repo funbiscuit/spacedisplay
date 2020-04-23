@@ -3,7 +3,6 @@
 #include <iostream>
 #include "spaceview.h"
 #include "colortheme.h"
-#include "mainwindow.h"
 #include "spacescanner.h"
 #include "fileentrypopup.h"
 #include "filepath.h"
@@ -11,7 +10,8 @@
 #include "fileentryview.h"
 #include "resources.h"
 
-SpaceView::SpaceView(MainWindow* parent) : QWidget(), parent(parent)
+SpaceView::SpaceView() :
+        QWidget(), onActionCallback(nullptr)
 {
     viewDB = Utils::make_unique<FileViewDB>();
 
@@ -21,8 +21,8 @@ SpaceView::SpaceView(MainWindow* parent) : QWidget(), parent(parent)
     entryPopup->onRescanListener = [this](const FilePath& path)
     {
         rescanDir(path);
-        this->parent->updateAvailableActions();
-        this->parent->updateStatusView();
+        if(onActionCallback)
+            onActionCallback();
     };
 
     auto& r = Resources::get();
@@ -130,7 +130,7 @@ bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryVie
 
 void SpaceView::mouseReleaseEvent(QMouseEvent *event)
 {
-    if(event->button() == Qt::RightButton && parent)
+    if(event->button() == Qt::RightButton)
     {
         if(scanner && viewDB->isReady())
         {
@@ -143,11 +143,11 @@ void SpaceView::mouseReleaseEvent(QMouseEvent *event)
                 entryPopup->updateActions(scanner);
                 entryPopup->popup(std::move(path));
             }
-        } else
-        {
-            parent->newScan();
-        }
-        parent->updateAvailableActions();
+        } else if(onNewScanRequestCallback)
+            onNewScanRequestCallback();
+
+        if(onActionCallback)
+            onActionCallback();
         event->accept();
         return;
     }
@@ -220,6 +220,16 @@ bool SpaceView::updateHoveredView(FileEntryView* prevHovered)
     }
 
     return updated;
+}
+
+void SpaceView::setOnActionCallback(std::function<void(void)> callback)
+{
+    onActionCallback = std::move(callback);
+}
+
+void SpaceView::setOnNewScanRequestCallback(std::function<void(void)> callback)
+{
+    onNewScanRequestCallback = std::move(callback);
 }
 
 void SpaceView::setScanner(SpaceScanner* _scanner)
@@ -520,11 +530,9 @@ void SpaceView::mousePressEvent(QMouseEvent *event) {
             historyPush();
             event->accept();
             onScanUpdate();
-            if(parent)
-            {
-                parent->updateAvailableActions();
-                parent->updateStatusView();
-            }
+
+            if(onActionCallback)
+                onActionCallback();
             return;
         }
     }

@@ -25,7 +25,7 @@ class MainWindow : public QMainWindow
 
 public:
     MainWindow();
-    ~MainWindow();
+    ~MainWindow() override;
 
     enum class ActionMask : uint32_t {
         NEW_SCAN =       1U <<  0U,
