@@ -4,8 +4,6 @@
 #include "filepath.h"
 #include "platformutils.h"
 
-#include "resource_builder/resources.h"
-
 
 TEST_CASE( "Creating and editing filepath", "[filepath]" )
 {

@@ -64,5 +64,4 @@ if( WIN32 )
 endif()
 
 install(TARGETS spacedisplay_gui
-        DESTINATION bin
-        RENAME spacedisplay)
+        DESTINATION bin)

@@ -1,0 +1,116 @@
+version: 0.1.{build}
+
+image:
+  - Visual Studio 2017
+  - Ubuntu1604
+
+platform:
+  - x64
+
+environment:
+  QT_DIR_WIN_32: C:\Qt\5.12.6\msvc2017
+  QT_DIR_WIN_64: C:\Qt\5.12.6\msvc2017_64
+
+for:
+  -
+    matrix:
+      only:
+        - image: Visual Studio 2017
+
+    init:
+      - ver
+      - cmake --version
+
+    build_script:
+      - md build_msvc15_x64
+      - cd build_msvc15_x64
+      - cmake -DQT_WIN_PATH=%QT_DIR_WIN_64% -G "Visual Studio 15 2017 Win64" ..
+      - cmake --build . --config Release
+      - cd ..
+      - md build_msvc15_x86
+      - cd build_msvc15_x86
+      - cmake -DQT_WIN_PATH=%QT_DIR_WIN_32% -G "Visual Studio 15 2017" ..
+      - cmake --build . --config Release
+      - cd ..
+      # create folders for binaries
+      - md bin_msvc15_x64
+      - md bin_msvc15_x64\platforms
+      - md bin_msvc15_x64\styles
+      - md bin_msvc15_x86
+      - md bin_msvc15_x86\platforms
+      - md bin_msvc15_x86\styles
+      # copy executable and dll's for msvc15-x64
+      - copy build_msvc15_x64\app-gui\Release\spacedisplay_gui.exe bin_msvc15_x64\spacedisplay.exe
+      - copy %QT_DIR_WIN_64%\bin\Qt5Core.dll bin_msvc15_x64\Qt5Core.dll
+      - copy %QT_DIR_WIN_64%\bin\Qt5Gui.dll bin_msvc15_x64\Qt5Gui.dll
+      - copy %QT_DIR_WIN_64%\bin\Qt5Svg.dll bin_msvc15_x64\Qt5Svg.dll
+      - copy %QT_DIR_WIN_64%\bin\Qt5Widgets.dll bin_msvc15_x64\Qt5Widgets.dll
+      - copy %QT_DIR_WIN_64%\plugins\platforms\qwindows.dll bin_msvc15_x64\platforms\qwindows.dll
+      - copy %QT_DIR_WIN_64%\plugins\styles\qwindowsvistastyle.dll bin_msvc15_x64\styles\qwindowsvistastyle.dll
+      # copy executable and dll's for msvc15-x86
+      - copy build_msvc15_x86\app-gui\Release\spacedisplay_gui.exe bin_msvc15_x86\spacedisplay.exe
+      - copy %QT_DIR_WIN_32%\bin\Qt5Core.dll bin_msvc15_x86\Qt5Core.dll
+      - copy %QT_DIR_WIN_32%\bin\Qt5Gui.dll bin_msvc15_x86\Qt5Gui.dll
+      - copy %QT_DIR_WIN_32%\bin\Qt5Svg.dll bin_msvc15_x86\Qt5Svg.dll
+      - copy %QT_DIR_WIN_32%\bin\Qt5Widgets.dll bin_msvc15_x86\Qt5Widgets.dll
+      - copy %QT_DIR_WIN_32%\plugins\platforms\qwindows.dll bin_msvc15_x86\platforms\qwindows.dll
+      - copy %QT_DIR_WIN_32%\plugins\styles\qwindowsvistastyle.dll bin_msvc15_x86\styles\qwindowsvistastyle.dll
+
+    artifacts:
+      - path: bin_msvc15_x64
+        type: zip
+        name: SpaceDisplay-msvc15-x64
+
+      - path: bin_msvc15_x86
+        type: zip
+        name: SpaceDisplay-msvc15-x86
+  -
+    matrix:
+      only:
+        - image: Ubuntu1604
+
+    init:
+      - cmake --version
+      - gcc -v
+
+    install:
+      - sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa
+      - sudo apt-get update -qq
+      - sudo apt-get -y install qtbase5-dev libqt5svg5-dev qt5-default
+      - mkdir tools && cd tools
+      # fetch linuxdeploy and qt plugin
+      - wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+      - wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+      - chmod a+x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
+      - cd ..
+
+    build_script:
+      - echo Ubuntu build script
+      - mkdir build
+      - cd build
+      - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+      - make
+      - make install DESTDIR=AppDir
+      - mv AppDir/usr/bin/spacedisplay_gui AppDir/usr/bin/spacedisplay
+      - ../tools/linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage
+      - mv Space_Display*.AppImage SpaceDisplay-x86_64.AppImage
+      - cd ..
+
+    artifacts:
+      - path: build/SpaceDisplay-x86_64.AppImage
+        type: File
+        name: SpaceDisplay-x86_64.AppImage
+
+
+deploy:
+  release: SpaceDisplay-v$(appveyor_build_version)
+  description: 'Continuous release'
+  provider: GitHub
+  auth_token:
+    secure: 6xHQBZVK+RtxmddurGPIg7Kx5vecSN1vVxwbv35EQmsIey4DXDXYhwAW/yLXbNLJ
+  artifact: SpaceDisplay-msvc15-x64, SpaceDisplay-msvc15-x86, SpaceDisplay-x86_64.AppImage
+  draft: false
+  prerelease: false
+  tag: $(APPVEYOR_REPO_TAG_NAME)
+  on:
+    APPVEYOR_REPO_TAG: true        # deploy on tag push only

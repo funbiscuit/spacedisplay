@@ -5,4 +5,4 @@ Name=Space Display
 Comment=Simple tool for analyzing used disk space
 Exec=spacedisplay
 Icon=spacedisplay
-Categories=Utility;
+Categories=Utility;System;FileTools;
