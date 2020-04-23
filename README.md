@@ -1,7 +1,13 @@
 Space Display
 -------------
+[![Build status](https://ci.appveyor.com/api/projects/status/3lr8534gpwa3u46n/branch/master?svg=true)](https://ci.appveyor.com/project/funbiscuit/spacedisplay/branch/master)
 
 Almost cross-platform (no macOS support yet) way to analyze used disk space.
+
+Downloads
+---------
+
+Check out [GitHub Releases](https://github.com/funbiscuit/spacedisplay/releases) page for the latest build.
 
 Screenshots
 -----------
@@ -41,18 +47,20 @@ First scan might seem slow but it is mainly because OS is not that fast accessin
 It is also much slower to scan an HDD than an SSD.
 After the first run OS caches information about files in memory so subsequent scans are much faster.
 It might take minutes for first scan of HDD but after that new scan will take just a few seconds.
-Here are some test results with time in seconds that takes to fully scan partition that I made on my PC.
+Here are some test results with time in seconds that takes to fully scan root partition.
 
 |   Platform  | Files | SpaceDisplay | File Manager |
 |:-----------:|-------|:------------:|:------------:|
-|  Windows 10 | 389K  |     2.4s     |      24s     |
-| Manjaro KDE | 300K  |     0.8s     |     2.3s     |
+|  Windows 10 | 510K  |      13s     |      43s     |
+| Manjaro KDE | 300K  |     1.1s     |     2.3s     |
 
 In tests above default file manager is Explorer in Windows and Dolphin in Manjaro KDE.
+In default file manager all folders inside root partition (`C:\ ` for windows and `/` for manjaro) where selected and
+total size was requested via properties. This step was repeated until time didn't decrease between runs.
 
 SpaceDisplay is also lightweight in terms of memory usage.  
-To scan 500k files it uses about 84MB of RAM in 64bit version and 67MB in 32bit version.
-Numbers are measured in Windows 10 while scanning drive C:\ with 505k files.
+To scan 500k files it uses about 150MB of RAM in 64bit version and 110MB in 32bit version.
+Numbers are measured in Windows 10 while scanning drive C:\ with 510k files.
 
 
 Requirements
