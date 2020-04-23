@@ -67,6 +67,12 @@ bool FileViewDB::update(bool includeUnknown, bool includeAvailable)
     return hasChanges;
 }
 
+void FileViewDB::onThemeChanged()
+{
+    // just reset pointer to root so on next update it will create new pixmaps with proper color
+    rootFile.reset();
+}
+
 void FileViewDB::setViewArea(Utils::RectI rect)
 {
     viewRect = rect;

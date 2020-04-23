@@ -148,6 +148,7 @@ bool FilePath::goUp()
     if(canGoUp())
     {
         parts.pop_back();
+        partCrcs.pop_back();
         return true;
     } else
         return false;

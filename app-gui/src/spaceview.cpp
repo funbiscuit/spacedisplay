@@ -244,6 +244,8 @@ void SpaceView::setScanner(SpaceScanner* _scanner)
 void SpaceView::setTheme(std::shared_ptr<ColorTheme> theme)
 {
     colorTheme = std::move(theme);
+    viewDB->onThemeChanged();
+    allocateEntries();
 }
 
 bool SpaceView::isAtRoot()

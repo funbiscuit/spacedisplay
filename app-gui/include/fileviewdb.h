@@ -34,6 +34,8 @@ public:
      */
     bool update(bool includeUnknown, bool includeAvailable);
 
+    void onThemeChanged();
+
     void setViewArea(Utils::RectI rect);
 
     void setViewPath(const FilePath& filepath);
