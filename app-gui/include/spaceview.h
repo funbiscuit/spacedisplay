@@ -26,8 +26,13 @@ public:
 
     void onScanUpdate();
 
+    bool canRefresh();
     bool isAtRoot();
     void rescanDir(const FilePath& dir_path);
+
+    void rescanCurrentView();
+
+    bool getSpace(uint64_t& scannedVisible, uint64_t& scannedHidden, uint64_t& available, uint64_t& total);
 
     /**
      * Sets callback that will be called when any action occurs.
@@ -46,10 +51,6 @@ public:
      * @return
      */
     void setOnNewScanRequestCallback(std::function<void(void)> callback);
-
-    FilePath* getCurrentPath();
-
-    FileEntryView* getHoveredEntry();
 
     /**
      * Navigates to the parent directory
@@ -98,8 +99,6 @@ public:
      */
     bool canDecreaseDetail();
 
-    uint64_t getDisplayedUsed();
-
     void setShowFreeSpace(bool showFree);
     void setShowUnknownSpace(bool showUnknown);
 
@@ -134,6 +133,12 @@ protected:
     FileEntryView* tooltipEntry = nullptr;
     SpaceScanner* scanner= nullptr;
 
+    /**
+     * Id of timer that is used to check whether new information is available
+     * in scanner
+     */
+    int scanTimerId;
+
     int textHeight = 0;
     bool showAvailable = false;
     bool showUnknown = true;
@@ -148,9 +153,11 @@ protected:
     void leaveEvent(QEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    void timerEvent(QTimerEvent *event) override;
 
     void historyPush();
 
+    FileEntryView* getHoveredEntry();
 
     void allocateEntries();
 

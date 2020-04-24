@@ -4,6 +4,7 @@
 #include <chrono>
 #include <iostream>
 #include "utils.h"
+#include "platformutils.h"
 
 void hex_to_rgb(int hex_color, float (&rgb)[3])
 {
@@ -68,6 +69,14 @@ void Utils::tic()
 int Utils::toc(const char* message, int threshold)
 {
     return Utils::_prof_meas(false, message, threshold);
+}
+
+void Utils::getMountPoints(std::vector<std::string>& availableMounts)
+{
+    // not a very elegant solution, but it doesn't make sense to write
+    // another function that retrieves only mount points without excluded ones
+    std::vector<std::string> temp;
+    PlatformUtils::get_mount_points(availableMounts, temp);
 }
 
 std::string Utils::format_size(int64_t size)

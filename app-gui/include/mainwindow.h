@@ -49,7 +49,6 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
-    void timerEvent(QTimerEvent *event) override;
 
 public slots:
     void newScan();
@@ -103,12 +102,11 @@ private:
     ActionMask enabledActions;
     bool isRootScanned = false;
 
-    int timerId;
     std::unique_ptr<SpaceScanner> scanner;
     std::unique_ptr<QVBoxLayout> layout;
     std::shared_ptr<ColorTheme> colorTheme;
 
-    SpaceView *spaceWidget;
+    std::unique_ptr<SpaceView> spaceWidget;
     StatusView *statusView;
 };
 

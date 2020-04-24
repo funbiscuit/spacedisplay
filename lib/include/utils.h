@@ -47,6 +47,12 @@ namespace Utils
     {
         return std::find(array.begin(), array.end(), value) != array.end();
     }
+
+    /**
+     * Returns available mount points (that can be scanned)
+     * @param availableMounts vector containing paths of safe mount points
+     */
+    void getMountPoints(std::vector<std::string>& availableMounts);
 }
 
 void hex_to_rgb(int hex_color, float (&rgb)[3]);

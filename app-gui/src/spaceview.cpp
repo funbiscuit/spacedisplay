@@ -30,9 +30,28 @@ SpaceView::SpaceView() :
             ResourceBuilder::ResId::__ICONS_SVG_APPICON_BW_SVG,
             256);
 
+
+    scanTimerId = startTimer(12);
 }
 
-SpaceView::~SpaceView() {}
+SpaceView::~SpaceView()
+{
+    killTimer(scanTimerId);
+}
+
+void SpaceView::timerEvent(QTimerEvent *event)
+{
+    event->accept();
+    if(!scanner)
+        return;
+
+    if(scanner->has_changes())
+    {
+        onScanUpdate();
+        if(onActionCallback)
+            onActionCallback();
+    }
+}
 
 void SpaceView::paintEvent(QPaintEvent *event)
 {
@@ -173,11 +192,6 @@ void SpaceView::mouseMoveEvent(QMouseEvent *event)
 
 }
 
-FilePath* SpaceView::getCurrentPath()
-{
-    return currentPath.get();
-}
-
 FileEntryView* SpaceView::getHoveredEntry()
 {
     if(hoveredEntry && (hoveredEntry->is_dir() || hoveredEntry->is_file()))
@@ -265,9 +279,47 @@ bool SpaceView::isAtRoot()
     return !currentPath->canGoUp();
 }
 
+bool SpaceView::canRefresh()
+{
+    if(!scanner)
+        return false;
+    return scanner->can_refresh();
+}
+
 void SpaceView::rescanDir(const FilePath& dir_path)
 {
     scanner->rescan_dir(dir_path);
+}
+
+void SpaceView::rescanCurrentView()
+{
+    if(!scanner || ! currentPath)
+        return;
+
+    //TODO if not at root, history is saved after rescan. but navigatin through it may
+    // be not possible. We should handle this somehow
+    if(isAtRoot())
+    {
+        clearHistory();
+        historyPush();
+    }
+    rescanDir(*currentPath);
+}
+
+bool SpaceView::getSpace(uint64_t& scannedVisible, uint64_t& scannedHidden, uint64_t& available, uint64_t& total)
+{
+    if(!scanner)
+        return false;
+
+    uint64_t scanned;
+    scanner->getSpace(scanned, available, total);
+
+    scannedHidden=0;
+    scannedVisible = viewDB->getFilesSize();
+    if(scannedVisible<scanned && !isAtRoot())
+        scannedHidden = scanned-scannedVisible;
+
+    return true;
 }
 
 void SpaceView::setShowFreeSpace(bool showAvailable_)
@@ -429,11 +481,6 @@ void SpaceView::leaveEvent(QEvent *event)
     }
     tooltipEntry = nullptr;
     repaint();
-}
-
-uint64_t SpaceView::getDisplayedUsed()
-{
-    return viewDB->getFilesSize();
 }
 
 void SpaceView::navigateHome()

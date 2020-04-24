@@ -197,6 +197,8 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     }
 
     std::lock_guard<std::mutex> lock_mtx(scanMtx);
+    //update info about mount points
+    PlatformUtils::get_mount_points(availableRoots, excludedMounts);
     // clears database if it was populated and sets new root
     db->setNewRootPath(path);
 
@@ -219,6 +221,8 @@ void SpaceScanner::rescan_dir(const FilePath& path)
         return;
 
     scannerStatus=ScannerStatus::SCANNING;
+    //update info about mount points
+    PlatformUtils::get_mount_points(availableRoots, excludedMounts);
 
     update_disk_space();//disk space might change since last update, so update it again
 

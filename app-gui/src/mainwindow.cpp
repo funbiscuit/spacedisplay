@@ -64,12 +64,11 @@ MainWindow::MainWindow()
 
     setCentralWidget(window);
 
-    layout->addWidget(spaceWidget,1);
+    layout->addWidget(spaceWidget.get(),1);
     layout->addWidget(statusView,0);
 
     spaceWidget->setOnActionCallback([this](){
-        updateAvailableActions();
-        updateStatusView();
+        onScanUpdate();
     });
     spaceWidget->setOnNewScanRequestCallback([this](){
         newScan();
@@ -85,35 +84,28 @@ MainWindow::MainWindow()
 
     setWindowTitle("Space Display");
 
-    timerId = startTimer(12);
-
     setEnabledActions(ActionMask::NEW_SCAN);
 }
 
 MainWindow::~MainWindow()
 {
-    killTimer(timerId);
+    layout->removeWidget(spaceWidget.get());
 }
 
 void MainWindow::onScanUpdate()
 {
-    spaceWidget->onScanUpdate();
     updateStatusView();
     updateAvailableActions();
 }
 
 void MainWindow::updateStatusView()
 {
-    uint64_t used, available, total;
-    scanner->getSpace(used, available, total);
+    uint64_t scannedVisible, scannedHidden, available, total;
 
-    uint64_t scannedHidden=0;
-    auto displayedUsed = spaceWidget->getDisplayedUsed();
-    if(displayedUsed<used && !spaceWidget->isAtRoot())
-        scannedHidden = used-displayedUsed;
+    if(!spaceWidget->getSpace(scannedVisible, scannedHidden, available, total))
+        return;
 
-    auto unknown= total - available - used;
-    auto scannedVisible = used - scannedHidden;
+    auto unknown= total - available - scannedVisible - scannedHidden;
 
     bool isAtRoot = spaceWidget->isAtRoot();
 
@@ -136,28 +128,27 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::newScan()
 {
-    auto parts = scanner->get_available_roots();
-    std::cout << parts.size()<<"\n";
-    if(parts.empty())
+    std::vector<std::string> scanTargets;
+    Utils::getMountPoints(scanTargets);
+    if(scanTargets.empty())
         return;
 
 
     QMenu menu(this);
     auto titleAction = menu.addAction("Choose scan target:");
     titleAction->setEnabled(false);
-    for(const auto& part : parts)
+    for(const auto& target : scanTargets)
     {
-        auto action = new QAction(part.c_str(), this);
-        connect(action, &QAction::triggered, this, [part, this]()
+        auto action = new QAction(target.c_str(), this);
+        connect(action, &QAction::triggered, this, [target, this]()
         {
-            startScan(part);
+            startScan(target);
         });
         menu.addAction(action);
     }
     auto browseAction = new QAction("Browse...", this);
     connect(browseAction, &QAction::triggered, this, [this]()
     {
-        std::cout<<"browse\n";
         auto path = UtilsGui::select_folder("Choose a directory to scan");
         if(!path.empty())
         {
@@ -213,41 +204,28 @@ void MainWindow::startScan(const std::string& path)
 void MainWindow::goBack()
 {
     spaceWidget->navigateBack();
-    updateStatusView();
-    updateAvailableActions();
+    onScanUpdate();
 }
 void MainWindow::goForward()
 {
     spaceWidget->navigateForward();
-    updateStatusView();
-    updateAvailableActions();
+    onScanUpdate();
 }
 void MainWindow::goUp()
 {
     spaceWidget->navigateUp();
-    updateStatusView();
-    updateAvailableActions();
+    onScanUpdate();
 }
 void MainWindow::goHome()
 {
     spaceWidget->navigateHome();
-    updateStatusView();
-    updateAvailableActions();
+    onScanUpdate();
 }
 void MainWindow::refreshView()
 {
     disableActions(ActionMask::REFRESH);
-
-    auto path = spaceWidget->getCurrentPath();
-    if(!path)
-        return; //should not happen, but just in case
-    if(spaceWidget->isAtRoot())
-    {
-        spaceWidget->clearHistory();
-        goHome();
-    }
-    spaceWidget->rescanDir(*path);
-    updateStatusView();
+    spaceWidget->rescanCurrentView();
+    onScanUpdate();
 }
 void MainWindow::lessDetail()
 {
@@ -347,7 +325,7 @@ void MainWindow::updateAvailableActions()
     else
         disableActions(ActionMask::LESS_DETAIL);
 
-    if(scanner->can_refresh())
+    if(spaceWidget->canRefresh())
         enableActions(ActionMask::REFRESH);
     else
         disableActions(ActionMask::REFRESH);
@@ -613,18 +591,4 @@ void MainWindow::writeSettings()
 void MainWindow::mouseMoveEvent(QMouseEvent *event)
 {
     QWidget::mouseMoveEvent(event);
-}
-
-void MainWindow::timerEvent(QTimerEvent *event)
-{
-    bool canRefresh = scanner->can_refresh();
-    static bool prevCanRefresh = canRefresh;
-    event->accept();
-    if(scanner->has_changes())
-        onScanUpdate();
-    if(canRefresh != prevCanRefresh)
-    {
-        prevCanRefresh = canRefresh;
-        updateAvailableActions();
-    }
 }
