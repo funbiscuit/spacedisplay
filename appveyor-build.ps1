@@ -1,5 +1,7 @@
 $ErrorActionPreference = 'Stop';
 
+# comment for invalidating appveyor build cache
+
 $vc_arch = @(" Win64", "") #empty for Win32
 $sufx = @("msvc15_x64", "msvc15_x86")
 

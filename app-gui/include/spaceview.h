@@ -12,6 +12,7 @@ class ColorTheme;
 class FilePath;
 class FileViewDB;
 class FileEntryView;
+class FileTooltip;
 
 
 class SpaceView : public QWidget
@@ -126,6 +127,7 @@ protected:
     int mouseY=-1;
 
     std::unique_ptr<FileEntryPopup> entryPopup;
+    std::unique_ptr<FileTooltip> fileTooltip;
 
     /**
      * History contains all paths we can get back to. historyPointer points to currentPath
@@ -141,7 +143,6 @@ protected:
     std::unique_ptr<FileViewDB> viewDB;
     //TODO probably should store paths to entries instead of raw pointers
     FileEntryView* hoveredEntry=nullptr;
-    FileEntryView* tooltipEntry = nullptr;
     std::unique_ptr<SpaceScanner> scanner;
 
     /**

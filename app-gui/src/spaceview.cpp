@@ -8,6 +8,7 @@
 #include "filepath.h"
 #include "fileviewdb.h"
 #include "fileentryview.h"
+#include "filetooltip.h"
 #include "resources.h"
 
 SpaceView::SpaceView() :
@@ -17,6 +18,8 @@ SpaceView::SpaceView() :
 
     setMouseTracking(true);
     entryPopup = Utils::make_unique<FileEntryPopup>(this);
+    fileTooltip = Utils::make_unique<FileTooltip>();
+    fileTooltip->setDelay(250);
 
     entryPopup->onRescanListener = [this](const FilePath& path)
     {
@@ -42,6 +45,7 @@ SpaceView::~SpaceView()
 void SpaceView::timerEvent(QTimerEvent *event)
 {
     event->accept();
+    fileTooltip->onTimer();
     if(!scanner)
         return;
 
@@ -208,30 +212,19 @@ bool SpaceView::updateHoveredView(FileEntryView* prevHovered)
 
     bool updated = prevHovered!=hoveredEntry;
 
-    //TODO show tooltip after small delay (when hovered entry stays the same for some time)
     if(hoveredEntry)
     {
         if(!hoveredEntry->get_parent() || (!hoveredEntry->is_dir() && !hoveredEntry->is_file()))
         {
             //don't show tooltips for views without parent and non-dirs/non-files
-            tooltipEntry = nullptr;
-            if(QToolTip::isVisible())
-                QToolTip::hideText();
+            fileTooltip->hideTooltip();
             return updated;
         }
-        if(tooltipEntry != hoveredEntry)
-        {
-//            std::cout << "Show for: "<<hoveredEntry->get_name()<<"\n";
-            tooltipEntry = hoveredEntry;
-            QToolTip::showText(mapToGlobal(QPoint(mouseX, mouseY)),
-                               hoveredEntry->get_tooltip().c_str());
-        }
-    } else if(QToolTip::isVisible())
-    {
-//        std::cout << "hide: "<<QToolTip::text().toStdString().c_str()<<"\n";
-        tooltipEntry = nullptr;
-        QToolTip::hideText();
-    }
+
+        auto point = mapToGlobal(QPoint(mouseX, mouseY));
+        fileTooltip->setTooltip(point.x(), point.y(), hoveredEntry->get_tooltip());
+    } else
+        fileTooltip->hideTooltip();
 
     return updated;
 }
@@ -415,12 +408,12 @@ void SpaceView::allocateEntries()
 
 void SpaceView::cleanupEntryPointers()
 {
+    //TODO refactor this
     if(hoveredEntry)
     {
         hoveredEntry->unhover();
         hoveredEntry= nullptr;
     }
-    tooltipEntry = nullptr;
 }
 
 void SpaceView::drawViewTitle(QPainter& painter, const QColor& bg, const FileEntryView& file)
@@ -499,12 +492,7 @@ void SpaceView::leaveEvent(QEvent *event)
     QWidget::leaveEvent(event);
     mouseX = -1;
     mouseY = -1;
-    if(hoveredEntry)
-    {
-        hoveredEntry->unhover();
-        hoveredEntry= nullptr;
-    }
-    tooltipEntry = nullptr;
+    cleanupEntryPointers();
     repaint();
 }
 

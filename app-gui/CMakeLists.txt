@@ -18,6 +18,7 @@ target_sources(spacedisplay_gui PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/colortheme.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/fileentrypopup.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/fileentryview.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/filetooltip.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/fileviewdb.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/mainwindow.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/resources.cpp
