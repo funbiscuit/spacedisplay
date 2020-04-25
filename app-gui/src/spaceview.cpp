@@ -212,9 +212,9 @@ bool SpaceView::updateHoveredView()
     }
 
     if(!hoveredPath)
-        hoveredPath = Utils::make_unique<FilePath>(currentPath->getPath());
+        hoveredPath = Utils::make_unique<FilePath>(*currentPath);
     else
-        hoveredPath->setRoot(currentPath->getPath());
+        *hoveredPath = *currentPath;
 
     hoveredEntry->getPath(*hoveredPath);
 
