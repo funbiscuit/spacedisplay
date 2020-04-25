@@ -115,7 +115,7 @@ FileEntryView* FileViewDB::getHoveredView(int mouseX, int mouseY)
     if(!isReady() || !rootFile)
         return nullptr;
 
-    return rootFile->update_hovered_element(mouseX, mouseY);
+    return rootFile->getHoveredView(mouseX, mouseY);
 }
 
 bool FileViewDB::isReady() const

@@ -93,7 +93,8 @@ void SpaceView::drawView(QPainter& painter, const FileEntryView& file, int nestL
         drawViewTitle(painter, bg, file);
         for(const auto& child : file.get_children())
         {
-            drawView(painter, *child, nestLevel - 1, false);
+            //if we just drawn hovered view, we need to draw backgrounds for all its children
+            drawView(painter, *child, nestLevel - 1, file.getId() == hoveredId);
         }
     } else
     {
@@ -111,6 +112,7 @@ bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryVie
     QRect qr {rect.x, rect.y, rect.w, rect.h};
 
     QColor fillColor, strokeColor;
+    bool isHovered = hoveredId == file.getId();
 
     switch(file.get_type())
     {
@@ -132,7 +134,7 @@ bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryVie
             break;
     }
 
-    if(file.isHovered && (!fillDir || file.get_type() != FileEntryView::EntryType::DIRECTORY))
+    if(isHovered)
     {
         fillColor = colorTheme->tint(fillColor, 0.7f);
         strokeColor = colorTheme->tint(strokeColor, 0.5f);
@@ -140,7 +142,7 @@ bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryVie
 
     bg_out = fillColor;
 
-    if(fillDir || file.isParentHovered)
+    if(fillDir || isHovered)
         painter.setBrush(QBrush(fillColor));
     else
         painter.setBrush(Qt::NoBrush);
@@ -157,14 +159,12 @@ void SpaceView::mouseReleaseEvent(QMouseEvent *event)
     {
         if(scanner && viewDB->isReady())
         {
-            auto hovered = getHoveredEntry();
-            if(hovered)
+            if(hoveredPath)
             {
-                auto path = Utils::make_unique<FilePath>(*currentPath);
-                hovered->getPath(*path);
-
+                auto path = Utils::make_unique<FilePath>(*hoveredPath);
                 entryPopup->updateActions(*scanner);
                 entryPopup->popup(std::move(path));
+                fileTooltip->hideTooltip();
             }
         } else if(onNewScanRequestCallback)
             onNewScanRequestCallback();
@@ -184,49 +184,44 @@ void SpaceView::mouseMoveEvent(QMouseEvent *event)
     mouseX=event->x();
     mouseY=event->y();
 
-    auto prevHovered = hoveredEntry;
-    if(hoveredEntry)
-    {
-        hoveredEntry->unhover();
-        hoveredEntry= nullptr;
-    }
-
-    if(updateHoveredView(prevHovered))
+    if(updateHoveredView())
         repaint();
 
 }
 
-FileEntryView* SpaceView::getHoveredEntry()
+bool SpaceView::updateHoveredView()
 {
-    if(hoveredEntry && (hoveredEntry->is_dir() || hoveredEntry->is_file()))
-        return hoveredEntry;
-    return nullptr;
-}
-
-
-bool SpaceView::updateHoveredView(FileEntryView* prevHovered)
-{
-    hoveredEntry = viewDB->getHoveredView(mouseX, mouseY);
+    auto hoveredEntry = viewDB->getHoveredView(mouseX, mouseY);
+    auto prevHoveredId = hoveredId;
     if(!hoveredEntry)
-        return false;
-
-    bool updated = prevHovered!=hoveredEntry;
-
-    if(hoveredEntry)
     {
-        if(!hoveredEntry->get_parent() || (!hoveredEntry->is_dir() && !hoveredEntry->is_file()))
-        {
-            //don't show tooltips for views without parent and non-dirs/non-files
-            fileTooltip->hideTooltip();
-            return updated;
-        }
-
-        auto point = mapToGlobal(QPoint(mouseX, mouseY));
-        fileTooltip->setTooltip(point.x(), point.y(), hoveredEntry->get_tooltip());
-    } else
         fileTooltip->hideTooltip();
+        hoveredPath.reset();
+        hoveredId = 0;
+        return prevHoveredId != 0;
+    }
 
-    return updated;
+    hoveredId = hoveredEntry->getId();
+    if(!hoveredEntry->get_parent() || (!hoveredEntry->is_dir() && !hoveredEntry->is_file()))
+    {
+        //don't show tooltips for views without parent and non-dirs/non-files
+        fileTooltip->hideTooltip();
+        hoveredPath.reset();
+        hoveredId = 0;
+        return prevHoveredId != hoveredId;
+    }
+
+    if(!hoveredPath)
+        hoveredPath = Utils::make_unique<FilePath>(currentPath->getPath());
+    else
+        hoveredPath->setRoot(currentPath->getPath());
+
+    hoveredEntry->getPath(*hoveredPath);
+
+    auto point = mapToGlobal(QPoint(mouseX, mouseY));
+    fileTooltip->setTooltip(point.x(), point.y(), hoveredEntry->get_tooltip());
+
+    return prevHoveredId != hoveredId;
 }
 
 void SpaceView::setOnActionCallback(std::function<void(void)> callback)
@@ -246,7 +241,6 @@ void SpaceView::setScanner(std::unique_ptr<SpaceScanner> _scanner)
 
     scanner=std::move(_scanner);
     clearHistory();
-    cleanupEntryPointers();
     if(scanner)
     {
         currentPath = Utils::make_unique<FilePath>(*(scanner->getRootPath()));
@@ -398,21 +392,9 @@ void SpaceView::allocateEntries()
         viewDB->setViewDepth(currentDepth);
         viewDB->setViewPath(*currentPath);
         viewDB->setTextHeight(textHeight);
-        //after update all stored pointers will become invalid, so reset them first
-        cleanupEntryPointers();
         viewDB->update(showUnknown, showAvailable);
 
         updateHoveredView();
-    }
-}
-
-void SpaceView::cleanupEntryPointers()
-{
-    //TODO refactor this
-    if(hoveredEntry)
-    {
-        hoveredEntry->unhover();
-        hoveredEntry= nullptr;
     }
 }
 
@@ -492,7 +474,6 @@ void SpaceView::leaveEvent(QEvent *event)
     QWidget::leaveEvent(event);
     mouseX = -1;
     mouseY = -1;
-    cleanupEntryPointers();
     repaint();
 }
 
@@ -584,9 +565,9 @@ void SpaceView::mousePressEvent(QMouseEvent *event) {
 
     if(event->button() == Qt::LeftButton)
     {
-        if(hoveredEntry && hoveredEntry->is_dir() && hoveredEntry->get_parent() != nullptr)
+        if(hoveredPath)
         {
-            hoveredEntry->getPath(*currentPath);
+            currentPath = Utils::make_unique<FilePath>(*hoveredPath);
             historyPush();
             event->accept();
             onScanUpdate();

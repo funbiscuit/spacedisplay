@@ -72,12 +72,14 @@ public:
         return drawArea;
     }
 
-    FileEntryView* update_hovered_element(int mouseX, int mouseY);
+    FileEntryView* getHoveredView(int mouseX, int mouseY);
     std::string format_size() const;
     std::string get_tooltip() const;
 
 
     const std::vector<FileEntryViewPtr>&  get_children() const;
+
+    uint64_t getId() const;
 
     bool is_dir() const{
         return entryType==EntryType::DIRECTORY;
@@ -97,9 +99,6 @@ public:
      */
     QPixmap getTitlePixmap(QPainter &painter, const QColor& color, const char* path = nullptr) const;
 
-    bool isHovered;
-    bool isParentHovered;
-
     /**
      * Allocates this view and all its children inside specified rectangle.
      * Reserves space for titlebar of specified height.
@@ -107,7 +106,6 @@ public:
      * @param titleHeight - how much space to reserve for title
      */
     void allocate_view(Utils::RectI rect, int titleHeight);
-    void unhover();
 
 private:
     /**
@@ -134,9 +132,6 @@ private:
 
     void set_child_rect(const FileEntryViewPtr& child, Utils::RectI &rect);
 
-    void set_parent_hovered(bool hovered);
-    void set_hovered(bool hovered);
-
     void createNamePixmap(QPainter &painter, const QColor& color) const;
     void createSizePixmap(QPainter &painter, const QColor& color) const;
     void createTitlePixmap(QPainter &painter, const QColor& color, const char* path = nullptr) const;
@@ -155,9 +150,11 @@ private:
     FileEntryView* parent{};
     std::vector<FileEntryViewPtr> children;
     int64_t size = 0;
+    uint64_t id = 0;
     std::string name;
     EntryType  entryType = EntryType::FILE;
 
+    static uint64_t idCounter;
 };
 
 #endif //SPACEDISPLAY_FILEENTRYVIEW_H

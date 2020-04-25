@@ -12,9 +12,12 @@
 const int MAX_CHILD_COUNT=100;
 const int MIN_CHILD_PIXEL_AREA=50;
 
-FileEntryView::FileEntryView() : drawArea{}, isHovered(false), isParentHovered(false)
-{
+// this counter is enough for generating 10 million IDs for 58 years
+uint64_t FileEntryView::idCounter = 0;
 
+FileEntryView::FileEntryView() : drawArea{}
+{
+    id = ++idCounter;
 }
 
 
@@ -32,8 +35,7 @@ void FileEntryView::init_from(const FileEntry* entry)
 {
     size=entry->get_size();
     name=entry->getName();
-    isHovered=false;
-    isParentHovered=false;
+    id = ++idCounter;
     entryType=entry->is_dir() ? EntryType::DIRECTORY : EntryType::FILE;
     drawArea.x=0;
     drawArea.y=0;
@@ -149,79 +151,25 @@ std::string FileEntryView::get_tooltip() const
     return str;
 }
 
-FileEntryView* FileEntryView::update_hovered_element(int mouseX, int mouseY)
+FileEntryView* FileEntryView::getHoveredView(int mouseX, int mouseY)
 {
-    FileEntryView* hoveredEntry = nullptr;
     if(drawArea.x<=mouseX && drawArea.y<=mouseY &&
-            drawArea.w>=mouseX-drawArea.x && drawArea.h>=mouseY-drawArea.y)
+       drawArea.w>=mouseX-drawArea.x && drawArea.h>=mouseY-drawArea.y)
     {
-        hoveredEntry = this;
-        isHovered=true;
-        isParentHovered=true;
-
-        FileEntryView* hoveredChild=nullptr;
-
         for(const auto& child :children)
         {
+            auto hoveredChild= child->getHoveredView(mouseX, mouseY);
             if(hoveredChild)
-                child->set_hovered(false);
-            else
-                hoveredChild=child->update_hovered_element(mouseX, mouseY);
-            child->set_parent_hovered(true);
+                return hoveredChild;
         }
-        if(hoveredChild)
-        {
-            hoveredEntry=hoveredChild;
-            isHovered= false;
-            isParentHovered=true;
-        }
-    } else
-    {
-        isHovered=false;
-        for(const auto& child :children)
-        {
-            child->set_parent_hovered(false);
-            child->set_hovered(false);
-        }
+        return this;
     }
-    
-    return hoveredEntry;
-}
-
-void FileEntryView::set_hovered(bool hovered)
-{
-    if(isHovered==hovered)
-        return;
-    
-    isHovered=hovered;
-    
-    for(const auto& child :children)
-    {
-        child->set_hovered(hovered);
-    }
-}
-
-void FileEntryView::set_parent_hovered(bool hovered)
-{
-    isParentHovered=hovered;
-    
-    for(const auto& child :children)
-    {
-        child->set_parent_hovered(hovered);
-    }
+    return nullptr;
 }
 
 std::string FileEntryView::format_size() const
 {
     return Utils::format_size(size);
-}
-
-void FileEntryView::unhover()
-{
-    isHovered=false;
-    isParentHovered=false;
-    if(parent)
-        parent->unhover();
 }
 
 void FileEntryView::allocate_view(Utils::RectI rect, int titleHeight)
@@ -519,24 +467,8 @@ void FileEntryView::getPath(FilePath& root) const
 const std::vector<FileEntryViewPtr>& FileEntryView::get_children() const {
     return children;
 }
-//
-//FileEntryPtr FileEntry::create_shared_copy(int nestLevel)
-//{
-//    auto len=strlen(name)+1;
-//    char* name2=new char[len];
-//    memcpy(name2, name, (len)*sizeof(char)); // int is a POD
-//    auto newRoot=new FileEntry(0,name2,isDir);
-//
-//    for(auto child : children)
-//    {
-//        const char* name=child->get_name();
-//        auto len=strlen(name)+1;
-//        char* name2=new char[len];
-//        memcpy(name2, name, (len)*sizeof(char)); // int is a POD
-//        auto newChild=new FileEntry(0,name2,child->is_dir());
-//        newChild->set_size(child->get_size());
-//        newRoot->add_child(newChild);
-//    }
-//
-//    return FileEntryPtr(newRoot);
-//}
+
+uint64_t FileEntryView::getId() const
+{
+    return id;
+}

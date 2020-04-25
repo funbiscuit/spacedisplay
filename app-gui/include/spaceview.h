@@ -141,8 +141,8 @@ protected:
     int currentDepth = 5;
     std::unique_ptr<FilePath> currentPath;
     std::unique_ptr<FileViewDB> viewDB;
-    //TODO probably should store paths to entries instead of raw pointers
-    FileEntryView* hoveredEntry=nullptr;
+    std::unique_ptr<FilePath> hoveredPath;
+    uint64_t hoveredId = 0;
     std::unique_ptr<SpaceScanner> scanner;
 
     /**
@@ -169,13 +169,9 @@ protected:
 
     void historyPush();
 
-    FileEntryView* getHoveredEntry();
-
     void allocateEntries();
 
-    void cleanupEntryPointers();
-
-    bool updateHoveredView(FileEntryView* prevHovered = nullptr);
+    bool updateHoveredView();
 
     void drawView(QPainter& painter, const FileEntryView& file, int nestLevel, bool forceFill);
     void drawViewTitle(QPainter& painter, const QColor& bg, const FileEntryView& file);
