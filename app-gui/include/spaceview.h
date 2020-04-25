@@ -21,7 +21,7 @@ public:
     SpaceView();
     ~SpaceView() override;
 
-    void setScanner(SpaceScanner* _scanner);
+    void setScanner(std::unique_ptr<SpaceScanner> _scanner);
     void setTheme(std::shared_ptr<ColorTheme> theme);
 
     void onScanUpdate();
@@ -142,7 +142,7 @@ protected:
     //TODO probably should store paths to entries instead of raw pointers
     FileEntryView* hoveredEntry=nullptr;
     FileEntryView* tooltipEntry = nullptr;
-    SpaceScanner* scanner= nullptr;
+    std::unique_ptr<SpaceScanner> scanner;
 
     /**
      * Id of timer that is used to check whether new information is available

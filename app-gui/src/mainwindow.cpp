@@ -50,7 +50,6 @@ MainWindow::MainWindow()
     setTheme(colorTheme->isDark(), false);
 
     setMinimumSize(600, 400);
-    scanner = Utils::make_unique<SpaceScanner>();
     layout = Utils::make_unique<QVBoxLayout>();
 //    layout->setContentsMargins(0,0,0,0);
 //    layout->setSpacing(0);
@@ -181,7 +180,7 @@ void MainWindow::newScan()
 
 void MainWindow::startScan(const std::string& path)
 {
-    scanner->stop_scan();
+    auto scanner = Utils::make_unique<SpaceScanner>();
 
     auto parts = scanner->get_available_roots();
     isRootScanned = false;
@@ -208,7 +207,7 @@ void MainWindow::startScan(const std::string& path)
     spaceWidget->setShowFreeSpace(false);
     if(scanner->scan_dir(path) == ScannerError::NONE)
     {
-        spaceWidget->setScanner(scanner.get());
+        spaceWidget->setScanner(std::move(scanner));
         onScanUpdate();
     } else
     {

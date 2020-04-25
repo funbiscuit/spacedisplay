@@ -130,22 +130,22 @@ std::shared_ptr<FileDB> SpaceScanner::getFileDB()
     return db;
 }
 
-bool SpaceScanner::can_refresh()
+bool SpaceScanner::can_refresh() const
 {
     return db->isReady() && !is_running();
 }
 
-bool SpaceScanner::is_running()
+bool SpaceScanner::is_running() const
 {
     return scannerStatus!=ScannerStatus::IDLE;
 }
 
-bool SpaceScanner::is_loaded()
+bool SpaceScanner::is_loaded() const
 {
     return db->isReady();
 }
 
-bool SpaceScanner::has_changes()
+bool SpaceScanner::has_changes() const
 {
     return db->hasChanges();
 }
@@ -155,7 +155,7 @@ bool SpaceScanner::isProgressKnown() const
     return isMountScanned;
 }
 
-int SpaceScanner::get_scan_progress()
+int SpaceScanner::get_scan_progress() const
 {
     uint64_t totalSpace, usedSpace, freeSpace;
     db->getSpace(usedSpace, freeSpace, totalSpace);

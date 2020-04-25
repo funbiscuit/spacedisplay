@@ -60,11 +60,11 @@ public:
      */
     bool isProgressKnown() const;
 
-    int get_scan_progress();
-    bool is_running();
-    bool is_loaded();
-    bool can_refresh();
-    bool has_changes();
+    int get_scan_progress() const;
+    bool is_running() const;
+    bool is_loaded() const;
+    bool can_refresh() const;
+    bool has_changes() const;
 
     const FilePath* getRootPath() const;
 

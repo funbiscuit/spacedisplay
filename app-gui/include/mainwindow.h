@@ -102,7 +102,6 @@ private:
     ActionMask enabledActions;
     bool isRootScanned = false;
 
-    std::unique_ptr<SpaceScanner> scanner;
     std::unique_ptr<QVBoxLayout> layout;
     std::shared_ptr<ColorTheme> colorTheme;
 

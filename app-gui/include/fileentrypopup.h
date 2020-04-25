@@ -23,7 +23,7 @@ public:
     ~FileEntryPopup();
 
     void popup(std::unique_ptr<FilePath> path);
-    void updateActions(SpaceScanner* scanner);
+    void updateActions(const SpaceScanner& scanner);
 
     std::function<void(const FilePath&)> onRescanListener = nullptr;
 

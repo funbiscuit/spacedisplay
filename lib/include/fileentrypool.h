@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <memory>
 #include <vector>
+#include <mutex>
 
 class FileEntry;
 
@@ -21,6 +22,9 @@ public:
     void cleanup_cache();
 
 private:
+    // cache could be accessed from different threads
+    mutable std::mutex cacheMtx;
+
     //pointers to entries in this cache are valid but their pointers should not be used
     //e.g. pointer to char array (entry name) might be used in some other entry, so it should be replaced
     std::vector<std::unique_ptr<FileEntry>> entriesCache;

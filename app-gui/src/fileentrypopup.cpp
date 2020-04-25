@@ -37,14 +37,11 @@ FileEntryPopup::FileEntryPopup(QWidget* _parent) : parent(_parent)
 
 FileEntryPopup::~FileEntryPopup() {}
 
-void FileEntryPopup::updateActions(SpaceScanner* scanner)
+void FileEntryPopup::updateActions(const SpaceScanner& scanner)
 {
-    if(scanner)
-    {
-        rescanAct->setEnabled(scanner->can_refresh());
-        //todo maybe allow to delete while scanning
-//        deleteDirAct->setEnabled(scanner->can_refresh());
-    }
+    rescanAct->setEnabled(scanner.can_refresh());
+    //todo maybe allow to delete while scanning
+//    deleteDirAct->setEnabled(scanner->can_refresh());
 }
 
 void FileEntryPopup::onRescan()

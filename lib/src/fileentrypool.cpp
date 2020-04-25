@@ -20,8 +20,10 @@ std::unique_ptr<FileEntry> FileEntryPool::create_entry(const std::string& name, 
     auto nameLen=name.length();
     std::unique_ptr<FileEntry> t;
 
+    std::unique_lock<std::mutex> lock(cacheMtx);
     if(entriesCache.empty())
     {
+        lock.unlock();
         auto chars=Utils::make_unique_arr<char>(nameLen+1);
         memcpy(chars.get(), name.c_str(), (nameLen+1)*sizeof(char));
 
@@ -45,6 +47,7 @@ std::unique_ptr<FileEntry> FileEntryPool::create_entry(const std::string& name, 
         {
             chars = Utils::make_unique_arr<char>(nameLen+1);
         }
+        lock.unlock();
         memcpy(chars.get(), name.c_str(), (nameLen+1)*sizeof(char));
 
         t->reconstruct(std::move(chars), isDir);
@@ -61,6 +64,7 @@ int64_t FileEntryPool::cache_children(std::unique_ptr<FileEntry> firstChild)
 
 void FileEntryPool::cleanup_cache()
 {
+    std::lock_guard<std::mutex> lock(cacheMtx);
     //don't delete, use caching
     //TODO delete may be okay on exit
 
@@ -75,6 +79,7 @@ void FileEntryPool::cleanup_cache()
 
 uint64_t FileEntryPool::_cache_children(std::unique_ptr<FileEntry> firstChild)
 {
+    std::unique_lock<std::mutex> lock(cacheMtx, std::defer_lock);
     uint64_t count = 0;
     while(firstChild)
     {
@@ -90,6 +95,7 @@ uint64_t FileEntryPool::_cache_children(std::unique_ptr<FileEntry> firstChild)
         auto name = std::move(firstChild->name);
         firstChild->parent = nullptr;
         auto nameLen = strlen(name.get());
+        lock.lock();
         entriesCache.push_back(std::move(firstChild));
         auto t = charsCache.find(nameLen);
         if(t != charsCache.end())
@@ -100,6 +106,7 @@ uint64_t FileEntryPool::_cache_children(std::unique_ptr<FileEntry> firstChild)
             vec.push_back(std::move(name));
             charsCache[nameLen] = std::move(vec);
         }
+        lock.unlock();
 
         firstChild = std::move(next);
     }

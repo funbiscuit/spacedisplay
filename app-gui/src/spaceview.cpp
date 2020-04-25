@@ -159,7 +159,7 @@ void SpaceView::mouseReleaseEvent(QMouseEvent *event)
                 auto path = Utils::make_unique<FilePath>(*currentPath);
                 hovered->getPath(*path);
 
-                entryPopup->updateActions(scanner);
+                entryPopup->updateActions(*scanner);
                 entryPopup->popup(std::move(path));
             }
         } else if(onNewScanRequestCallback)
@@ -246,9 +246,12 @@ void SpaceView::setOnNewScanRequestCallback(std::function<void(void)> callback)
     onNewScanRequestCallback = std::move(callback);
 }
 
-void SpaceView::setScanner(SpaceScanner* _scanner)
+void SpaceView::setScanner(std::unique_ptr<SpaceScanner> _scanner)
 {
-    scanner=_scanner;
+    if(scanner)
+        scanner->stop_scan();
+
+    scanner=std::move(_scanner);
     clearHistory();
     cleanupEntryPointers();
     if(scanner)
@@ -387,9 +390,12 @@ void SpaceView::resizeEvent(QResizeEvent *event)
 
 void SpaceView::onScanUpdate()
 {
-    allocateEntries();
+    if(scanner)
+    {
+        allocateEntries();
+        entryPopup->updateActions(*scanner);
+    }
     repaint();
-    entryPopup->updateActions(scanner);
 }
 
 void SpaceView::allocateEntries()
