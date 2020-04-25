@@ -130,6 +130,7 @@ void MainWindow::updateStatusView()
     // and maximize what is actually scanned
     statusView->setMaximizeSpace(!spaceWidget->isProgressKnown());
 
+    statusView->setScannedFiles(spaceWidget->getScannedFiles());
     statusView->setProgress(progress);
     statusView->setSpace((float) scannedVisible, (float) scannedHidden,
                          (float) available, (float) unknown);

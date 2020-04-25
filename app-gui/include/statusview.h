@@ -58,6 +58,12 @@ public:
      */
     void setMaximizeSpace(bool maximize);
 
+    /**
+     * Set how much files are scanned
+     * @param files
+     */
+    void setScannedFiles(int64_t files);
+
     QSize minimumSizeHint() const override;
 
 protected:
@@ -67,6 +73,8 @@ protected:
     float unknownSpace=1.f;
 
     int scanProgress=0;
+
+    int64_t scannedFiles = 0;
 
     Mode currentMode;
 
@@ -81,6 +89,7 @@ protected:
     std::vector<StatusPart> parts;
 
     std::string getScanStatusText();
+    std::string getScannedFilesText();
     void allocateParts(const QFontMetrics& fm, float width);
 
     void paintEvent(QPaintEvent *event) override;

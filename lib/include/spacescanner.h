@@ -70,6 +70,8 @@ public:
 
     void getSpace(uint64_t& used, uint64_t& available, uint64_t& total) const;
 
+    int64_t getFileCount() const;
+
 private:
     std::thread workerThread;
     std::atomic<bool> runWorker;

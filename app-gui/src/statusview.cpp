@@ -39,6 +39,11 @@ void StatusView::setMaximizeSpace(bool maximize)
     maximizeSpace = maximize;
 }
 
+void StatusView::setScannedFiles(int64_t files)
+{
+    scannedFiles = files;
+}
+
 std::string StatusView::getScanStatusText()
 {
     if(currentMode==Mode::NO_SCAN || currentMode==Mode::SCAN_FINISHED)
@@ -54,6 +59,14 @@ std::string StatusView::getScanStatusText()
     return string_format("%d%%", scanProgress);
 }
 
+std::string StatusView::getScannedFilesText()
+{
+    if(currentMode==Mode::NO_SCAN)
+        return "";
+
+    return string_format("%d files", scannedFiles);
+}
+
 void StatusView::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
@@ -64,13 +77,17 @@ void StatusView::paintEvent(QPaintEvent *event)
 
     auto fm = painter.fontMetrics();
     auto scanStatusStr = getScanStatusText();
+    auto scannedFilesStr = getScannedFilesText();
 
-    int availableWidth = width - fm.size(0, scanStatusStr.c_str()).width() - textMargin;
+    auto filesStrWidth = fm.size(0, scannedFilesStr.c_str()).width() + textMargin;
+
+    int availableWidth = width - fm.size(0, scanStatusStr.c_str()).width() - textMargin - filesStrWidth;
 
     QRect textRect{0,0,size().width(),size().height()};
 
     painter.setPen(QPen(colorTheme->foreground));
     painter.drawText(textRect, Qt::AlignVCenter | Qt::AlignRight, scanStatusStr.c_str());
+    painter.drawText(textRect, Qt::AlignVCenter | Qt::AlignLeft, scannedFilesStr.c_str());
 
     //don't render actual bars if scan is not opened
     if(currentMode == Mode::NO_SCAN)
@@ -108,8 +125,8 @@ void StatusView::paintEvent(QPaintEvent *event)
     allocateParts(fm, float(availableWidth));
 
 
-    int start=0;
-    int end = availableWidth;
+    int start = filesStrWidth;
+    int end = start + availableWidth;
     int start1=start;
     int end1=end;
     int endAllVisible=end1;
@@ -143,7 +160,7 @@ void StatusView::paintEvent(QPaintEvent *event)
     painter.setPen( colorTheme->foreground);
     painter.setBrush(Qt::transparent);
     if(endAllVisible!=end1)
-        painter.drawRect(0,0,endAllVisible, height);
+        painter.drawRect(filesStrWidth,0,endAllVisible-filesStrWidth, height);
 }
 
 void StatusView::allocateParts(const QFontMetrics& fm, float width)

@@ -259,6 +259,11 @@ void SpaceScanner::getSpace(uint64_t& used, uint64_t& available, uint64_t& total
     db->getSpace(used, available, total);
 }
 
+int64_t SpaceScanner::getFileCount() const
+{
+    return db->getFileCount();
+}
+
 const FilePath* SpaceScanner::getRootPath() const
 {
     return db->getRootPath();

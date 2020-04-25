@@ -46,6 +46,8 @@ public:
 
     bool getSpace(uint64_t& scannedVisible, uint64_t& scannedHidden, uint64_t& available, uint64_t& total);
 
+    int64_t getScannedFiles();
+
     /**
      * Sets callback that will be called when any action occurs.
      * For example, user navigates to different directory or presses rescan dir

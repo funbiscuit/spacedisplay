@@ -331,6 +331,13 @@ bool SpaceView::getSpace(uint64_t& scannedVisible, uint64_t& scannedHidden, uint
     return true;
 }
 
+int64_t SpaceView::getScannedFiles()
+{
+    if(scanner)
+        return scanner->getFileCount();
+    return 0;
+}
+
 void SpaceView::setShowFreeSpace(bool showAvailable_)
 {
     showAvailable = showAvailable_;
