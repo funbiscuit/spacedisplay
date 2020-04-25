@@ -306,6 +306,25 @@ void SpaceView::rescanCurrentView()
     rescanDir(*currentPath);
 }
 
+bool SpaceView::isScanOpen()
+{
+    return viewDB->isReady() && scanner;
+}
+
+int SpaceView::getScanProgress()
+{
+    if(scanner)
+        return scanner->get_scan_progress();
+    return 100;
+}
+
+bool SpaceView::isProgressKnown()
+{
+    if(scanner)
+        return scanner->isProgressKnown();
+    return false;
+}
+
 bool SpaceView::getSpace(uint64_t& scannedVisible, uint64_t& scannedHidden, uint64_t& available, uint64_t& total)
 {
     if(!scanner)

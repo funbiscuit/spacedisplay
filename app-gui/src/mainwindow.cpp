@@ -55,8 +55,7 @@ MainWindow::MainWindow()
 //    layout->setContentsMargins(0,0,0,0);
 //    layout->setSpacing(0);
 
-    statusView->scanOpened=false;
-    statusView->set_progress(true,0.f);
+    statusView->setMode(StatusView::Mode::NO_SCAN);
 
     auto window = new QWidget();
 
@@ -100,23 +99,41 @@ void MainWindow::onScanUpdate()
 
 void MainWindow::updateStatusView()
 {
+    statusView->setMode(StatusView::Mode::NO_SCAN);
+    if(!spaceWidget->isScanOpen())
+    {
+        //if nothing opened, we don't have any data so just call repaint
+        statusView->repaint();
+        return;
+    }
+
     uint64_t scannedVisible, scannedHidden, available, total;
 
     if(!spaceWidget->getSpace(scannedVisible, scannedHidden, available, total))
-        return;
+        return; //should not happen
 
     auto unknown= total - available - scannedVisible - scannedHidden;
 
-    bool isAtRoot = spaceWidget->isAtRoot();
+    auto progress = spaceWidget->getScanProgress();
+    if(progress == 100)
+        statusView->setMode(StatusView::Mode::SCAN_FINISHED);
+    else if(spaceWidget->isProgressKnown())
+        statusView->setMode(StatusView::Mode::SCANNING_DEFINITE);
+    else
+        statusView->setMode(StatusView::Mode::SCANNING_INDEFINITE);
 
-    statusView->isDirScanned=!isRootScanned;
-    statusView->showFree= toggleFreeAct->isChecked() && isAtRoot;
-    statusView->showUnknown= toggleUnknownAct->isChecked() && isAtRoot;
-    statusView->scanOpened=scanner->is_loaded();
-    statusView->set_progress(!scanner->is_loaded() || scanner->can_refresh(),
-            scanner->get_scan_progress());
-    statusView->set_sizes(isAtRoot, (float) scannedVisible,(float) scannedHidden,
-            (float) available,(float) unknown);
+    if(spaceWidget->isAtRoot())
+        statusView->setSpaceHighlight(toggleFreeAct->isChecked(), toggleUnknownAct->isChecked());
+    else
+        statusView->setSpaceHighlight(false, false);
+
+    // if exact progress not known, we should minimize available and unknown bars
+    // and maximize what is actually scanned
+    statusView->setMaximizeSpace(!spaceWidget->isProgressKnown());
+
+    statusView->setProgress(progress);
+    statusView->setSpace((float) scannedVisible, (float) scannedHidden,
+                         (float) available, (float) unknown);
     statusView->repaint();
 }
 

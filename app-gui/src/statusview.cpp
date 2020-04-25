@@ -5,45 +5,53 @@
 #include "statusview.h"
 #include "colortheme.h"
 
-void StatusView::set_sizes(bool isAtRoot, float scannedVisible, float scannedHidden, float free, float unknown)
+void StatusView::setSpace(float scannedVisible, float scannedHidden, float available, float unknown)
 {
-    if(isDirScanned)
-    {
-        free=0.f;
-        unknown=0.f;
-    }
-    globalView = isAtRoot;
     scannedSpaceVisible=scannedVisible;
     scannedSpaceHidden=scannedHidden;
-    freeSpace=free;
+    availableSpace=available;
     unknownSpace=unknown;
 }
 
-void StatusView::set_progress(bool isReady, float progress)
+void StatusView::setProgress(int progress)
 {
-    scanReady=isReady;
     scanProgress=progress;
 }
 
 void StatusView::setTheme(std::shared_ptr<ColorTheme> theme)
 {
-    colorTheme = theme;
+    colorTheme = std::move(theme);
 }
 
-std::string StatusView::get_text_status_progress()
+void StatusView::setMode(Mode mode)
 {
-    if(!scanReady)
-    {
-        // If we are scanning a directory, we don't actually know how much we need to scan
-        // so don't display any numbers
-        if(isDirScanned)
-            return "Scanning...";
-        int progress=(int)std::round(100.f*scanProgress);
-        if(progress>99)
-            progress=99;
-        return string_format("%d%%", progress);
-    }
-    return "Ready";
+    currentMode = mode;
+}
+
+void StatusView::setSpaceHighlight(bool available, bool unknown)
+{
+    highlightAvailable = available;
+    highlightUnknown = unknown;
+}
+
+void StatusView::setMaximizeSpace(bool maximize)
+{
+    maximizeSpace = maximize;
+}
+
+std::string StatusView::getScanStatusText()
+{
+    if(currentMode==Mode::NO_SCAN || currentMode==Mode::SCAN_FINISHED)
+        return "Ready";
+    // If we are scanning a directory, we don't actually know how much we need to scan
+    // so don't display any numbers
+    if(currentMode==Mode::SCANNING_INDEFINITE)
+        return "Scanning...";
+
+    // progress can't be 100% because then it will be ready
+    if(scanProgress>99)
+        scanProgress=99;
+    return string_format("%d%%", scanProgress);
 }
 
 void StatusView::paintEvent(QPaintEvent *event)
@@ -55,17 +63,17 @@ void StatusView::paintEvent(QPaintEvent *event)
     int textMargin = 5;
 
     auto fm = painter.fontMetrics();
-    auto str = get_text_status_progress();
+    auto scanStatusStr = getScanStatusText();
 
-    int availableWidth = width-fm.size(0, str.c_str()).width()-textMargin;
+    int availableWidth = width - fm.size(0, scanStatusStr.c_str()).width() - textMargin;
 
     QRect textRect{0,0,size().width(),size().height()};
 
     painter.setPen(QPen(colorTheme->foreground));
-    painter.drawText(textRect, Qt::AlignVCenter | Qt::AlignRight, str.c_str());
+    painter.drawText(textRect, Qt::AlignVCenter | Qt::AlignRight, scanStatusStr.c_str());
 
     //don't render actual bars if scan is not opened
-    if(!scanOpened)
+    if(currentMode == Mode::NO_SCAN)
         return;
 
     parts.clear();
@@ -83,21 +91,21 @@ void StatusView::paintEvent(QPaintEvent *event)
     partScannedHidden.weight = scannedSpaceHidden;
 
     partFree.color = colorTheme->viewFreeFill;
-    partFree.isHidden = !showFree;
-    partFree.label = Utils::format_size((int64_t)freeSpace);
-    partFree.weight = freeSpace;
+    partFree.isHidden = !highlightAvailable;
+    partFree.label = Utils::format_size((int64_t)availableSpace);
+    partFree.weight = maximizeSpace ? -1.f : availableSpace;
 
     partUnknown.color = colorTheme->viewUnknownFill;
-    partUnknown.isHidden = !showUnknown;
+    partUnknown.isHidden = !highlightUnknown;
     partUnknown.label = Utils::format_size((int64_t)unknownSpace);
-    partUnknown.weight = unknownSpace;
+    partUnknown.weight = maximizeSpace ? -1.f : unknownSpace;
 
     parts.push_back(partScannedVisible);
     parts.push_back(partScannedHidden);
     parts.push_back(partFree);
     parts.push_back(partUnknown);
 
-    allocate_parts(fm, float(availableWidth));
+    allocateParts(fm, float(availableWidth));
 
 
     int start=0;
@@ -138,13 +146,18 @@ void StatusView::paintEvent(QPaintEvent *event)
         painter.drawRect(0,0,endAllVisible, height);
 }
 
-void StatusView::allocate_parts(const QFontMetrics& fm, float width)
+void StatusView::allocateParts(const QFontMetrics& fm, float width)
 {
+    // holds width of each label in pixels so we allocate enough space for it
     std::vector<int> partLabelSizes;
+    // minimum weight of each part so each label is shown
     std::vector<float> minWeights;
+    // holds weight of each part that is available (can be removed from part)
+    // it will be negative if default weight is less than minimum weight
     std::vector<float> availWeights;
 
     float totalWeight=0.f;
+    // calculate total weight of all parts, remove parts that should not be shown
     for(auto it=parts.begin();it!=parts.end();)
     {
         //remove empty parts, we don't need them
@@ -152,7 +165,8 @@ void StatusView::allocate_parts(const QFontMetrics& fm, float width)
         {
             it=parts.erase(it);
             continue;
-        }
+        } else if(it->weight<0.f)
+            it->weight=0.f; //this part should be minimized, but kept in place
         totalWeight+=it->weight;
 
         ++it;
@@ -173,7 +187,7 @@ void StatusView::allocate_parts(const QFontMetrics& fm, float width)
         minWeights[i]=partLabelSizes[i]/width;
         availWeights[i]=parts[i].weight - minWeights[i];
 
-        if(parts[i].weight>0.f)
+        if(parts[i].weight>=0.f)
         {
             if(availWeights[i]<0.f)
                 parts[i].weight-=availWeights[i];

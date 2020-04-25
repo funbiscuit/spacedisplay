@@ -32,6 +32,17 @@ public:
 
     void rescanCurrentView();
 
+    bool isScanOpen();
+
+    int getScanProgress();
+
+    /**
+     * Returns true if it possible to determine scan progress.
+     * For example, if we scan partition and can get total occupied space.
+     * @return
+     */
+    bool isProgressKnown();
+
     bool getSpace(uint64_t& scannedVisible, uint64_t& scannedHidden, uint64_t& available, uint64_t& total);
 
     /**

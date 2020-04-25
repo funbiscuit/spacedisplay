@@ -48,6 +48,11 @@ namespace Utils
         return std::find(array.begin(), array.end(), value) != array.end();
     }
 
+    template <typename T>
+    T clip(const T& n, const T& lower, const T& upper) {
+        return std::max(lower, std::min(n, upper));
+    }
+
     /**
      * Returns available mount points (that can be scanned)
      * @param availableMounts vector containing paths of safe mount points

@@ -10,7 +10,7 @@
 #include <chrono>
 
 SpaceScanner::SpaceScanner() :
-        scannerStatus(ScannerStatus::IDLE), runWorker(false)
+        scannerStatus(ScannerStatus::IDLE), runWorker(false), isMountScanned(false)
 {
     db = std::make_shared<FileDB>();
     //Start thread after everything is initialized
@@ -150,13 +150,21 @@ bool SpaceScanner::has_changes()
     return db->hasChanges();
 }
 
-float SpaceScanner::get_scan_progress()
+bool SpaceScanner::isProgressKnown() const
+{
+    return isMountScanned;
+}
+
+int SpaceScanner::get_scan_progress()
 {
     uint64_t totalSpace, usedSpace, freeSpace;
     db->getSpace(usedSpace, freeSpace, totalSpace);
     if(scannerStatus==ScannerStatus::SCANNING && totalSpace>0)
-        return float(usedSpace)/float(totalSpace-freeSpace);
-    return 1.f;
+    {
+        int progress = static_cast<int>((usedSpace*100)/(totalSpace-freeSpace));
+        return Utils::clip(progress, 0, 100);;
+    }
+    return 100;
 }
 
 void SpaceScanner::stop_scan()
@@ -203,6 +211,16 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     db->setNewRootPath(path);
 
     scannerStatus=ScannerStatus::SCANNING;
+
+    isMountScanned = false;
+    for(const auto& root : availableRoots)
+    {
+        if(root == path)
+        {
+            isMountScanned = true;
+            break;
+        }
+    }
 
     //this will load known info about disk space (available and total) to database
     update_disk_space();

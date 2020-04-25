@@ -52,7 +52,15 @@ public:
 
     std::shared_ptr<FileDB> getFileDB();
 
-    float get_scan_progress();
+
+    /**
+     * Returns true if it possible to determine scan progress.
+     * For example, if we scan partition and can get total occupied space.
+     * @return
+     */
+    bool isProgressKnown() const;
+
+    int get_scan_progress();
     bool is_running();
     bool is_loaded();
     bool can_refresh();
@@ -66,6 +74,9 @@ private:
     std::thread workerThread;
     std::atomic<bool> runWorker;
     std::mutex scanMtx;
+
+    // true if we scan mount point so we can get info about how big it should be
+    bool isMountScanned;
 
     //edits to queue should be mutex protected
     std::list<std::unique_ptr<FilePath>> scanQueue;
