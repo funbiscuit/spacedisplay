@@ -113,6 +113,12 @@ public:
      */
     bool canDecreaseDetail();
 
+    bool canTogglePause();
+
+    bool isPaused();
+
+    void setPause(bool paused);
+
     void setShowFreeSpace(bool showFree);
     void setShowUnknownSpace(bool showUnknown);
 

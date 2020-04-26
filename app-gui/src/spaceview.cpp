@@ -324,7 +324,7 @@ bool SpaceView::getSpace(uint64_t& scannedVisible, uint64_t& scannedHidden, uint
     scanner->getSpace(scanned, available, total);
 
     scannedHidden=0;
-    scannedVisible = viewDB->getFilesSize();
+    scannedVisible = scanned;
     if(scannedVisible<scanned && !isAtRoot())
         scannedHidden = scanned-scannedVisible;
 
@@ -550,11 +550,39 @@ bool SpaceView::canDecreaseDetail()
     return viewDB->isReady() && currentDepth>MIN_DEPTH;
 }
 
+bool SpaceView::canTogglePause()
+{
+    if(!scanner)
+        return false;
+
+    return scanner->canPause() != scanner->canResume();
+}
+
+bool SpaceView::isPaused()
+{
+    if(!scanner)
+        return true;
+
+    return scanner->canResume();
+}
+
+void SpaceView::setPause(bool paused)
+{
+    if(!scanner)
+        return;
+
+    if(paused)
+        scanner->pauseScan();
+    else
+        scanner->resumeScan();
+}
+
 void SpaceView::increaseDetail()
 {
     if(canIncreaseDetail())
     {
         ++currentDepth;
+        scanner->resumeScan();
         onScanUpdate();
     }
 }
@@ -564,6 +592,7 @@ void SpaceView::decreaseDetail()
     if(canDecreaseDetail())
     {
         --currentDepth;
+        scanner->pauseScan();
         onScanUpdate();
     }
 }

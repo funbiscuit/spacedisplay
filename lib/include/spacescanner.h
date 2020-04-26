@@ -14,9 +14,10 @@
 
 
 enum class ScannerStatus {
-    IDLE=0,
-    SCANNING=1,
-    STOPPING=2,
+    IDLE,
+    SCANNING,
+    STOPPING,
+    SCAN_PAUSED,
 };
 
 class FileEntry;
@@ -40,6 +41,19 @@ public:
     ScannerError scan_dir(const std::string &path);
 
     void stop_scan();
+
+    /**
+     * Pauses current scan and returns true if it was paused
+     * If no scan is running returns false
+     * @return
+     */
+    bool pauseScan();
+
+    bool resumeScan();
+
+    bool canPause();
+
+    bool canResume();
 
     void rescan_dir(const FilePath& folder_path);
 
