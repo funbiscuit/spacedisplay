@@ -31,11 +31,11 @@ void FilePath::setRoot(const std::string& root_, uint16_t crc)
         return;
     }
     parts.clear();
-    partCrcs.clear();
+    pathCrcs.clear();
     parts.push_back(root);
     if(crc == 0)
         crc = crc16((char*)root.c_str(), (uint16_t) root.length());
-    partCrcs.push_back(crc);
+    pathCrcs.push_back(crc);
     pathCrc = crc;
 }
 
@@ -111,8 +111,8 @@ bool FilePath::addDir(const std::string& name, uint16_t crc)
 
     if(crc == 0)
         crc = crc16((char*)name.c_str(),(uint16_t) name.length());
-    partCrcs.push_back(crc);
     pathCrc ^= crc;
+    pathCrcs.push_back(pathCrc);
     return true;
 }
 
@@ -131,8 +131,8 @@ bool FilePath::addFile(const std::string& name, uint16_t crc)
     parts.push_back(name);
     if(crc == 0)
         crc = crc16((char*)name.c_str(), (uint16_t) name.length());
-    partCrcs.push_back(crc);
     pathCrc ^= crc;
+    pathCrcs.push_back(pathCrc);
     return true;
 }
 
@@ -150,12 +150,42 @@ bool FilePath::goUp()
 {
     if(canGoUp())
     {
-        pathCrc ^= partCrcs.back();
         parts.pop_back();
-        partCrcs.pop_back();
+        pathCrcs.pop_back();
+        pathCrc = pathCrcs.back();
         return true;
     } else
         return false;
+}
+
+FilePath::CompareResult FilePath::compareTo(const FilePath& path)
+{
+    if(parts.size() < path.parts.size())
+    {
+        //this path can be only parent to provided path if crc is the same
+        if(path.pathCrcs[parts.size()-1] != pathCrc)
+            return CompareResult::DIFFERENT;
+
+        for(int i=0; i<parts.size(); ++i)
+            if(parts[i] != path.parts[i])
+                return CompareResult::DIFFERENT;
+
+        return CompareResult::PARENT;
+    }
+    else
+    {
+        if(pathCrcs[path.parts.size()-1] != path.pathCrc)
+            return CompareResult::DIFFERENT;
+
+        for(int i=0; i<path.parts.size(); ++i)
+            if(parts[i] != path.parts[i])
+                return CompareResult::DIFFERENT;
+
+        if(parts.size() == path.parts.size())
+            return CompareResult::EQUAL;
+
+        return CompareResult::CHILD;
+    }
 }
 
 void FilePath::normalize(std::string& path, bool keepTrailingSlash)

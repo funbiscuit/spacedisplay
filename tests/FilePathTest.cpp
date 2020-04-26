@@ -74,5 +74,24 @@ TEST_CASE( "Creating and editing filepath", "[filepath]" )
         path.setRoot(newPath.getRoot());
         REQUIRE( path.getPathCrc() == newPath.getPathCrc() );
     }
+    SECTION( "Check compare work" ) {
+        FilePath newPath("D:\\");
+        REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::EQUAL );
+        REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::EQUAL );
+        newPath.addDir("test");
+        REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::PARENT );
+        REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::CHILD );
+        path.addDir("test");
+        REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::EQUAL );
+        REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::EQUAL );
+        path.goUp();
+        path.addFile("test");
+        REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::DIFFERENT );
+        REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::DIFFERENT );
+        newPath.goUp();
+        newPath.addFile("test");
+        REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::EQUAL );
+        REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::EQUAL );
+    }
 }
 

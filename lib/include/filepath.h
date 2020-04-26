@@ -7,6 +7,13 @@
 class FilePath
 {
 public:
+    enum class CompareResult {
+        PARENT,
+        CHILD,
+        DIFFERENT,
+        EQUAL
+    };
+
     /**
      * Constructs a path object given a root string
      * Path can be constructed only from root directory (slash at the end is optional).
@@ -79,6 +86,13 @@ public:
      * @return false if path is already at root, true otherwise
      */
     bool goUp();
+
+    /**
+     * Compares this path to specified path
+     * @param path
+     * @return
+     */
+    CompareResult compareTo(const FilePath& path);
     
     /**
      * Sets new root for the path. All previous information is deleted.
@@ -99,7 +113,7 @@ private:
      */
     std::vector<std::string> parts;
 
-    std::vector<uint16_t> partCrcs;
+    std::vector<uint16_t> pathCrcs;
 
     uint16_t pathCrc;
     

@@ -114,6 +114,18 @@ private:
     void worker_run();
 
     /**
+     * Adds specified path to queue. If such path already exist in queue,
+     * it will be moved to back (if toBack is true) or to front (otherwise).
+     * All paths in queue that contain this path, will be removed from queue
+     * This function must be called with locked scan mutex.
+     * If there are any path in queue that is contained in this path, then this
+     * path will not be added
+     * @param path
+     * @param toBack
+     */
+    void addToQueue(std::unique_ptr<FilePath> path, bool toBack = true);
+
+    /**
      * Performs a scan at given path, creates entry for each child and populates scannedEntries vector
      * Scan is not recursive, only direct children are scanned
      * @param path - FilePath where to perform scan

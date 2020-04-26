@@ -95,7 +95,7 @@ void SpaceScanner::scanChildrenAt(const FilePath& path, std::vector<std::unique_
     //TODO add check if iterator was constructed and we were able to open path
     for(FileIterator it(pathStr); it.is_valid(); ++it)
     {
-        bool addToQueue = it.isDir;
+        bool doScan = it.isDir;
         std::unique_ptr<FilePath> entryPath;
         // this section is important for linux since not any path should be scanned (e.g. /proc or /sys)
         if(it.isDir && scannerStatus != ScannerStatus::STOPPING)
@@ -108,20 +108,53 @@ void SpaceScanner::scanChildrenAt(const FilePath& path, std::vector<std::unique_
                 newPath.push_back(PlatformUtils::filePathSeparator);
             if(Utils::in_array(newPath, availableRoots) || Utils::in_array(newPath, excludedMounts))
             {
-                addToQueue = false;
+                doScan = false;
                 std::cout<<"Skip scan of: "<<newPath<<"\n";
             }
         }
         auto fe=FileEntry::createEntry(it.name, it.isDir);
         fe->set_size(it.size);
-        if(addToQueue)
+        if(doScan)
         {
             entryPath = Utils::make_unique<FilePath>(path);
             entryPath->addDir(it.name, fe->getNameCrc16());
-            scanQueue.push_front(std::move(entryPath));
+            std::lock_guard<std::mutex> lock(scanMtx);
+            //TODO it would be faster to save all adding for later and then just check if
+            // parent path exist in entry (or any of its child paths)
+            // if it is not (and most of the times this will be true), we can just push all
+            // these paths without further checking
+            // but this will give a small improvement (around 1sec when scanning C:\\
+            // which takes 15 seconds to scan)
+            addToQueue(std::move(entryPath), false);
         }
         scannedEntries.push_back(std::move(fe));
     }
+}
+
+void SpaceScanner::addToQueue(std::unique_ptr<FilePath> path, bool toBack)
+{
+    auto it = scanQueue.begin();
+
+    while(it != scanQueue.end())
+    {
+        auto res = path->compareTo(*(*it));
+
+        if(res == FilePath::CompareResult::DIFFERENT || res == FilePath::CompareResult::CHILD)
+            ++it;
+        else if(res == FilePath::CompareResult::PARENT)
+            //if we are parent path to some path in queue, then we should remove it from queue
+            it = scanQueue.erase(it);
+        else //equal
+        {
+            scanQueue.erase(it);
+            break;
+        }
+    }
+
+    if(toBack)
+        scanQueue.push_back(std::move(path));
+    else
+        scanQueue.push_front(std::move(path));
 }
 
 std::vector<std::string> SpaceScanner::get_available_roots()
@@ -259,7 +292,7 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     //this will load known info about disk space (available and total) to database
     update_disk_space();
 
-    scanQueue.push_back(Utils::make_unique<FilePath>(*(db->getRootPath())));
+    addToQueue(Utils::make_unique<FilePath>(*(db->getRootPath())));
 
     return ScannerError::NONE;
 }
@@ -286,8 +319,7 @@ void SpaceScanner::rescan_dir(const FilePath& path)
     }
 
     // pushing to front so we start rescanning as soon as possible
-    //TODO remove all rescan pathes that begin with this path
-    scanQueue.push_front(Utils::make_unique<FilePath>(path));
+    addToQueue(Utils::make_unique<FilePath>(path), false);
 }
 
 void SpaceScanner::getSpace(uint64_t& used, uint64_t& available, uint64_t& total) const
