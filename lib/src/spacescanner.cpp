@@ -132,12 +132,7 @@ std::shared_ptr<FileDB> SpaceScanner::getFileDB()
 
 bool SpaceScanner::can_refresh() const
 {
-    return db->isReady() && !is_running();
-}
-
-bool SpaceScanner::is_running() const
-{
-    return scannerStatus!=ScannerStatus::IDLE;
+    return db->isReady();
 }
 
 bool SpaceScanner::is_loaded() const
@@ -162,7 +157,7 @@ int SpaceScanner::get_scan_progress() const
     if(scannerStatus==ScannerStatus::SCANNING && totalSpace>0)
     {
         int progress = static_cast<int>((usedSpace*100)/(totalSpace-freeSpace));
-        return Utils::clip(progress, 0, 100);;
+        return Utils::clip(progress, 0, 100);
     }
     return 100;
 }
@@ -251,7 +246,8 @@ void SpaceScanner::rescan_dir(const FilePath& path)
         return;
     }
 
-    scanQueue.push_back(Utils::make_unique<FilePath>(path));
+    // pushing to front so we start rescanning as soon as possible
+    scanQueue.push_front(Utils::make_unique<FilePath>(path));
 }
 
 void SpaceScanner::getSpace(uint64_t& used, uint64_t& available, uint64_t& total) const
