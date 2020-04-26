@@ -61,7 +61,6 @@ public:
     bool isProgressKnown() const;
 
     int get_scan_progress() const;
-    bool is_running() const;
     bool is_loaded() const;
     bool can_refresh() const;
     bool has_changes() const;
