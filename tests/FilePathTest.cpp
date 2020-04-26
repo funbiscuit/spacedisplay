@@ -61,5 +61,18 @@ TEST_CASE( "Creating and editing filepath", "[filepath]" )
         REQUIRE( !emptyPath.addFile("any") );
         REQUIRE( !emptyPath.addDir("any") );
     }
+    SECTION( "Check crcs work" ) {
+        FilePath newPath("/home");
+        auto rootCrc = path.getPathCrc();
+        path.addDir("test");
+        // actually it could collide and be the same, but not with provided paths
+        REQUIRE( path.getPathCrc() != rootCrc );
+        path.goUp();
+        REQUIRE( path.getPathCrc() == rootCrc );
+        path.addFile("test2");
+        REQUIRE( path.getPathCrc() != rootCrc );
+        path.setRoot(newPath.getRoot());
+        REQUIRE( path.getPathCrc() == newPath.getPathCrc() );
+    }
 }
 

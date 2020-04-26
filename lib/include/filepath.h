@@ -29,7 +29,13 @@ public:
     std::string getRoot() const;
 
     const std::vector<std::string>& getParts() const;
-    const std::vector<uint16_t>& getCrs() const;
+
+    /**
+     * Return crc16 this path
+     * Crc is calculated for each part of this path and then xor'ed together
+     * @return
+     */
+    uint16_t getPathCrc() const;
 
     /**
      * Returns name of file or directory this path is pointing to.
@@ -94,6 +100,8 @@ private:
     std::vector<std::string> parts;
 
     std::vector<uint16_t> partCrcs;
+
+    uint16_t pathCrc;
     
     /**
      * Converts all slashes to platform correct ones, removes unnecessary slashes.

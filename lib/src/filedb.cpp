@@ -151,7 +151,6 @@ FileEntry* FileDB::_findEntry(const FilePath& path) const
     auto& parts = path.getParts();
     if(parts.empty())
         return nullptr;
-    auto& partCrcs = path.getCrs();
 
     //provided path should have the same root as name of root entry
     if(parts.front() != rootFile->getName())
@@ -163,9 +162,7 @@ FileEntry* FileDB::_findEntry(const FilePath& path) const
     if(name.back() == PlatformUtils::filePathSeparator)
         name.pop_back();
 
-    uint16_t pathCrc = 0;
-    for(auto& crc : partCrcs)
-        pathCrc ^= crc;
+    auto pathCrc = path.getPathCrc();
 
     auto it = entriesMap.find(pathCrc);
     if(it == entriesMap.end())

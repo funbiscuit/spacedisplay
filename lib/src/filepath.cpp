@@ -10,7 +10,7 @@ extern "C" {
 
 FilePath::FilePath(const std::string& root_, uint16_t crc)
 {
-    setRoot(root_);
+    setRoot(root_, crc);
 }
 
 void FilePath::setRoot(const std::string& root_, uint16_t crc)
@@ -36,6 +36,7 @@ void FilePath::setRoot(const std::string& root_, uint16_t crc)
     if(crc == 0)
         crc = crc16((char*)root.c_str(), (uint16_t) root.length());
     partCrcs.push_back(crc);
+    pathCrc = crc;
 }
 
 std::string FilePath::getPath(bool addDirSlash) const
@@ -86,9 +87,9 @@ const std::vector<std::string>& FilePath::getParts() const
     return parts;
 }
 
-const std::vector<uint16_t>& FilePath::getCrs() const
+uint16_t FilePath::getPathCrc() const
 {
-    return partCrcs;
+    return pathCrc;
 }
 
 bool FilePath::addDir(const std::string& name, uint16_t crc)
@@ -111,6 +112,7 @@ bool FilePath::addDir(const std::string& name, uint16_t crc)
     if(crc == 0)
         crc = crc16((char*)name.c_str(),(uint16_t) name.length());
     partCrcs.push_back(crc);
+    pathCrc ^= crc;
     return true;
 }
 
@@ -130,6 +132,7 @@ bool FilePath::addFile(const std::string& name, uint16_t crc)
     if(crc == 0)
         crc = crc16((char*)name.c_str(), (uint16_t) name.length());
     partCrcs.push_back(crc);
+    pathCrc ^= crc;
     return true;
 }
 
@@ -147,6 +150,7 @@ bool FilePath::goUp()
 {
     if(canGoUp())
     {
+        pathCrc ^= partCrcs.back();
         parts.pop_back();
         partCrcs.pop_back();
         return true;
