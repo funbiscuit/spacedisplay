@@ -16,6 +16,7 @@ add_library(spacedisplay_lib STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/fileentrypool.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/filepath.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/spacescanner.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/spacewatcher.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/utils.cpp
         )
 
@@ -34,6 +35,8 @@ target_link_libraries(spacedisplay_lib PRIVATE
 
 if(WIN32)
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/platformutils-win.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/spacewatcher-win.cpp)
 else()
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/platformutils-nix.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/spacewatcher-nix.cpp)
 endif()
