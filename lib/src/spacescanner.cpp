@@ -66,7 +66,7 @@ void SpaceScanner::worker_run()
                 break;
             }
 
-            db->addEntries(*entryPath, std::move(scannedEntries));
+            db->setChildrenForPath(*entryPath, std::move(scannedEntries));
 
             while(scannerStatus==ScannerStatus::SCAN_PAUSED)
             {
@@ -310,13 +310,6 @@ void SpaceScanner::rescan_dir(const FilePath& path)
     PlatformUtils::get_mount_points(availableRoots, excludedMounts);
 
     update_disk_space();//disk space might change since last update, so update it again
-
-    uint64_t count;
-    if(!db->clearEntry(path, count))
-    {
-        std::cout<<"Can't rescan "<<path.getPath()<<"\n";
-        return;
-    }
 
     // pushing to front so we start rescanning as soon as possible
     addToQueue(Utils::make_unique<FilePath>(path), false);

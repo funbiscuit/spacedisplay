@@ -61,6 +61,12 @@ public:
      */
     void add_child(std::unique_ptr<FileEntry> child);
 
+    /**
+     * Remove all children, that are marked for deletion
+     * All removed children are put into provided vector
+     */
+    void removePendingDelete(std::vector<std::unique_ptr<FileEntry>>& deletedChildren);
+
     int64_t deleteChildren();
     
     bool is_dir() const {
@@ -102,6 +108,9 @@ private:
     //used only inside EntryBin to point to the next entry with the same size
     std::unique_ptr<FileEntry> nextEntry;
     std::set<EntryBin> children;
+
+    //used to mark entry to delete in function removePendingDelete
+    bool pendingDelete;
 
     bool isDir;
     uint16_t nameCrc;
