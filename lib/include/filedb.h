@@ -115,6 +115,8 @@ private:
     void _clearDb();
     FileEntry* _findEntry(const FilePath& path) const;
 
+    FileEntry* _findEntry(const char* entryName, uint16_t nameCrc, FileEntry* parent) const;
+
     /**
      * Deletes all items from entriesMap for this entry and all children (recursively)
      * @param entry

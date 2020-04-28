@@ -29,8 +29,6 @@ bool FileDB::setChildrenForPath(const FilePath &path, std::vector<std::unique_pt
     if(!isReady() || entries.empty())
         return false;
 
-    auto childPath = path;
-
     auto parentEntry = _findEntry(path);
     if(parentEntry)
     {
@@ -51,13 +49,7 @@ bool FileDB::setChildrenForPath(const FilePath &path, std::vector<std::unique_pt
 
         for(auto& e : entries)
         {
-            //Construct path to new child and try to find it
-            if(e->is_dir())
-                childPath.addDir(e->name.get(), e->nameCrc);
-            else
-                childPath.addFile(e->name.get(), e->nameCrc);
-            auto existingChild = _findEntry(childPath);
-            childPath.goUp();//go up since this path will be reused on next iteration
+            auto existingChild = _findEntry(e->name.get(), e->nameCrc, parentEntry);
 
             if(existingChild)
             {
@@ -215,6 +207,31 @@ void FileDB::_cleanupEntryCrc(const FileEntry& entry)
             }
         }
     }
+}
+
+FileEntry* FileDB::_findEntry(const char* entryName, uint16_t nameCrc, FileEntry* parent) const
+{
+    if(!parent)
+    {
+        //only root can be without parents
+        if(strcmp(entryName, rootFile->name.get()) == 0)
+            return rootFile.get();
+        return nullptr;
+    }
+
+    auto pathCrc = parent->pathCrc ^ nameCrc;
+    auto it = entriesMap.find(pathCrc);
+    if(it == entriesMap.end())
+        return nullptr;
+
+    auto vIt = it->second.begin();
+    while(vIt != it->second.end())
+    {
+        if((*vIt)->parent == parent && strcmp(entryName, (*vIt)->name.get()) == 0)
+            return (*vIt);
+        ++vIt;
+    }
+    return nullptr;
 }
 
 FileEntry* FileDB::_findEntry(const FilePath& path) const
