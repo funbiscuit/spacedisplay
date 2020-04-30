@@ -36,7 +36,6 @@ void FilePath::setRoot(const std::string& root_, uint16_t crc)
     if(crc == 0)
         crc = crc16((char*)root.c_str(), (uint16_t) root.length());
     pathCrcs.push_back(crc);
-    pathCrc = crc;
 }
 
 std::string FilePath::getPath(bool addDirSlash) const
@@ -89,7 +88,10 @@ const std::vector<std::string>& FilePath::getParts() const
 
 uint16_t FilePath::getPathCrc() const
 {
-    return pathCrc;
+    if(pathCrcs.empty())
+        return 0;
+    else
+        return pathCrcs.back();
 }
 
 bool FilePath::addDir(const std::string& name, uint16_t crc)
@@ -111,8 +113,7 @@ bool FilePath::addDir(const std::string& name, uint16_t crc)
 
     if(crc == 0)
         crc = crc16((char*)name.c_str(),(uint16_t) name.length());
-    pathCrc ^= crc;
-    pathCrcs.push_back(pathCrc);
+    pathCrcs.push_back(pathCrcs.back() ^ crc);
     return true;
 }
 
@@ -131,8 +132,7 @@ bool FilePath::addFile(const std::string& name, uint16_t crc)
     parts.push_back(name);
     if(crc == 0)
         crc = crc16((char*)name.c_str(), (uint16_t) name.length());
-    pathCrc ^= crc;
-    pathCrcs.push_back(pathCrc);
+    pathCrcs.push_back(pathCrcs.back() ^ crc);
     return true;
 }
 
@@ -152,7 +152,6 @@ bool FilePath::goUp()
     {
         parts.pop_back();
         pathCrcs.pop_back();
-        pathCrc = pathCrcs.back();
         return true;
     } else
         return false;
@@ -163,7 +162,7 @@ FilePath::CompareResult FilePath::compareTo(const FilePath& path)
     if(parts.size() < path.parts.size())
     {
         //this path can be only parent to provided path if crc is the same
-        if(path.pathCrcs[parts.size()-1] != pathCrc)
+        if(path.pathCrcs[parts.size()-1] != pathCrcs.back())
             return CompareResult::DIFFERENT;
 
         for(int i=0; i<parts.size(); ++i)
@@ -174,7 +173,7 @@ FilePath::CompareResult FilePath::compareTo(const FilePath& path)
     }
     else
     {
-        if(pathCrcs[path.parts.size()-1] != path.pathCrc)
+        if(pathCrcs[path.parts.size()-1] != path.pathCrcs.back())
             return CompareResult::DIFFERENT;
 
         for(int i=0; i<path.parts.size(); ++i)
@@ -186,6 +185,19 @@ FilePath::CompareResult FilePath::compareTo(const FilePath& path)
 
         return CompareResult::CHILD;
     }
+}
+
+bool FilePath::makeRelativeTo(const FilePath& parentPath)
+{
+    auto state = compareTo(parentPath);
+    if(state != CompareResult::CHILD) //this path should be child to parentPath
+        return false;
+
+    //erase first entries from provided path, so it becomes relative to this path
+    parts.erase(parts.begin(), parts.begin()+parentPath.parts.size());
+    pathCrcs.erase(pathCrcs.begin(), pathCrcs.begin()+parentPath.parts.size());
+
+    return true;
 }
 
 void FilePath::normalize(std::string& path, bool keepTrailingSlash)

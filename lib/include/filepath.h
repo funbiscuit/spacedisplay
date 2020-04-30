@@ -93,6 +93,15 @@ public:
      * @return
      */
     CompareResult compareTo(const FilePath& path);
+
+    /**
+     * Converts this path to make it relative to provided path
+     * Provided path should be parent of this path
+     * If path can't be converted, false is returned
+     * @param path
+     * @return
+     */
+    bool makeRelativeTo(const FilePath& parentPath);
     
     /**
      * Sets new root for the path. All previous information is deleted.
@@ -114,8 +123,6 @@ private:
     std::vector<std::string> parts;
 
     std::vector<uint16_t> pathCrcs;
-
-    uint16_t pathCrc;
     
     /**
      * Converts all slashes to platform correct ones, removes unnecessary slashes.
