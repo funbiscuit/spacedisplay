@@ -17,7 +17,7 @@ void FileDB::setSpace(uint64_t totalSpace_, uint64_t availableSpace_)
     availableSpace = availableSpace_;
 }
 
-bool FileDB::addEntries(const FilePath &path, std::vector<std::unique_ptr<FileEntry>> entries)
+bool FileDB::setChildrenForPath(const FilePath &path, std::vector<std::unique_ptr<FileEntry>> entries)
 {
     // Presorting entries by size so we can insert them much quicker
     std::sort(entries.begin(), entries.end(),
@@ -29,15 +29,50 @@ bool FileDB::addEntries(const FilePath &path, std::vector<std::unique_ptr<FileEn
     if(!isReady() || entries.empty())
         return false;
 
-    auto entry = _findEntry(path);
-    if(entry)
+    auto parentEntry = _findEntry(path);
+    if(parentEntry)
     {
+        int deleteCount = 0;
+        //Mark all children for deletion
+        //We will unmark every child that should be kept and then will delete everything else
+        for(auto& childBins : parentEntry->children)
+        {
+            auto child = childBins.firstEntry.get();
+            while(child)
+            {
+                ++deleteCount;
+                child->pendingDelete = true;
+                child = child->nextEntry.get();
+            }
+        }
+
+
         for(auto& e : entries)
         {
+            auto existingChild = _findEntry(e->name.get(), e->nameCrc, parentEntry);
+
+            if(existingChild)
+            {
+                --deleteCount;
+                //child found, decide what to do with it. unmark it for deletion
+                existingChild->pendingDelete = false;
+                if(existingChild->isDir || existingChild->size == e->size)
+                {
+                    // if entry is dir or file with the same size, just continue
+                    continue;
+                }
+                auto sizeChange = e->size-existingChild->size;
+                // if size changed, tell about it to parent, but we need to increase child size by ourself
+                existingChild->size = e->size;
+                parentEntry->on_child_size_changed(existingChild, sizeChange);
+                continue;
+            }
+            // if entry was not found, we need to add it
+
             auto ePtr = e.get();
-            ePtr->updatePathCrc(entry->pathCrc);
+            ePtr->updatePathCrc(parentEntry->pathCrc);
             auto crc = ePtr->pathCrc;
-            entry->add_child(std::move(e));
+            parentEntry->add_child(std::move(e));
             ++fileCount;
 
             //TODO move out of lock?
@@ -50,6 +85,34 @@ bool FileDB::addEntries(const FilePath &path, std::vector<std::unique_ptr<FileEn
                 entriesMap[crc] = std::move(vec);
             }
         }
+
+        std::vector<std::unique_ptr<FileEntry>> deletedChildren;
+        deletedChildren.reserve(deleteCount);
+
+        if(deleteCount>0)
+            parentEntry->removePendingDelete(deletedChildren);
+
+        //also delete all pointers to this children from crc map (since all children will be deleted)
+        for(auto& child : deletedChildren)
+        {
+            auto crc = child->pathCrc;
+
+            auto it2 = entriesMap.find(crc);
+            if(it2 != entriesMap.end())
+            {
+                auto it3 = it2->second.begin();
+                while(it3 != it2->second.end())
+                {
+                    if((*it3) == child.get())
+                    {
+                        it2->second.erase(it3);
+                        break;
+                    }
+                    ++it3;
+                }
+            }
+        }
+
         usedSpace = rootFile->get_size();
         bHasChanges = true;
     }
@@ -146,12 +209,36 @@ void FileDB::_cleanupEntryCrc(const FileEntry& entry)
     }
 }
 
+FileEntry* FileDB::_findEntry(const char* entryName, uint16_t nameCrc, FileEntry* parent) const
+{
+    if(!parent)
+    {
+        //only root can be without parents
+        if(strcmp(entryName, rootFile->name.get()) == 0)
+            return rootFile.get();
+        return nullptr;
+    }
+
+    auto pathCrc = parent->pathCrc ^ nameCrc;
+    auto it = entriesMap.find(pathCrc);
+    if(it == entriesMap.end())
+        return nullptr;
+
+    auto vIt = it->second.begin();
+    while(vIt != it->second.end())
+    {
+        if((*vIt)->parent == parent && strcmp(entryName, (*vIt)->name.get()) == 0)
+            return (*vIt);
+        ++vIt;
+    }
+    return nullptr;
+}
+
 FileEntry* FileDB::_findEntry(const FilePath& path) const
 {
     auto& parts = path.getParts();
     if(parts.empty())
         return nullptr;
-    auto& partCrcs = path.getCrs();
 
     //provided path should have the same root as name of root entry
     if(parts.front() != rootFile->getName())
@@ -163,17 +250,17 @@ FileEntry* FileDB::_findEntry(const FilePath& path) const
     if(name.back() == PlatformUtils::filePathSeparator)
         name.pop_back();
 
-    uint16_t pathCrc = 0;
-    for(auto& crc : partCrcs)
-        pathCrc ^= crc;
+    auto pathCrc = path.getPathCrc();
 
     auto it = entriesMap.find(pathCrc);
     if(it == entriesMap.end())
         return nullptr;
 
-    for(auto& possible : it->second)
+    auto vIt = it->second.begin();
+
+    while(vIt != it->second.end())
     {
-        auto currentEntry = possible;
+        auto currentEntry = *vIt;
 
         // for each possible entry check its name and names of all parents that they
         // are the same as in provided path
@@ -193,7 +280,9 @@ FileEntry* FileDB::_findEntry(const FilePath& path) const
                 break;
         }
         if(currentEntry == rootFile.get())
-            return possible;
+            return *vIt;
+
+        ++vIt;
     }
     return nullptr;
 }

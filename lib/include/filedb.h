@@ -26,13 +26,14 @@ public:
     void setSpace(uint64_t totalSpace, uint64_t availableSpace);
 
     /**
-     * Inserts given entries to database at specified path
+     * Tries to find entry by specified path and updates its children to be the same as in
+     * provided path. All existing children that are not listed in this vector, will be deleted.
      * If path doesn't exist - entries are destroyed and false is returned
      * @param path
      * @param entries
      * @return
      */
-    bool addEntries(const FilePath& path, std::vector<std::unique_ptr<FileEntry>> entries);
+    bool setChildrenForPath(const FilePath& path, std::vector<std::unique_ptr<FileEntry>> entries);
 
     /**
      * Clears database and sets new root, making db initialized
@@ -113,6 +114,8 @@ private:
 
     void _clearDb();
     FileEntry* _findEntry(const FilePath& path) const;
+
+    FileEntry* _findEntry(const char* entryName, uint16_t nameCrc, FileEntry* parent) const;
 
     /**
      * Deletes all items from entriesMap for this entry and all children (recursively)

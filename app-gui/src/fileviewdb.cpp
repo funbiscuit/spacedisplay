@@ -118,6 +118,25 @@ FileEntryView* FileViewDB::getHoveredView(int mouseX, int mouseY)
     return rootFile->getHoveredView(mouseX, mouseY);
 }
 
+FileEntryView* FileViewDB::getClosestView(const FilePath& filepath, int maxDepth)
+{
+    if(!isReady() || !rootFile)
+        return nullptr;
+
+    auto state = viewPath->compareTo(filepath);
+    if(state == FilePath::CompareResult::DIFFERENT || state==FilePath::CompareResult::CHILD)
+        return nullptr;
+
+    if(state == FilePath::CompareResult::EQUAL)
+        return rootFile.get();
+
+    auto relPath = filepath;
+    if(!relPath.makeRelativeTo(*viewPath))
+        return nullptr; //should not happen
+
+    return rootFile->getClosestView(relPath, maxDepth);
+}
+
 bool FileViewDB::isReady() const
 {
     return db != nullptr;

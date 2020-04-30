@@ -8,6 +8,7 @@
 #include "filepath.h"
 #include "fileentry.h"
 #include "fileentryview.h"
+#include "platformutils.h"
 
 const int MAX_CHILD_COUNT=100;
 const int MIN_CHILD_PIXEL_AREA=50;
@@ -165,6 +166,42 @@ FileEntryView* FileEntryView::getHoveredView(int mouseX, int mouseY)
         return this;
     }
     return nullptr;
+}
+
+FileEntryView* FileEntryView::getClosestView(const FilePath& filepath, int maxDepth)
+{
+    auto closest = this;
+    int currentDepth = 0;
+
+    auto& parts = filepath.getParts();
+
+    while (currentDepth < maxDepth && currentDepth < parts.size())
+    {
+        bool found = false;
+        auto part = parts[currentDepth];
+        if(part.back() == PlatformUtils::filePathSeparator)
+            part.pop_back();
+
+        for(auto& child : closest->children)
+        {
+            //find appropriate child with big enough area
+            if(child->drawArea.w > MIN_CHILD_PIXEL_AREA/5
+               && child->drawArea.h > MIN_CHILD_PIXEL_AREA/5
+               && child->name == part)
+            {
+                closest = child.get();
+                found = true;
+                break;
+            }
+        }
+
+        if(!found)
+            break;
+
+        ++currentDepth;
+    }
+
+    return closest;
 }
 
 std::string FileEntryView::format_size() const

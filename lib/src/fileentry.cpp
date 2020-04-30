@@ -14,7 +14,7 @@ extern "C" {
 std::unique_ptr<FileEntryPool> FileEntry::entryPool;
 
 FileEntry::FileEntry(std::unique_ptr<char[]> name_, bool isDir_) :
-        isDir(false), size(0), parent(nullptr), nameCrc(0), pathCrc(0)
+        isDir(false), pendingDelete(false), size(0), parent(nullptr), nameCrc(0), pathCrc(0)
 {
     reconstruct(std::move(name_), isDir_);
 }
@@ -61,6 +61,44 @@ void FileEntry::add_child(std::unique_ptr<FileEntry> child) {
 
     if(parent)
         parent->on_child_size_changed(this, childSize);
+}
+
+void FileEntry::removePendingDelete(std::vector<std::unique_ptr<FileEntry>>& deletedChildren)
+{
+    auto it = children.begin();
+    while(it!=children.end())
+    {
+        if(!it->firstEntry) //this shouldn't happen, but better check
+            it = children.erase(it);
+
+        auto child = it->firstEntry.get();
+        while(child->nextEntry)
+        {
+            if(child->nextEntry->pendingDelete)
+            {
+                auto temp = std::move(child->nextEntry);
+                child->nextEntry = std::move(temp->nextEntry);
+                deletedChildren.push_back(std::move(temp));
+                continue;
+            }
+            child = child->nextEntry.get();
+        }
+        //now all children in this bin (except first) are processed
+        //now check if first child should also be removed and if it is, check if we have anything left
+        if(it->firstEntry->pendingDelete)
+        {
+            auto& ptrFirst = const_cast<std::unique_ptr<FileEntry>&>(it->firstEntry);
+            auto temp = std::move(ptrFirst);
+            if(temp->nextEntry)
+                ptrFirst = std::move(temp->nextEntry);
+            deletedChildren.push_back(std::move(temp));
+        }
+        //if no entries left, delete bin
+        if(!it->firstEntry)
+            it = children.erase(it);
+        else
+            ++it;
+    }
 }
 
 void FileEntry::_addChild(std::unique_ptr<FileEntry> child, bool addCrc) {

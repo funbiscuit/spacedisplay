@@ -52,6 +52,11 @@ void SpaceScanner::worker_run()
         {
             auto entryPath = std::move(scanQueue.front());
             scanQueue.pop_front();
+            // update current scanned path with new data
+            if(currentScannedPath)
+                *currentScannedPath = *entryPath;
+            else
+                currentScannedPath = Utils::make_unique<FilePath>(*entryPath);
             scanLock.unlock();
 
             scanChildrenAt(*entryPath, scannedEntries);
@@ -59,18 +64,25 @@ void SpaceScanner::worker_run()
             // so we should add all new entries to database, otherwise we might not be able
             // to find them on the next iteration
 
-            if(scannerStatus!=ScannerStatus::SCANNING)
+            if(scannerStatus==ScannerStatus::STOPPING)
             {
                 //lock mutex because next action will be clearing of queue and it should be protected
                 scanLock.lock();
                 break;
             }
 
-            db->addEntries(*entryPath, std::move(scannedEntries));
+            db->setChildrenForPath(*entryPath, std::move(scannedEntries));
+
+            while(scannerStatus==ScannerStatus::SCAN_PAUSED)
+            {
+                //if scan is paused, just wait until it isn't
+                std::this_thread::sleep_for(milliseconds(20));
+            }
 
             scanLock.lock();
         }
         scanQueue.clear();
+        currentScannedPath = nullptr;
         scanLock.unlock();
 
         auto stop   = high_resolution_clock::now();
@@ -89,10 +101,10 @@ void SpaceScanner::scanChildrenAt(const FilePath& path, std::vector<std::unique_
     //TODO add check if iterator was constructed and we were able to open path
     for(FileIterator it(pathStr); it.is_valid(); ++it)
     {
-        bool addToQueue = it.isDir;
+        bool doScan = it.isDir;
         std::unique_ptr<FilePath> entryPath;
         // this section is important for linux since not any path should be scanned (e.g. /proc or /sys)
-        if(it.isDir && scannerStatus == ScannerStatus::SCANNING)
+        if(it.isDir && scannerStatus != ScannerStatus::STOPPING)
         {
             std::string newPath = pathStr;
             if(newPath.back() != PlatformUtils::filePathSeparator)
@@ -102,20 +114,53 @@ void SpaceScanner::scanChildrenAt(const FilePath& path, std::vector<std::unique_
                 newPath.push_back(PlatformUtils::filePathSeparator);
             if(Utils::in_array(newPath, availableRoots) || Utils::in_array(newPath, excludedMounts))
             {
-                addToQueue = false;
+                doScan = false;
                 std::cout<<"Skip scan of: "<<newPath<<"\n";
             }
         }
         auto fe=FileEntry::createEntry(it.name, it.isDir);
         fe->set_size(it.size);
-        if(addToQueue)
+        if(doScan)
         {
             entryPath = Utils::make_unique<FilePath>(path);
             entryPath->addDir(it.name, fe->getNameCrc16());
-            scanQueue.push_front(std::move(entryPath));
+            std::lock_guard<std::mutex> lock(scanMtx);
+            //TODO it would be faster to save all adding for later and then just check if
+            // parent path exist in entry (or any of its child paths)
+            // if it is not (and most of the times this will be true), we can just push all
+            // these paths without further checking
+            // but this will give a small improvement (around 1sec when scanning C:\\
+            // which takes 15 seconds to scan)
+            addToQueue(std::move(entryPath), false);
         }
         scannedEntries.push_back(std::move(fe));
     }
+}
+
+void SpaceScanner::addToQueue(std::unique_ptr<FilePath> path, bool toBack)
+{
+    auto it = scanQueue.begin();
+
+    while(it != scanQueue.end())
+    {
+        auto res = path->compareTo(*(*it));
+
+        if(res == FilePath::CompareResult::DIFFERENT || res == FilePath::CompareResult::CHILD)
+            ++it;
+        else if(res == FilePath::CompareResult::PARENT)
+            //if we are parent path to some path in queue, then we should remove it from queue
+            it = scanQueue.erase(it);
+        else //equal
+        {
+            scanQueue.erase(it);
+            break;
+        }
+    }
+
+    if(toBack)
+        scanQueue.push_back(std::move(path));
+    else
+        scanQueue.push_front(std::move(path));
 }
 
 std::vector<std::string> SpaceScanner::get_available_roots()
@@ -128,6 +173,22 @@ std::vector<std::string> SpaceScanner::get_available_roots()
 std::shared_ptr<FileDB> SpaceScanner::getFileDB()
 {
     return db;
+}
+
+bool SpaceScanner::getCurrentScanPath(std::unique_ptr<FilePath>& path)
+{
+    std::lock_guard<std::mutex> lock_mtx(scanMtx);
+
+    if(currentScannedPath)
+    {
+        if(!path)
+            path = Utils::make_unique<FilePath>(*currentScannedPath);
+        else
+            *path = *currentScannedPath;
+        return true;
+    }
+    path = nullptr;
+    return false;
 }
 
 bool SpaceScanner::can_refresh() const
@@ -154,7 +215,8 @@ int SpaceScanner::get_scan_progress() const
 {
     uint64_t totalSpace, usedSpace, freeSpace;
     db->getSpace(usedSpace, freeSpace, totalSpace);
-    if(scannerStatus==ScannerStatus::SCANNING && totalSpace>0)
+    if((scannerStatus==ScannerStatus::SCANNING || scannerStatus==ScannerStatus::SCAN_PAUSED)
+       && totalSpace>0)
     {
         int progress = static_cast<int>((usedSpace*100)/(totalSpace-freeSpace));
         return Utils::clip(progress, 0, 100);
@@ -162,11 +224,43 @@ int SpaceScanner::get_scan_progress() const
     return 100;
 }
 
+bool SpaceScanner::pauseScan()
+{
+    std::lock_guard<std::mutex> lock_mtx(scanMtx);
+    if(scannerStatus==ScannerStatus::SCANNING)
+    {
+        scannerStatus=ScannerStatus::SCAN_PAUSED;
+        return true;
+    }
+    return false;
+}
+
+bool SpaceScanner::resumeScan()
+{
+    std::lock_guard<std::mutex> lock_mtx(scanMtx);
+    if(scannerStatus==ScannerStatus::SCAN_PAUSED)
+    {
+        scannerStatus=ScannerStatus::SCANNING;
+        return true;
+    }
+    return false;
+}
+
+bool SpaceScanner::canPause()
+{
+    return scannerStatus == ScannerStatus::SCANNING;
+}
+
+bool SpaceScanner::canResume()
+{
+    return scannerStatus == ScannerStatus::SCAN_PAUSED;
+}
+
 void SpaceScanner::stop_scan()
 {
     {
         std::lock_guard<std::mutex> lock_mtx(scanMtx);
-        if(scannerStatus==ScannerStatus::SCANNING)
+        if(scannerStatus!=ScannerStatus::STOPPING && scannerStatus!=ScannerStatus::IDLE)
             scannerStatus=ScannerStatus::STOPPING;
     }
     //wait until everything is stopped
@@ -220,7 +314,7 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     //this will load known info about disk space (available and total) to database
     update_disk_space();
 
-    scanQueue.push_back(Utils::make_unique<FilePath>(*(db->getRootPath())));
+    addToQueue(Utils::make_unique<FilePath>(*(db->getRootPath())));
 
     return ScannerError::NONE;
 }
@@ -239,15 +333,8 @@ void SpaceScanner::rescan_dir(const FilePath& path)
 
     update_disk_space();//disk space might change since last update, so update it again
 
-    uint64_t count;
-    if(!db->clearEntry(path, count))
-    {
-        std::cout<<"Can't rescan "<<path.getPath()<<"\n";
-        return;
-    }
-
     // pushing to front so we start rescanning as soon as possible
-    scanQueue.push_front(Utils::make_unique<FilePath>(path));
+    addToQueue(Utils::make_unique<FilePath>(path), false);
 }
 
 void SpaceScanner::getSpace(uint64_t& used, uint64_t& available, uint64_t& total) const

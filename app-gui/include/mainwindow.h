@@ -33,11 +33,12 @@ public:
         FORWARD =        1U <<  2U,
         NAVIGATE_UP =    1U <<  3U,
         HOME =           1U <<  4U,
-        REFRESH =        1U <<  5U,
-        LESS_DETAIL =    1U <<  6U,
-        MORE_DETAIL =    1U <<  7U,
-        TOGGLE_FREE =    1U <<  8U,
-        TOGGLE_UNKNOWN = 1U <<  9U,
+        PAUSE =          1U <<  5U,
+        REFRESH =        1U <<  6U,
+        LESS_DETAIL =    1U <<  7U,
+        MORE_DETAIL =    1U <<  8U,
+        TOGGLE_FREE =    1U <<  9U,
+        TOGGLE_UNKNOWN = 1U << 10U,
     };
 
     void updateAvailableActions();
@@ -56,6 +57,7 @@ public slots:
     void goForward();
     void goUp();
     void goHome();
+    void togglePause();
     void refreshView();
     void lessDetail();
     void moreDetail();
@@ -91,6 +93,7 @@ private:
     std::unique_ptr<QAction> forwardAct;
     std::unique_ptr<QAction> upAct;
     std::unique_ptr<QAction> homeAct;
+    std::unique_ptr<QAction> pauseAct;
     std::unique_ptr<QAction> rescanAct;
     std::unique_ptr<QAction> lessDetailAct;
     std::unique_ptr<QAction> moreDetailAct;

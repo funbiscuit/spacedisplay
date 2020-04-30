@@ -14,9 +14,10 @@
 
 
 enum class ScannerStatus {
-    IDLE=0,
-    SCANNING=1,
-    STOPPING=2,
+    IDLE,
+    SCANNING,
+    STOPPING,
+    SCAN_PAUSED,
 };
 
 class FileEntry;
@@ -41,6 +42,19 @@ public:
 
     void stop_scan();
 
+    /**
+     * Pauses current scan and returns true if it was paused
+     * If no scan is running returns false
+     * @return
+     */
+    bool pauseScan();
+
+    bool resumeScan();
+
+    bool canPause();
+
+    bool canResume();
+
     void rescan_dir(const FilePath& folder_path);
 
     /**
@@ -51,6 +65,8 @@ public:
     std::vector<std::string> get_available_roots();
 
     std::shared_ptr<FileDB> getFileDB();
+
+    bool getCurrentScanPath(std::unique_ptr<FilePath>& path);
 
 
     /**
@@ -75,6 +91,7 @@ private:
     std::thread workerThread;
     std::atomic<bool> runWorker;
     std::mutex scanMtx;
+    std::unique_ptr<FilePath> currentScannedPath;
 
     // true if we scan mount point so we can get info about how big it should be
     bool isMountScanned;
@@ -98,6 +115,18 @@ private:
     std::shared_ptr<FileDB> db;
 
     void worker_run();
+
+    /**
+     * Adds specified path to queue. If such path already exist in queue,
+     * it will be moved to back (if toBack is true) or to front (otherwise).
+     * All paths in queue that contain this path, will be removed from queue
+     * This function must be called with locked scan mutex.
+     * If there are any path in queue that is contained in this path, then this
+     * path will not be added
+     * @param path
+     * @param toBack
+     */
+    void addToQueue(std::unique_ptr<FilePath> path, bool toBack = true);
 
     /**
      * Performs a scan at given path, creates entry for each child and populates scannedEntries vector

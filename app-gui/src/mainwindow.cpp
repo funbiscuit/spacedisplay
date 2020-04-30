@@ -238,6 +238,11 @@ void MainWindow::goHome()
     spaceWidget->navigateHome();
     onScanUpdate();
 }
+void MainWindow::togglePause()
+{
+    spaceWidget->setPause(pauseAct->isChecked());
+    onScanUpdate();
+}
 void MainWindow::refreshView()
 {
     disableActions(ActionMask::REFRESH);
@@ -290,6 +295,7 @@ void MainWindow::setTheme(bool isDark, bool updateIcons)
         using namespace ResourceBuilder;
         std::vector<std::pair<ResId, QAction*>> iconPairs={
                 std::make_pair(ResId::__ICONS_SVG_NEW_SCAN_SVG,newAct.get()),
+                std::make_pair(ResId::__ICONS_SVG_PAUSE_SVG,pauseAct.get()),
                 std::make_pair(ResId::__ICONS_SVG_REFRESH_SVG,rescanAct.get()),
                 std::make_pair(ResId::__ICONS_SVG_ARROW_BACK_SVG,backAct.get()),
                 std::make_pair(ResId::__ICONS_SVG_ARROW_FORWARD_SVG,forwardAct.get()),
@@ -342,6 +348,13 @@ void MainWindow::updateAvailableActions()
     else
         disableActions(ActionMask::LESS_DETAIL);
 
+    if(spaceWidget->canTogglePause())
+        enableActions(ActionMask::PAUSE);
+    else
+        disableActions(ActionMask::PAUSE);
+
+    pauseAct->setChecked(spaceWidget->isPaused());
+
     if(spaceWidget->canRefresh())
         enableActions(ActionMask::REFRESH);
     else
@@ -372,6 +385,7 @@ void MainWindow::setEnabledActions(ActionMask actions)
     forwardAct->setEnabled(!!(enabledActions & ActionMask::FORWARD));
     upAct->setEnabled(!!(enabledActions & ActionMask::NAVIGATE_UP));
     homeAct->setEnabled(!!(enabledActions & ActionMask::HOME));
+    pauseAct->setEnabled(!!(enabledActions & ActionMask::PAUSE));
     rescanAct->setEnabled(!!(enabledActions & ActionMask::REFRESH));
     lessDetailAct->setEnabled(!!(enabledActions & ActionMask::LESS_DETAIL));
     moreDetailAct->setEnabled(!!(enabledActions & ActionMask::MORE_DETAIL));
@@ -403,6 +417,7 @@ void MainWindow::createActions()
     connect(aboutAct, &QAction::triggered, this, &MainWindow::about);
 
     const QIcon newIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_NEW_SCAN_SVG);
+    const QIcon pauseIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_PAUSE_SVG);
     const QIcon rescanIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_REFRESH_SVG);
     const QIcon backIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_ARROW_BACK_SVG);
     const QIcon forwardIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_ARROW_FORWARD_SVG);
@@ -436,6 +451,11 @@ void MainWindow::createActions()
     homeAct = Utils::make_unique<QAction>(homeIcon,"Go &Home", this);
     homeAct->setStatusTip("Go to home (root) view");
     connect(homeAct.get(), &QAction::triggered, this, &MainWindow::goHome);
+
+    pauseAct = Utils::make_unique<QAction>(pauseIcon, "&Pause", this);
+    pauseAct->setStatusTip("Pause current scan");
+    pauseAct->setCheckable(true);
+    connect(pauseAct.get(), &QAction::triggered, this, &MainWindow::togglePause);
 
     rescanAct = Utils::make_unique<QAction>(rescanIcon, "&Rescan", this);
     rescanAct->setShortcuts(QKeySequence::Refresh);
@@ -499,6 +519,7 @@ void MainWindow::createActions()
     mainToolbar->setMovable(false);
 
     mainToolbar->addAction(newAct.get());
+    mainToolbar->addAction(pauseAct.get());
     mainToolbar->addAction(rescanAct.get());
     mainToolbar->addSeparator();
 
