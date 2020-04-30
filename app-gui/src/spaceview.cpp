@@ -582,7 +582,6 @@ void SpaceView::increaseDetail()
     if(canIncreaseDetail())
     {
         ++currentDepth;
-        scanner->resumeScan();
         onScanUpdate();
     }
 }
@@ -592,7 +591,6 @@ void SpaceView::decreaseDetail()
     if(canDecreaseDetail())
     {
         --currentDepth;
-        scanner->pauseScan();
         onScanUpdate();
     }
 }
