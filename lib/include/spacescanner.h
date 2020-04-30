@@ -66,6 +66,8 @@ public:
 
     std::shared_ptr<FileDB> getFileDB();
 
+    bool getCurrentScanPath(std::unique_ptr<FilePath>& path);
+
 
     /**
      * Returns true if it possible to determine scan progress.
@@ -89,6 +91,7 @@ private:
     std::thread workerThread;
     std::atomic<bool> runWorker;
     std::mutex scanMtx;
+    std::unique_ptr<FilePath> currentScannedPath;
 
     // true if we scan mount point so we can get info about how big it should be
     bool isMountScanned;

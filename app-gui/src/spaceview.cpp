@@ -93,8 +93,9 @@ void SpaceView::drawView(QPainter& painter, const FileEntryView& file, int nestL
         drawViewTitle(painter, bg, file);
         for(const auto& child : file.get_children())
         {
-            //if we just drawn hovered view, we need to draw backgrounds for all its children
-            drawView(painter, *child, nestLevel - 1, file.getId() == hoveredId);
+            //if we just drawn hovered or scanned view, we need to draw backgrounds for all its children
+            drawView(painter, *child, nestLevel - 1,
+                    file.getId() == hoveredId || file.getId() == currentScannedId);
         }
     } else
     {
@@ -113,6 +114,7 @@ bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryVie
 
     QColor fillColor, strokeColor;
     bool isHovered = hoveredId == file.getId();
+    bool isScanning = currentScannedId == file.getId();
 
     switch(file.get_type())
     {
@@ -138,11 +140,15 @@ bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryVie
     {
         fillColor = colorTheme->tint(fillColor, 0.7f);
         strokeColor = colorTheme->tint(strokeColor, 0.5f);
+    } else if(isScanning && !isPaused())
+    {
+        fillColor = colorTheme->tint(fillColor, 0.5f);
+        strokeColor = colorTheme->tint(strokeColor, 0.3f);
     }
 
     bg_out = fillColor;
 
-    if(fillDir || isHovered)
+    if(fillDir || isHovered || isScanning)
         painter.setBrush(QBrush(fillColor));
     else
         painter.setBrush(Qt::NoBrush);
@@ -222,6 +228,17 @@ bool SpaceView::updateHoveredView()
     fileTooltip->setTooltip(point.x(), point.y(), hoveredEntry->get_tooltip());
 
     return prevHoveredId != hoveredId;
+}
+
+void SpaceView::updateScannedView()
+{
+    currentScannedId = 0;
+    if(currentScannedPath)
+    {
+        auto view = viewDB->getClosestView(*currentScannedPath, currentDepth+1);
+        if(view)
+            currentScannedId = view->getId();
+    }
 }
 
 void SpaceView::setOnActionCallback(std::function<void(void)> callback)
@@ -386,6 +403,7 @@ void SpaceView::onScanUpdate()
 {
     if(scanner)
     {
+        scanner->getCurrentScanPath(currentScannedPath);
         allocateEntries();
         entryPopup->updateActions(*scanner);
     }
@@ -402,6 +420,7 @@ void SpaceView::allocateEntries()
         viewDB->update(showUnknown, showAvailable);
 
         updateHoveredView();
+        updateScannedView();
     }
 }
 

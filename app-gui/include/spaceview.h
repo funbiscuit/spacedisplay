@@ -150,7 +150,9 @@ protected:
     std::unique_ptr<FilePath> currentPath;
     std::unique_ptr<FileViewDB> viewDB;
     std::unique_ptr<FilePath> hoveredPath;
+    std::unique_ptr<FilePath> currentScannedPath;
     uint64_t hoveredId = 0;
+    uint64_t currentScannedId = 0;
     std::unique_ptr<SpaceScanner> scanner;
 
     /**
@@ -180,6 +182,8 @@ protected:
     void allocateEntries();
 
     bool updateHoveredView();
+
+    void updateScannedView();
 
     void drawView(QPainter& painter, const FileEntryView& file, int nestLevel, bool forceFill);
     void drawViewTitle(QPainter& painter, const QColor& bg, const FileEntryView& file);

@@ -60,6 +60,8 @@ public:
 
     FileEntryView* getHoveredView(int mouseX, int mouseY);
 
+    FileEntryView* getClosestView(const FilePath& filepath, int maxDepth);
+
     /**
      * Checks if database is valid (i.e. has a valid root) and can be accessed
      * @return

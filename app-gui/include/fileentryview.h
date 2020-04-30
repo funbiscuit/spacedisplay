@@ -73,6 +73,17 @@ public:
     }
 
     FileEntryView* getHoveredView(int mouseX, int mouseY);
+
+    /**
+     * Returns closest view to specified path. For example,
+     * if C:\Windows\System32 is specified, but only C:\Windows exist, then it
+     * will be returned.
+     * @param filepath
+     * @param maxDepth
+     * @return
+     */
+    FileEntryView* getClosestView(const FilePath& filepath, int maxDepth);
+
     std::string format_size() const;
     std::string get_tooltip() const;
 

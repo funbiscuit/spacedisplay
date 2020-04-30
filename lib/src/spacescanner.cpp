@@ -52,6 +52,11 @@ void SpaceScanner::worker_run()
         {
             auto entryPath = std::move(scanQueue.front());
             scanQueue.pop_front();
+            // update current scanned path with new data
+            if(currentScannedPath)
+                *currentScannedPath = *entryPath;
+            else
+                currentScannedPath = Utils::make_unique<FilePath>(*entryPath);
             scanLock.unlock();
 
             scanChildrenAt(*entryPath, scannedEntries);
@@ -77,6 +82,7 @@ void SpaceScanner::worker_run()
             scanLock.lock();
         }
         scanQueue.clear();
+        currentScannedPath = nullptr;
         scanLock.unlock();
 
         auto stop   = high_resolution_clock::now();
@@ -167,6 +173,22 @@ std::vector<std::string> SpaceScanner::get_available_roots()
 std::shared_ptr<FileDB> SpaceScanner::getFileDB()
 {
     return db;
+}
+
+bool SpaceScanner::getCurrentScanPath(std::unique_ptr<FilePath>& path)
+{
+    std::lock_guard<std::mutex> lock_mtx(scanMtx);
+
+    if(currentScannedPath)
+    {
+        if(!path)
+            path = Utils::make_unique<FilePath>(*currentScannedPath);
+        else
+            *path = *currentScannedPath;
+        return true;
+    }
+    path = nullptr;
+    return false;
 }
 
 bool SpaceScanner::can_refresh() const
