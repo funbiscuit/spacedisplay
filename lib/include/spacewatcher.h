@@ -2,6 +2,12 @@
 #define SPACEDISPLAY_SPACEWATCHER_H
 
 #include <string>
+#include <memory>
+#include <mutex>
+#include <list>
+#include <thread>
+#include <atomic>
+
 
 class SpaceWatcher {
 public:
@@ -13,16 +19,52 @@ public:
         NEW_NAME=6
     };
 
-    struct FileInfo {
-        FileAction Action;
-        std::string FileName;
+    struct FileEvent {
+        FileAction action;
+        std::string filepath;
+        std::string parentpath;
     };
+
+    static std::unique_ptr<SpaceWatcher> getWatcher();
 
     SpaceWatcher();
     ~SpaceWatcher();
 
-    void watchDir(const std::string& path);
+    virtual bool beginWatch(const std::string& path) = 0;
+    virtual void endWatch() = 0;
+    virtual bool isWatching() = 0;
 
+    /**
+     * Returns event if any is present.
+     * @return nullptr if there are no events
+     */
+    std::unique_ptr<FileEvent> popEvent();
+
+    /**
+     * Adds directory to watch. Watch should be already started.
+     * Used on platforms that can't watch recursively (e.g. linux)
+     * @param path
+     */
+    virtual void addDir(const std::string& path) = 0;
+
+protected:
+
+    std::mutex eventsMtx;
+    std::list<std::unique_ptr<FileEvent>> eventQueue;
+
+    std::string watchedPath;
+
+    std::atomic<bool> runThread;
+    std::thread watchThread;
+
+    void initPlatform();
+
+    virtual void readEvents() = 0;
+
+    void addEvent(std::unique_ptr<FileEvent> event);
+private:
+
+    void watcherRun();
 };
 
 

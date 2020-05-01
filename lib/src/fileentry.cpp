@@ -65,6 +65,7 @@ void FileEntry::add_child(std::unique_ptr<FileEntry> child) {
 
 void FileEntry::removePendingDelete(std::vector<std::unique_ptr<FileEntry>>& deletedChildren)
 {
+    int64_t changedSize = 0;
     auto it = children.begin();
     while(it!=children.end())
     {
@@ -78,6 +79,7 @@ void FileEntry::removePendingDelete(std::vector<std::unique_ptr<FileEntry>>& del
             {
                 auto temp = std::move(child->nextEntry);
                 child->nextEntry = std::move(temp->nextEntry);
+                changedSize += temp->size;
                 deletedChildren.push_back(std::move(temp));
                 continue;
             }
@@ -91,6 +93,7 @@ void FileEntry::removePendingDelete(std::vector<std::unique_ptr<FileEntry>>& del
             auto temp = std::move(ptrFirst);
             if(temp->nextEntry)
                 ptrFirst = std::move(temp->nextEntry);
+            changedSize += temp->size;
             deletedChildren.push_back(std::move(temp));
         }
         //if no entries left, delete bin
@@ -98,6 +101,12 @@ void FileEntry::removePendingDelete(std::vector<std::unique_ptr<FileEntry>>& del
             it = children.erase(it);
         else
             ++it;
+    }
+    if(changedSize>0)
+    {
+        size-=changedSize;
+        if(parent)
+            parent->on_child_size_changed(this, -changedSize);
     }
 }
 

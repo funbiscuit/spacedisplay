@@ -124,6 +124,15 @@ namespace PlatformUtils
      */
     std::string wstr2str(std::wstring const &wstr);
 
+
+    /**
+     * Convert short path (utf-8 encoded) to long path (also utf-8).
+     * Conversion is done "in place". If conversion failed, path is not changed
+     * @param shortPath
+     * @return true on success
+     */
+    bool toLongPath(std::string& shortPath);
+
 #endif
 
 };

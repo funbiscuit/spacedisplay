@@ -1,17 +1,26 @@
-#include "spacewatcher.h"
+#include "spacewatcher-win.h"
 
 #include "platformutils.h"
 #include "utils.h"
 
 #include <iostream>
 
-#include <Windows.h>
-
-
-void SpaceWatcher::watchDir(const std::string& path)
+SpaceWatcherWin::SpaceWatcherWin()
 {
+    watchBuffer=std::unique_ptr<DWORD[]>(new DWORD[watchBufferSize]);
+}
+SpaceWatcherWin::~SpaceWatcherWin()
+{
+    // endWatch() is virtual so we can't call it in destructor
+    _endWatch();
+}
+
+bool SpaceWatcherWin::beginWatch(const std::string& path)
+{
+    endWatch();
+
     auto wname=PlatformUtils::str2wstr(path);
-    auto handle=CreateFileW(
+    watchedDir=CreateFileW(
             wname.c_str(),
             FILE_LIST_DIRECTORY,  //needed for reading changes
             FILE_SHARE_READ | FILE_SHARE_WRITE| FILE_SHARE_DELETE,
@@ -21,97 +30,129 @@ void SpaceWatcher::watchDir(const std::string& path)
             nullptr
     );
 
-    std::cout<<"Start monitoring changes\n";
-    int bufSize=1024*32;
-    auto buffer=std::unique_ptr<DWORD[]>(new DWORD[bufSize]);
-    while(true)
+    if(watchedDir != INVALID_HANDLE_VALUE)
     {
-        DWORD bytesReturned=0;
+        watchedPath = path;
+        return true;
+    }
+    return false;
+}
 
-        auto success=ReadDirectoryChangesW(
-                handle,
-                buffer.get(), //DWORD aligned buffer
-                bufSize, //size of buffer in bytes
-                true, //watching all files recursively
-                FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE,
-                &bytesReturned,
-                nullptr,
-                nullptr
-        );
-        if(success == 0)
-            break;
+void SpaceWatcherWin::endWatch()
+{
+    _endWatch();
+}
 
-        //calculate required number of dwords to hold returned bytes
-        auto dwords=bytesReturned/sizeof(DWORD)+1;
+void SpaceWatcherWin::_endWatch()
+{
+    if(watchedDir != INVALID_HANDLE_VALUE)
+    {
+        CloseHandle(watchedDir);
+        watchedPath.clear();
+        watchedDir = INVALID_HANDLE_VALUE;
+    }
+}
 
-        // buffer is filled with objects of structure FILE_NOTIFY_INFORMATION
-        // first DWORD holds offset to the next record (in bytes!)
-        // second DWORD holds Action
-        // third DWORD holds filename length
-        // then wchar buffer of filename length (without null terminating char)
+bool SpaceWatcherWin::isWatching()
+{
+    return watchedDir != INVALID_HANDLE_VALUE;
+}
 
-        // minimum size is 4, so do nothing until we receive it
-        if(dwords>3)
+void SpaceWatcherWin::readEvents()
+{
+    if(!isWatching())
+        return;
+
+    DWORD bytesReturned=0;
+
+    auto success=ReadDirectoryChangesW(
+            watchedDir,
+            watchBuffer.get(), //DWORD aligned buffer
+            watchBufferSize*sizeof(DWORD), //size of buffer in bytes
+            true, //watching all files recursively
+            FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE,
+            &bytesReturned,
+            nullptr,
+            nullptr
+    );
+    if(success == 0 || bytesReturned == 0)
+        return;
+
+    //calculate required number of dwords to hold returned bytes
+    auto dwords=bytesReturned/sizeof(DWORD)+1;
+
+    // buffer is filled with objects of structure FILE_NOTIFY_INFORMATION
+    // first DWORD holds offset to the next record (in bytes!)
+    // second DWORD holds Action
+    // third DWORD holds filename length
+    // then wchar buffer of filename length (without null terminating char)
+
+    // minimum size is 4, so do nothing until we receive it
+    if(dwords>3)
+    {
+        int currentDword=0;
+
+        while(true)
         {
-            int currentDword=0;
+            auto notifyInfo = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(&watchBuffer[currentDword]);
 
-            while(true)
+            auto fileEvent = Utils::make_unique<FileEvent>();
+            switch (notifyInfo->Action)
             {
-                auto notifyInfo = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(&buffer[currentDword]);
-
-                FileInfo fileInfo={};
-                switch (notifyInfo->Action)
-                {
-                    case FILE_ACTION_ADDED:
-                        fileInfo.Action=FileAction::ADDED;
-                        break;
-                    case FILE_ACTION_REMOVED:
-                        fileInfo.Action=FileAction::REMOVED;
-                        break;
-                    case FILE_ACTION_MODIFIED:
-                        fileInfo.Action=FileAction::MODIFIED;
-                        break;
-                    case FILE_ACTION_RENAMED_OLD_NAME:
-                        fileInfo.Action=FileAction::OLD_NAME;
-                        break;
-                    case FILE_ACTION_RENAMED_NEW_NAME:
-                        fileInfo.Action=FileAction::NEW_NAME;
-                        break;
-                    default:
-                        continue;//should not happen
-                }
-
-                auto nameLen= notifyInfo->FileNameLength / sizeof(wchar_t);
-                //nameLen doesn't include null-terminating byte
-                auto name=Utils::make_unique_arr<wchar_t>(nameLen+1);
-
-                memcpy(name.get(), notifyInfo->FileName, notifyInfo->FileNameLength);
-                name[nameLen]=L'\0';
-                fileInfo.FileName=path+PlatformUtils::wstr2str(name.get());
-                std::cout<<"File name: "<<fileInfo.FileName<<", reason: "<<(int)fileInfo.Action<<"\n";
-
-
-                // returned filename might (or might not) be a short path. we should restore long path
-                // but it is not possible if file was deleted/removed since it will give error file not found
-                auto len = GetLongPathNameW(
-                        PlatformUtils::str2wstr(fileInfo.FileName).c_str(),
-                        nullptr,
-                        0
-                );
-                std::cout<<"Long File name len: "<<len<<"\n";
-                if(len==0)
-                    std::cout << "err:" << GetLastError() << "\n";
-
-
-                //offset to next this should be dword aligned
-                auto next = notifyInfo->NextEntryOffset / sizeof(DWORD);
-                currentDword+=next;
-                if(next==0)
+                case FILE_ACTION_ADDED:
+                    fileEvent->action=FileAction::ADDED;
                     break;
+                case FILE_ACTION_REMOVED:
+                    fileEvent->action=FileAction::REMOVED;
+                    break;
+                case FILE_ACTION_MODIFIED:
+                    fileEvent->action=FileAction::MODIFIED;
+                    break;
+                case FILE_ACTION_RENAMED_OLD_NAME:
+                    fileEvent->action=FileAction::OLD_NAME;
+                    break;
+                case FILE_ACTION_RENAMED_NEW_NAME:
+                    fileEvent->action=FileAction::NEW_NAME;
+                    break;
+                default:
+                    continue;//should not happen
             }
+
+            auto nameLen= notifyInfo->FileNameLength / sizeof(wchar_t);
+            //nameLen doesn't include null-terminating byte
+            auto name=Utils::make_unique_arr<wchar_t>(nameLen+1);
+
+            memcpy(name.get(), notifyInfo->FileName, notifyInfo->FileNameLength);
+            name[nameLen]=L'\0';
+            fileEvent->filepath= watchedPath + PlatformUtils::wstr2str(name.get());
+
+            // returned filename might (or might not) be a short path. we should restore long path
+
+            bool pathConverted = false;
+            if(fileEvent->action != FileAction::MODIFIED && fileEvent->action != FileAction::REMOVED)
+            {
+                PlatformUtils::toLongPath(fileEvent->filepath);
+            }
+
+            if(fileEvent->filepath.back() == '\\')
+                fileEvent->filepath.pop_back();
+
+            auto lastSlash = fileEvent->filepath.find_last_of('\\');
+            if(lastSlash != std::string::npos)
+                fileEvent->parentpath = fileEvent->filepath.substr(0, lastSlash+1);
+            else
+                fileEvent->parentpath = "";
+
+            PlatformUtils::toLongPath(fileEvent->parentpath);
+
+            addEvent(std::move(fileEvent));
+
+            //offset to next this should be dword aligned
+            auto next = notifyInfo->NextEntryOffset / sizeof(DWORD);
+            currentDword+=next;
+            if(next==0)
+                break;
         }
     }
-    std::cout<<"Stop monitoring changes\n";
 
-    CloseHandle(handle);
 }

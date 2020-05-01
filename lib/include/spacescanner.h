@@ -23,6 +23,7 @@ enum class ScannerStatus {
 class FileEntry;
 class FilePath;
 class FileDB;
+class SpaceWatcher;
 
 enum class ScannerError
 {
@@ -114,7 +115,11 @@ private:
     std::atomic<ScannerStatus> scannerStatus;
     std::shared_ptr<FileDB> db;
 
+    std::unique_ptr<SpaceWatcher> watcher;
+
     void worker_run();
+
+    void checkForEvents();
 
     /**
      * Adds specified path to queue. If such path already exist in queue,

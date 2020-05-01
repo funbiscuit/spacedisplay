@@ -211,3 +211,20 @@ std::string PlatformUtils::wstr2str(std::wstring const &wstr)
     WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), (LPSTR)ret.data(), (int)ret.size(), nullptr, nullptr);
     return ret;
 }
+
+bool PlatformUtils::toLongPath(std::string& shortPath)
+{
+    auto wpath = PlatformUtils::str2wstr(shortPath);
+    auto requiredBufLen = GetLongPathNameW(wpath.c_str(), nullptr, 0);
+    if(requiredBufLen > 0)
+    {
+        auto longName=Utils::make_unique_arr<wchar_t>(requiredBufLen);
+        auto copiedChars = GetLongPathNameW(wpath.c_str(), longName.get(), requiredBufLen);
+        if(copiedChars < requiredBufLen && copiedChars > 0)
+        {
+            shortPath = PlatformUtils::wstr2str(longName.get());
+            return true;
+        }
+    }
+    return false;
+}

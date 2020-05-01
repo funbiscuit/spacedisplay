@@ -3,6 +3,7 @@
 #include "fileentry.h"
 #include "filepath.h"
 #include "filedb.h"
+#include "spacewatcher.h"
 #include "platformutils.h"
 #include "utils.h"
 
@@ -13,16 +14,47 @@ SpaceScanner::SpaceScanner() :
         scannerStatus(ScannerStatus::IDLE), runWorker(false), isMountScanned(false)
 {
     db = std::make_shared<FileDB>();
+    watcher = SpaceWatcher::getWatcher();
     //Start thread after everything is initialized
     workerThread=std::thread(&SpaceScanner::worker_run, this);
 }
 
 SpaceScanner::~SpaceScanner()
 {
+    //if watcher is not stopped, it will hang in waiting for changes
+    if(watcher)
+        watcher->endWatch();
+
     runWorker = false;
     scannerStatus=ScannerStatus::STOPPING;
     workerThread.join();
     db->clearDb();
+}
+
+void SpaceScanner::checkForEvents()
+{
+    if(!watcher)
+        return;
+    //should be called with locked scan mutex
+
+    while(auto event = watcher->popEvent())
+    {
+        if(event->parentpath.empty())
+            continue;
+
+        //try constructing FilePath and add it to queue
+        try
+        {
+            auto path = Utils::make_unique<FilePath>(event->parentpath,
+                                                     db->getRootPath()->getRoot());
+            //TODO adding to queue leads to recursive rescanning while we need to rescan only
+            // direct children of this path
+            addToQueue(std::move(path));
+            scannerStatus=ScannerStatus::SCANNING;
+        } catch (std::exception& e) {
+            std::cerr<<"Unable to construct path from: " << event->parentpath <<"\n";
+        }
+    }
 }
 
 void SpaceScanner::worker_run()
@@ -40,6 +72,7 @@ void SpaceScanner::worker_run()
             scanLock.unlock();
             std::this_thread::sleep_for(milliseconds(20));
             scanLock.lock();
+            checkForEvents();
         }
 
         //scan queue is not empty at this point
@@ -80,6 +113,9 @@ void SpaceScanner::worker_run()
             }
 
             scanLock.lock();
+            checkForEvents();
+            // update disk space after scan of directory is finished
+            update_disk_space();
         }
         scanQueue.clear();
         currentScannedPath = nullptr;
@@ -298,6 +334,9 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     PlatformUtils::get_mount_points(availableRoots, excludedMounts);
     // clears database if it was populated and sets new root
     db->setNewRootPath(path);
+
+    if(watcher)
+        watcher->beginWatch(path);
 
     scannerStatus=ScannerStatus::SCANNING;
 
