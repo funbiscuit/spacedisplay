@@ -24,6 +24,18 @@ public:
      * @param crc - crc of given string
      */
     explicit FilePath(const std::string& root, uint16_t crc = 0);
+
+    /**
+     * Constructs new path by given full path and root
+     * Root should be prefix of path
+     * Path and root should be non empty
+     * If path ends with slash, it is considered directory, otherwise it is a file.
+     * Root may end with slash, but it is not required.
+     * @param path - full path (e.g. /home/usr/test)
+     * @param root - root for path (e.g. /home/)
+     * @throws std::invalid_argument if construction failed
+     */
+    explicit FilePath(const std::string& path, const std::string& root);
     
     /**
      * Returns correct path to this file or directory

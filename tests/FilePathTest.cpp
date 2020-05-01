@@ -83,6 +83,81 @@ TEST_CASE( "Creating and editing filepath", "[filepath]" )
         REQUIRE( !emptyPath.addFile("any") );
         REQUIRE( !emptyPath.addDir("any") );
     }
+    SECTION( "Creating from path and root. Arguments check." ) {
+        bool thrown;
+        try{
+            FilePath newPath("", "");
+            thrown = false;
+        } catch (std::exception& e) { thrown = true; }
+        REQUIRE( thrown );
+
+        try{
+            FilePath newPath("", "D:\\Windows");
+            thrown = false;
+        } catch (std::exception& e) { thrown = true; }
+        REQUIRE( thrown );
+
+        try{
+            FilePath newPath("D:\\Windows", "");
+            thrown = false;
+        } catch (std::exception& e) { thrown = true; }
+        REQUIRE( thrown );
+
+        try{
+            FilePath newPath("D:\\Windows", "C:\\");
+            thrown = false;
+        } catch (std::exception& e) { thrown = true; }
+        REQUIRE( thrown );
+
+        try{
+            FilePath newPath("D:\\Windows", "D:\\Windows\\System32");
+            thrown = false;
+        } catch (std::exception& e) { thrown = true; }
+        REQUIRE( thrown );
+
+        try{
+            //if path doesn't have slash at the end, it is considered to be a file
+            //while root is always considered to be a directory
+            FilePath newPath("D:\\Windows", "D:\\Windows\\");
+            thrown = false;
+        } catch (std::exception& e) { thrown = true; }
+        REQUIRE( thrown );
+
+        try{
+            FilePath newPath("D:\\Windows\\", "D:\\Windows");
+            FilePath newPath2("D:\\Windows\\", "D:\\Windows\\");
+            FilePath newPath3("D:\\Windows", "D:\\");
+            thrown = false;
+        } catch (std::exception& e) { thrown = true; }
+        REQUIRE( !thrown );
+
+    }
+    SECTION( "Creating from path and root" ) {
+        SECTION( "Creating path to file" ) {
+            path.addFile("Windows");
+            FilePath filePath("D:\\Windows", "D:\\");
+            REQUIRE( !filePath.isDir() );
+            REQUIRE( filePath.compareTo(path) == FilePath::CompareResult::EQUAL );
+            REQUIRE( filePath.goUp() );
+            REQUIRE( !filePath.canGoUp() );
+        }
+
+        SECTION( "Creating path to directory" ) {
+            path.addDir("Windows");
+            FilePath dirPath("D:\\Windows\\", "D:\\");
+            REQUIRE( dirPath.isDir() );
+            REQUIRE( dirPath.compareTo(path) == FilePath::CompareResult::EQUAL );
+            REQUIRE( dirPath.goUp() );
+            REQUIRE( !dirPath.canGoUp() );
+        }
+
+        SECTION( "Creating path to root" ) {
+            FilePath rootPath("D:\\", "D:\\");
+            REQUIRE( rootPath.isDir() );
+            REQUIRE( !rootPath.canGoUp() );
+            REQUIRE( rootPath.compareTo(path) == FilePath::CompareResult::EQUAL );
+        }
+    }
     SECTION( "Check crcs work" ) {
         FilePath newPath("/home");
         auto rootCrc = path.getPathCrc();

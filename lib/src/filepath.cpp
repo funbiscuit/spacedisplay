@@ -10,6 +10,41 @@ FilePath::FilePath(const std::string& root_, uint16_t crc)
     setRoot(root_, crc);
 }
 
+FilePath::FilePath(const std::string& path, const std::string& root)
+{
+    if(path.empty() || root.empty())
+        throw std::invalid_argument("Can't create path from empty root or path");
+
+    auto newPath = path;
+    auto newRoot = root;
+    normalize(newPath, path.back() == PlatformUtils::filePathSeparator);
+    normalize(newRoot, true);
+
+    if(newPath.rfind(newRoot, 0) != 0)
+        throw std::invalid_argument("Provided path doesn't begin with provided root");
+
+    parts.push_back(newRoot);
+    pathCrcs.push_back(Utils::strCrc16(newRoot));
+
+    newPath.erase(0, newRoot.length());
+
+    //split remaining string by slashes
+    size_t pos;
+    while ((pos = newPath.find(PlatformUtils::filePathSeparator)) != std::string::npos)
+    {
+        std::string dirName = newPath.substr(0, pos + 1); //keep slash
+        parts.push_back(dirName);
+        dirName.pop_back();// slash should not count in calculation of crc
+        pathCrcs.push_back(pathCrcs.back() ^ Utils::strCrc16(dirName));
+        newPath.erase(0, pos + 1);
+    }
+    if(!newPath.empty())
+    {
+        parts.push_back(newPath);
+        pathCrcs.push_back(pathCrcs.back() ^ Utils::strCrc16(newPath));
+    }
+}
+
 void FilePath::setRoot(const std::string& root_, uint16_t crc)
 {
     if(root_.empty())
