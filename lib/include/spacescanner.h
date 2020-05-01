@@ -137,6 +137,14 @@ private:
     void addToQueue(std::unique_ptr<FilePath> path, bool recursiveScan, bool toBack = true);
 
     /**
+     * Same as addToQueue but assumes that all paths in provided vector have common parent
+     * @param paths
+     * @param recursiveScan
+     * @param toBack
+     */
+    void addChildrenToQueue(std::vector<std::unique_ptr<FilePath>>& paths, bool recursiveScan, bool toBack = true);
+
+    /**
      * Performs a scan at given path, creates entry for each child and populates scannedEntries vector
      * Scan is not recursive, only direct children are scanned
      * @param path - FilePath where to perform scan

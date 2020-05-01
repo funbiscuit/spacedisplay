@@ -49,7 +49,7 @@ void SpaceScanner::checkForEvents()
                                                      db->getRootPath()->getRoot());
             addToQueue(std::move(path), false);
             scannerStatus=ScannerStatus::SCANNING;
-        } catch (std::exception& e) {
+        } catch (std::exception&) {
             std::cerr<<"Unable to construct path from: " << event->parentpath <<"\n";
         }
     }
@@ -119,8 +119,7 @@ void SpaceScanner::worker_run()
             scanLock.lock();
             if(!newPaths.empty())
             {
-                for(auto& path : newPaths)
-                    addToQueue(std::move(path), true, false);
+                addChildrenToQueue(newPaths, true, false);
                 newPaths.clear();
             }
             checkForEvents();
@@ -133,7 +132,7 @@ void SpaceScanner::worker_run()
         auto stop   = high_resolution_clock::now();
         auto mseconds = duration_cast<milliseconds>(stop - start).count();
         //TODO this outputs very frequently when watching for changes
-        std::cout << "Time taken: " << mseconds <<"ms, "<<db->getFileCount()<<" file(s) scanned\n";
+        std::cout << "Time taken: " << mseconds <<"ms, "<<db->getFileCount()<<" known file(s)/dir(s)\n";
         scannerStatus = ScannerStatus::IDLE;
     }
 
@@ -182,6 +181,52 @@ void SpaceScanner::scanChildrenAt(const FilePath& path,
         }
         scannedEntries.push_back(std::move(fe));
     }
+}
+
+void SpaceScanner::addChildrenToQueue(std::vector<std::unique_ptr<FilePath>>& paths, bool recursiveScan, bool toBack)
+{
+    //create parent for children
+    FilePath parent = *paths.front();
+    parent.goUp();
+
+    bool safeToBatchAdd = true;
+    auto it = scanQueue.begin();
+
+    while(it != scanQueue.end())
+    {
+        auto res = parent.compareTo(*(*it).path);
+
+        if(res == FilePath::CompareResult::DIFFERENT)
+            ++it;
+        else if(res == FilePath::CompareResult::CHILD && it->recursive)
+            //if parent of entries is child to some recursive scan request, then we don't need to add
+            return;
+        else
+        {
+            safeToBatchAdd = false;
+            break;
+        }
+    }
+    if(safeToBatchAdd)
+    {
+        for(auto& child : paths)
+        {
+            ScanRequest request;
+            request.path = std::move(child);
+            request.recursive = recursiveScan;
+
+            if(toBack)
+                scanQueue.push_back(std::move(request));
+            else
+                scanQueue.push_front(std::move(request));
+        }
+    } else {
+        // Adding all children separately
+        // most of the times this will not happen
+        for(auto& child : paths)
+            addToQueue(std::move(child), recursiveScan, toBack);
+    }
+
 }
 
 void SpaceScanner::addToQueue(std::unique_ptr<FilePath> path, bool recursiveScan, bool toBack)
