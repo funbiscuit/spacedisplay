@@ -2,11 +2,8 @@
 #include <algorithm>
 #include <iostream>
 #include "filepath.h"
+#include "utils.h"
 #include "platformutils.h"
-
-extern "C" {
-#include <crc.h>
-}
 
 FilePath::FilePath(const std::string& root_, uint16_t crc)
 {
@@ -34,7 +31,7 @@ void FilePath::setRoot(const std::string& root_, uint16_t crc)
     pathCrcs.clear();
     parts.push_back(root);
     if(crc == 0)
-        crc = crc16((char*)root.c_str(), (uint16_t) root.length());
+        crc = Utils::strCrc16(root);
     pathCrcs.push_back(crc);
 }
 
@@ -112,7 +109,7 @@ bool FilePath::addDir(const std::string& name, uint16_t crc)
         parts.back().push_back(PlatformUtils::filePathSeparator);
 
     if(crc == 0)
-        crc = crc16((char*)name.c_str(),(uint16_t) name.length());
+        crc = Utils::strCrc16(name);
     pathCrcs.push_back(pathCrcs.back() ^ crc);
     return true;
 }
@@ -131,7 +128,7 @@ bool FilePath::addFile(const std::string& name, uint16_t crc)
     }
     parts.push_back(name);
     if(crc == 0)
-        crc = crc16((char*)name.c_str(), (uint16_t) name.length());
+        crc = Utils::strCrc16(name);
     pathCrcs.push_back(pathCrcs.back() ^ crc);
     return true;
 }

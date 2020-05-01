@@ -6,6 +6,10 @@
 #include "utils.h"
 #include "platformutils.h"
 
+extern "C" {
+#include <crc.h>
+}
+
 void hex_to_rgb(int hex_color, float (&rgb)[3])
 {
 //    printf("Input: %06X\n", hex_color);
@@ -77,6 +81,11 @@ void Utils::getMountPoints(std::vector<std::string>& availableMounts)
     // another function that retrieves only mount points without excluded ones
     std::vector<std::string> temp;
     PlatformUtils::get_mount_points(availableMounts, temp);
+}
+
+uint16_t Utils::strCrc16(const std::string& str)
+{
+    return crc16((char*)str.c_str(), (uint16_t)str.length());
 }
 
 std::string Utils::format_size(int64_t size)

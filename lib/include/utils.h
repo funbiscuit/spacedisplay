@@ -23,6 +23,8 @@ namespace Utils
     void tic();
     int toc(const char* message = nullptr, int threshold = 0);
 
+    uint16_t strCrc16(const std::string& str);
+
     std::string format_size(int64_t size);
 
     //todo we don't need anything from C++14, just make_unique, so use this simple version with C++11
