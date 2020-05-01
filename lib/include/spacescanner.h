@@ -34,7 +34,10 @@ enum class ScannerError
 
 
 class SpaceScanner {
-
+    struct ScanRequest {
+        std::unique_ptr<FilePath> path;
+        bool recursive;
+    };
 public:
 
     SpaceScanner();
@@ -98,7 +101,7 @@ private:
     bool isMountScanned;
 
     //edits to queue should be mutex protected
-    std::list<std::unique_ptr<FilePath>> scanQueue;
+    std::list<ScanRequest> scanQueue;
 
     std::vector<std::string> availableRoots;
     /**
@@ -131,17 +134,18 @@ private:
      * @param path
      * @param toBack
      */
-    void addToQueue(std::unique_ptr<FilePath> path, bool toBack = true);
+    void addToQueue(std::unique_ptr<FilePath> path, bool recursiveScan, bool toBack = true);
 
     /**
      * Performs a scan at given path, creates entry for each child and populates scannedEntries vector
      * Scan is not recursive, only direct children are scanned
      * @param path - FilePath where to perform scan
      * @param scannedEntries - vector reference where to add scanned children
+     * @param newPaths - pointer to vector where to add paths to scanned dirs
      */
     void scanChildrenAt(const FilePath& path,
-            std::vector<std::unique_ptr<FileEntry>>& scannedEntries
-            );
+                        std::vector<std::unique_ptr<FileEntry>>& scannedEntries,
+                        std::vector<std::unique_ptr<FilePath>>* newPaths = nullptr);
 };
 
 

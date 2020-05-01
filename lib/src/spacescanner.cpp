@@ -47,9 +47,7 @@ void SpaceScanner::checkForEvents()
         {
             auto path = Utils::make_unique<FilePath>(event->parentpath,
                                                      db->getRootPath()->getRoot());
-            //TODO adding to queue leads to recursive rescanning while we need to rescan only
-            // direct children of this path
-            addToQueue(std::move(path));
+            addToQueue(std::move(path), false);
             scannerStatus=ScannerStatus::SCANNING;
         } catch (std::exception& e) {
             std::cerr<<"Unable to construct path from: " << event->parentpath <<"\n";
@@ -80,19 +78,23 @@ void SpaceScanner::worker_run()
         // temporary queue for entries so we only lock mutex to add reasonable number of entries
         // instead of locking for each entry
         std::vector<std::unique_ptr<FileEntry>> scannedEntries;
+        std::vector<std::unique_ptr<FilePath>> newPaths;
 
+        update_disk_space();
         while(!scanQueue.empty() && scannerStatus==ScannerStatus::SCANNING)
         {
-            auto entryPath = std::move(scanQueue.front());
+            auto scanRequest = std::move(scanQueue.front());
             scanQueue.pop_front();
             // update current scanned path with new data
             if(currentScannedPath)
-                *currentScannedPath = *entryPath;
+                *currentScannedPath = *scanRequest.path;
             else
-                currentScannedPath = Utils::make_unique<FilePath>(*entryPath);
+                currentScannedPath = Utils::make_unique<FilePath>(*scanRequest.path);
             scanLock.unlock();
 
-            scanChildrenAt(*entryPath, scannedEntries);
+            // if we should perform recursive scan, store all paths to dirs in vector
+            scanChildrenAt(*scanRequest.path, scannedEntries,
+                           scanRequest.recursive ? &newPaths : nullptr);
             // after scan, all new paths, that should be scanned, are already added to queue
             // so we should add all new entries to database, otherwise we might not be able
             // to find them on the next iteration
@@ -104,7 +106,9 @@ void SpaceScanner::worker_run()
                 break;
             }
 
-            db->setChildrenForPath(*entryPath, std::move(scannedEntries));
+            // if this is not a recursive scan, we need to store paths to all new dirs
+            db->setChildrenForPath(*scanRequest.path, std::move(scannedEntries),
+                                   scanRequest.recursive ? nullptr : &newPaths);
 
             while(scannerStatus==ScannerStatus::SCAN_PAUSED)
             {
@@ -113,16 +117,22 @@ void SpaceScanner::worker_run()
             }
 
             scanLock.lock();
+            if(!newPaths.empty())
+            {
+                for(auto& path : newPaths)
+                    addToQueue(std::move(path), true, false);
+                newPaths.clear();
+            }
             checkForEvents();
-            // update disk space after scan of directory is finished
-            update_disk_space();
         }
+        update_disk_space();
         scanQueue.clear();
         currentScannedPath = nullptr;
         scanLock.unlock();
 
         auto stop   = high_resolution_clock::now();
         auto mseconds = duration_cast<milliseconds>(stop - start).count();
+        //TODO this outputs very frequently when watching for changes
         std::cout << "Time taken: " << mseconds <<"ms, "<<db->getFileCount()<<" file(s) scanned\n";
         scannerStatus = ScannerStatus::IDLE;
     }
@@ -130,7 +140,9 @@ void SpaceScanner::worker_run()
     std::cout << "End worker thread\n";
 }
 
-void SpaceScanner::scanChildrenAt(const FilePath& path, std::vector<std::unique_ptr<FileEntry>>& scannedEntries)
+void SpaceScanner::scanChildrenAt(const FilePath& path,
+                                  std::vector<std::unique_ptr<FileEntry>>& scannedEntries,
+                                  std::vector<std::unique_ptr<FilePath>>* newPaths)
 {
     auto pathStr = path.getPath();
 
@@ -156,30 +168,29 @@ void SpaceScanner::scanChildrenAt(const FilePath& path, std::vector<std::unique_
         }
         auto fe=FileEntry::createEntry(it.name, it.isDir);
         fe->set_size(it.size);
-        if(doScan)
+        if(doScan && newPaths)
         {
             entryPath = Utils::make_unique<FilePath>(path);
             entryPath->addDir(it.name, fe->getNameCrc16());
-            std::lock_guard<std::mutex> lock(scanMtx);
             //TODO it would be faster to save all adding for later and then just check if
             // parent path exist in entry (or any of its child paths)
             // if it is not (and most of the times this will be true), we can just push all
             // these paths without further checking
             // but this will give a small improvement (around 1sec when scanning C:\\
             // which takes 15 seconds to scan)
-            addToQueue(std::move(entryPath), false);
+            newPaths->push_back(std::move(entryPath));
         }
         scannedEntries.push_back(std::move(fe));
     }
 }
 
-void SpaceScanner::addToQueue(std::unique_ptr<FilePath> path, bool toBack)
+void SpaceScanner::addToQueue(std::unique_ptr<FilePath> path, bool recursiveScan, bool toBack)
 {
     auto it = scanQueue.begin();
 
     while(it != scanQueue.end())
     {
-        auto res = path->compareTo(*(*it));
+        auto res = path->compareTo(*(*it).path);
 
         if(res == FilePath::CompareResult::DIFFERENT || res == FilePath::CompareResult::CHILD)
             ++it;
@@ -193,10 +204,14 @@ void SpaceScanner::addToQueue(std::unique_ptr<FilePath> path, bool toBack)
         }
     }
 
+    ScanRequest request;
+    request.path = std::move(path);
+    request.recursive = recursiveScan;
+
     if(toBack)
-        scanQueue.push_back(std::move(path));
+        scanQueue.push_back(std::move(request));
     else
-        scanQueue.push_front(std::move(path));
+        scanQueue.push_front(std::move(request));
 }
 
 std::vector<std::string> SpaceScanner::get_available_roots()
@@ -353,7 +368,7 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     //this will load known info about disk space (available and total) to database
     update_disk_space();
 
-    addToQueue(Utils::make_unique<FilePath>(*(db->getRootPath())));
+    addToQueue(Utils::make_unique<FilePath>(*(db->getRootPath())), true);
 
     return ScannerError::NONE;
 }
@@ -373,7 +388,7 @@ void SpaceScanner::rescan_dir(const FilePath& path)
     update_disk_space();//disk space might change since last update, so update it again
 
     // pushing to front so we start rescanning as soon as possible
-    addToQueue(Utils::make_unique<FilePath>(path), false);
+    addToQueue(Utils::make_unique<FilePath>(path), true, false);
 }
 
 void SpaceScanner::getSpace(uint64_t& used, uint64_t& available, uint64_t& total) const

@@ -17,7 +17,9 @@ void FileDB::setSpace(uint64_t totalSpace_, uint64_t availableSpace_)
     availableSpace = availableSpace_;
 }
 
-bool FileDB::setChildrenForPath(const FilePath &path, std::vector<std::unique_ptr<FileEntry>> entries)
+bool FileDB::setChildrenForPath(const FilePath &path,
+                                std::vector<std::unique_ptr<FileEntry>> entries,
+                                std::vector<std::unique_ptr<FilePath>>* newPaths)
 {
     // Presorting entries by size so we can insert them much quicker
     std::sort(entries.begin(), entries.end(),
@@ -75,6 +77,14 @@ bool FileDB::setChildrenForPath(const FilePath &path, std::vector<std::unique_pt
             parentEntry->add_child(std::move(e));
             ++fileCount;
 
+            // if directory is added, it should be put into newPaths vector so it gets scanned
+            if(ePtr->isDir && newPaths)
+            {
+                auto childPath = Utils::make_unique<FilePath>(path);
+                childPath->addDir(ePtr->name.get(), ePtr->nameCrc);
+                newPaths->push_back(std::move(childPath));
+            }
+
             //TODO move out of lock?
             auto it2 = entriesMap.find(crc);
             if(it2 != entriesMap.end())
@@ -91,6 +101,7 @@ bool FileDB::setChildrenForPath(const FilePath &path, std::vector<std::unique_pt
 
         if(deleteCount>0)
             parentEntry->removePendingDelete(deletedChildren);
+        fileCount-=deletedChildren.size();
 
         //also delete all pointers to this children from crc map (since all children will be deleted)
         for(auto& child : deletedChildren)
@@ -117,7 +128,7 @@ bool FileDB::setChildrenForPath(const FilePath &path, std::vector<std::unique_pt
         bHasChanges = true;
     }
 
-    return false;
+    return true;
 }
 
 void FileDB::setNewRootPath(const std::string& path)

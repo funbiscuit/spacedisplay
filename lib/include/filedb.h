@@ -28,12 +28,15 @@ public:
     /**
      * Tries to find entry by specified path and updates its children to be the same as in
      * provided path. All existing children that are not listed in this vector, will be deleted.
-     * If path doesn't exist - entries are destroyed and false is returned
+     * If path doesn't exist - entries are destroyed and empty vector is returned
+     * Paths to newly added directories are added to provided array (if not nullptr).
      * @param path
      * @param entries
      * @return
      */
-    bool setChildrenForPath(const FilePath& path, std::vector<std::unique_ptr<FileEntry>> entries);
+    bool setChildrenForPath(const FilePath& path,
+                            std::vector<std::unique_ptr<FileEntry>> entries,
+                            std::vector<std::unique_ptr<FilePath>>* newPaths = nullptr);
 
     /**
      * Clears database and sets new root, making db initialized
