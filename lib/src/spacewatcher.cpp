@@ -1,6 +1,10 @@
 #include "spacewatcher.h"
+
+#ifdef _WIN32
 #include "spacewatcher-win.h"
-#include "utils.h"
+#else
+
+#endif
 
 #include <iostream>
 
