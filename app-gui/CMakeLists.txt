@@ -50,7 +50,7 @@ target_link_libraries(spacedisplay_gui PRIVATE
         )
 
 if( WIN32 )
-    set(WIN32_CONSOLE "On" CACHE STRING "Enable default windows console")
+    option(WIN32_CONSOLE "Enable default windows console" ON)
     # On Windows disable console if not needed
     if(NOT ${WIN32_CONSOLE})
         message(STATUS "Console is disabled")

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.8...3.17)
 
 project(spacedisplay LANGUAGES C CXX)
 
+option(BUILD_TESTS "Build test programs" OFF)
+
 # add dependencies
 add_subdirectory(deps)
 
@@ -15,4 +17,6 @@ add_subdirectory(res)
 add_subdirectory(app-gui)
 
 # add tests
-add_subdirectory(tests)
+if(${BUILD_TESTS})
+    add_subdirectory(tests)
+endif()
