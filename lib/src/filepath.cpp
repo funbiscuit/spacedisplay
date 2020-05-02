@@ -17,7 +17,8 @@ FilePath::FilePath(const std::string& path, const std::string& root)
 
     auto newPath = path;
     auto newRoot = root;
-    normalize(newPath, path.back() == PlatformUtils::filePathSeparator);
+    normalize(newPath, path.back() == PlatformUtils::filePathSeparator ||
+                       path.back() == PlatformUtils::invertedFilePathSeparator);
     normalize(newRoot, true);
 
     if(newPath.rfind(newRoot, 0) != 0)
