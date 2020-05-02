@@ -28,7 +28,7 @@ public:
     static std::unique_ptr<SpaceWatcher> getWatcher();
 
     SpaceWatcher();
-    ~SpaceWatcher();
+    virtual ~SpaceWatcher();
 
     virtual bool beginWatch(const std::string& path) = 0;
     virtual void endWatch() = 0;
@@ -49,20 +49,23 @@ public:
 
 protected:
 
-    std::mutex eventsMtx;
-    std::list<std::unique_ptr<FileEvent>> eventQueue;
-
     std::string watchedPath;
-
-    std::atomic<bool> runThread;
-    std::thread watchThread;
-
-    void initPlatform();
 
     virtual void readEvents() = 0;
 
+    // start and stop thread are called from child classes
+    void startThread();
+    void stopThread();
+
     void addEvent(std::unique_ptr<FileEvent> event);
 private:
+
+    std::mutex eventsMtx;
+    std::list<std::unique_ptr<FileEvent>> eventQueue;
+
+
+    std::atomic<bool> runThread;
+    std::thread watchThread;
 
     void watcherRun();
 };

@@ -8,15 +8,29 @@
 
 #include <iostream>
 
-SpaceWatcher::SpaceWatcher() : runThread(true)
+SpaceWatcher::SpaceWatcher() : runThread(false)
 {
 
-    //Start thread after everything is initialized
-    watchThread=std::thread(&SpaceWatcher::watcherRun, this);
 }
 
 SpaceWatcher::~SpaceWatcher()
 {
+}
+
+void SpaceWatcher::startThread()
+{
+    if(runThread)
+        return;
+    runThread = true;
+    //Start thread after everything is initialized
+    watchThread=std::thread(&SpaceWatcher::watcherRun, this);
+}
+
+void SpaceWatcher::stopThread()
+{
+    if(!runThread)
+        return;
+
     runThread = false;
     watchThread.join();
 }
@@ -38,7 +52,8 @@ void SpaceWatcher::watcherRun()
     std::cout << "Start watcher thread\n";
     while(runThread)
     {
-        readEvents();
+        if(isWatching())
+            readEvents();
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
     std::cout << "Stop watcher thread\n";

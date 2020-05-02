@@ -6,6 +6,7 @@
 #include <string>
 #include <memory>
 #include <list>
+#include <atomic>
 
 #include <Windows.h>
 
@@ -13,7 +14,7 @@ class SpaceWatcherWin : public SpaceWatcher {
 public:
 
     SpaceWatcherWin();
-    ~SpaceWatcherWin();
+    ~SpaceWatcherWin() override;
 
     bool beginWatch(const std::string& path) override;
     void endWatch() override;
@@ -29,7 +30,7 @@ private:
 
     const int watchBufferSize = 1024*48;
 
-    HANDLE watchedDir = INVALID_HANDLE_VALUE;
+    std::atomic<HANDLE> watchedDir;
 
     std::unique_ptr<DWORD[]> watchBuffer;
 

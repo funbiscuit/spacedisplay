@@ -5,14 +5,16 @@
 
 #include <iostream>
 
-SpaceWatcherWin::SpaceWatcherWin()
+SpaceWatcherWin::SpaceWatcherWin() : watchedDir(INVALID_HANDLE_VALUE)
 {
     watchBuffer=std::unique_ptr<DWORD[]>(new DWORD[watchBufferSize]);
+    startThread();
 }
 SpaceWatcherWin::~SpaceWatcherWin()
 {
     // endWatch() is virtual so we can't call it in destructor
     _endWatch();
+    stopThread();
 }
 
 bool SpaceWatcherWin::beginWatch(const std::string& path)
