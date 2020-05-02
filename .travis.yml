@@ -28,11 +28,13 @@ install:
 
 before_script:
   # create a build folder for the out-of-source build
+  - cd "$TRAVIS_BUILD_DIR"
   - mkdir -p build
   - mkdir -p build-cov
   - cd build
   - cmake .. -DCMAKE_BUILD_TYPE=Release
   # configure coverage
+  - cd "$TRAVIS_BUILD_DIR"
   - cd build-cov
   - cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -DTESTS_COV=ON
 
