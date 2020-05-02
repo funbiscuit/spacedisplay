@@ -337,3 +337,9 @@ void PlatformUtils::show_file_in_file_manager(const char* file_path)
 
     system_async(command);
 }
+
+bool PlatformUtils::deleteDir(const std::string &path)
+{
+    // not implemented
+    return false;
+}
