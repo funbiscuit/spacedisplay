@@ -94,6 +94,15 @@ namespace PlatformUtils
     void show_file_in_file_manager(const char* file_path);
 
     /**
+     * Deletes directory and all files inside
+     * Provided path should be global path, otherwise it is not thread-safe to call this.
+     * Since working directory could change while function is executing.
+     * @param path
+     * @return true if was deleted, false otherwise
+     */
+    bool deleteDir(const std::string& path);
+
+    /**
      * filePathSeparator - file path separator that is native for the platform
      * invertedFilePathSeparator - file path separator that is not native for the platform
      */

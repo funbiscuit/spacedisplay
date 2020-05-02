@@ -228,3 +228,25 @@ bool PlatformUtils::toLongPath(std::string& shortPath)
     }
     return false;
 }
+
+bool PlatformUtils::deleteDir(const std::string &path)
+{
+    std::wstring wpath = str2wstr(path);
+
+    // string in SHFILEOPSTRUCTW must be double null terminated so do it manually
+    std::vector<wchar_t> buffer(wpath.size() + 2, L'\0');
+    memcpy(buffer.data(), wpath.c_str(), wpath.size() * sizeof(wchar_t));
+
+    SHFILEOPSTRUCTW file_op = {
+            nullptr,
+            FO_DELETE,
+            buffer.data(),
+            nullptr,
+            FOF_NOCONFIRMATION |
+            FOF_NOERRORUI |
+            FOF_SILENT,
+            false,
+            nullptr,
+            nullptr };
+    return SHFileOperationW(&file_op)==0; // returns 0 on success, non zero on failure.
+}
