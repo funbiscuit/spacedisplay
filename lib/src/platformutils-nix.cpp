@@ -88,8 +88,6 @@ private:
 
         if(dp != nullptr)
         {
-            auto nameLen=strlen(dp->d_name);
-
             // to get file info we need full path
             std::string child = path;
             child.append("/");

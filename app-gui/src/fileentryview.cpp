@@ -262,13 +262,11 @@ void FileEntryView::allocate_children(size_t start, size_t end, Utils::RectI &re
     int availableArea = rect.h * rect.w;
     auto minPart = MIN_CHILD_PIXEL_AREA / availableArea;
     auto minSize = int64_t(totalSize*minPart);
-    totalSize=0;
     size_t newEnd=start;
     for(size_t i=start;i<=end;++i)
     {
         if(children[i]->size<minSize && i>start+1)
             break;
-        totalSize+=children[i]->size;
         ++newEnd;
     }
     for(size_t i=newEnd;i<=end;++i)

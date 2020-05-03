@@ -103,11 +103,15 @@ If it builds successfully, output will be stored in `bin` directory.
 
 #### MinGW
 
-1. Install [MSYS2](https://www.msys2.org) somewhere, prefer to install it to `C:\msys64` to avoid any problems
-2. Launch MSYS2 console: `C:\msysXX\msys2.exe` (assuming MSYS2 was installed to `C:\msysXX`).
-3. Update system by executing `pacman -Syu`
+1.  Install [MSYS2](https://www.msys2.org) somewhere, prefer to install it to `C:\msys64` to avoid any problems
+
+2.  Launch MSYS2 console: `C:\msysXX\msys2.exe` (assuming MSYS2 was installed to `C:\msysXX`).
+
+3.  Update system by executing `pacman -Syu`
 (run this command several times until it will display that there is nothing to update)
-4. The compilers are not installed by default, so install them and required packages:
+
+4.  The compilers are not installed by default, so install them and required packages:
+
 ```bash
 pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-cmake mingw-w64-x86_64-qt5
 ```
@@ -162,14 +166,12 @@ version of installed Visual Studio. If it's not 14 or 15, use existing `build-wi
 
 3.  Builded binary should be in bin folder, you'll need to put following Qt5 dll's to the bin folder:
 
-
 > Qt5Core.dll  
 > Qt5Gui.dll  
 > Qt5Svg.dll  
 > Qt5Widgets.dll  
 > platforms/qwindows.dll  
 > styles/qwindowsvistastyle.dll  
-
 
 Acknowledgements
 ----------------
