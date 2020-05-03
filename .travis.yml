@@ -54,3 +54,4 @@ script:
   - cmake --build . --target coverage_xml
   - ls
   - bash <(curl -s https://codecov.io/bash) -X gcov -f "coverage_xml.xml" || echo "Codecov did not collect coverage reports"
+  - bash <(wget -q -O - https://coverage.codacy.com/get.sh) report -r coverage_xml.xml --language C++ --force-language
