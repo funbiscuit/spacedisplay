@@ -22,6 +22,7 @@ public:
 
 
     void addDir(const std::string& path) override {}
+    void rmDir(const std::string& path) override {}
 
 protected:
     void readEvents() override;
