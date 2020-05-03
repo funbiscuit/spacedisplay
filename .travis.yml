@@ -8,7 +8,8 @@ compiler:
 before_install:
   - sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa
   - sudo apt-get update -qq
-  - sudo apt-get install qtbase5-dev libqt5svg5-dev gcovr
+  - sudo apt-get install qtbase5-dev libqt5svg5-dev
+  - sudo pip install gcovr
 
 # the install step will take care of deploying a newer cmake version
 install:
