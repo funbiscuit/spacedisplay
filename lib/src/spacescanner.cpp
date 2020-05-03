@@ -92,6 +92,9 @@ void SpaceScanner::worker_run()
                 currentScannedPath = Utils::make_unique<FilePath>(*scanRequest.path);
             scanLock.unlock();
 
+            if(watcher)
+                watcher->addDir(scanRequest.path->getPath());
+
             // if we should perform recursive scan, store all paths to dirs in vector
             scanChildrenAt(*scanRequest.path, scannedEntries,
                            scanRequest.recursive ? &newPaths : nullptr);

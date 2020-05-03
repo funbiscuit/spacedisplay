@@ -21,7 +21,7 @@ public:
     bool isWatching() override;
 
 
-    void addDir(const std::string& path) override {}
+    bool addDir(const std::string& path) override { return true; }
     void rmDir(const std::string& path) override {}
 
 protected:
@@ -32,6 +32,8 @@ private:
     const int watchBufferSize = 1024*48;
 
     std::atomic<HANDLE> watchedDir;
+
+    std::string watchedPath;
 
     std::unique_ptr<DWORD[]> watchBuffer;
 

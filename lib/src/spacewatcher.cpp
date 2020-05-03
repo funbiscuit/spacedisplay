@@ -3,7 +3,7 @@
 #ifdef _WIN32
 #include "spacewatcher-win.h"
 #else
-
+#include "spacewatcher-linux.h"
 #endif
 
 #include <iostream>
@@ -64,7 +64,7 @@ std::unique_ptr<SpaceWatcher> SpaceWatcher::getWatcher()
 #ifdef _WIN32
     return std::unique_ptr<SpaceWatcher>(new SpaceWatcherWin());
 #else
-    return nullptr;
+    return std::unique_ptr<SpaceWatcher>(new SpaceWatcherLinux());
 #endif
 }
 

@@ -45,7 +45,7 @@ public:
      * Used on platforms that can't watch recursively (e.g. linux)
      * @param path
      */
-    virtual void addDir(const std::string& path) = 0;
+    virtual bool addDir(const std::string& path) = 0;
 
     /**
      * Adds directory to watch. Watch should be already started.
@@ -55,8 +55,6 @@ public:
     virtual void rmDir(const std::string& path) = 0;
 
 protected:
-
-    std::string watchedPath;
 
     virtual void readEvents() = 0;
 
