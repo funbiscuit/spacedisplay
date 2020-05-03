@@ -246,6 +246,11 @@ void SpaceView::setOnActionCallback(std::function<void(void)> callback)
     onActionCallback = std::move(callback);
 }
 
+void SpaceView::setOnWatchLimitCallback(std::function<void(void)> callback)
+{
+    onWatchLimitCallback = std::move(callback);
+}
+
 void SpaceView::setOnNewScanRequestCallback(std::function<void(void)> callback)
 {
     onNewScanRequestCallback = std::move(callback);
@@ -277,6 +282,14 @@ void SpaceView::setTheme(std::shared_ptr<ColorTheme> theme)
     colorTheme = std::move(theme);
     viewDB->onThemeChanged();
     allocateEntries();
+}
+
+bool SpaceView::getWatcherLimits(int64_t& watchedNow, int64_t& watchLimit)
+{
+    if(!scanner)
+        return false;
+
+    return scanner->getWatcherLimits(watchedNow, watchLimit);
 }
 
 bool SpaceView::isAtRoot()
@@ -355,6 +368,13 @@ int64_t SpaceView::getScannedFiles()
     return 0;
 }
 
+int64_t SpaceView::getScannedDirs()
+{
+    if(scanner)
+        return scanner->getDirCount();
+    return 0;
+}
+
 void SpaceView::setShowFreeSpace(bool showAvailable_)
 {
     showAvailable = showAvailable_;
@@ -406,6 +426,10 @@ void SpaceView::onScanUpdate()
         scanner->getCurrentScanPath(currentScannedPath);
         allocateEntries();
         entryPopup->updateActions(*scanner);
+
+        int64_t watchedNow, watchLimit;
+        if(scanner->getWatcherLimits(watchedNow, watchLimit) && onWatchLimitCallback)
+            onWatchLimitCallback();
     }
     repaint();
 }

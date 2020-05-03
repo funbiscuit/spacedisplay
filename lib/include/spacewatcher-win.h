@@ -20,9 +20,7 @@ public:
     void endWatch() override;
     bool isWatching() override;
 
-
-    bool addDir(const std::string& path) override { return true; }
-    void rmDir(const std::string& path) override {}
+    int64_t getDirCountLimit() override { return -1; }
 
 protected:
     void readEvents() override;

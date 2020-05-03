@@ -71,6 +71,9 @@ MainWindow::MainWindow()
     spaceWidget->setOnNewScanRequestCallback([this](){
         newScan();
     });
+    spaceWidget->setOnWatchLimitCallback([this](){
+        watchLimitExceeded = true;
+    });
 
     createActions();
 //    createStatusBar();
@@ -94,6 +97,21 @@ void MainWindow::onScanUpdate()
 {
     updateStatusView();
     updateAvailableActions();
+    if(spaceWidget->getScanProgress() == 100 && watchLimitExceeded && !watchLimitReported)
+    {
+        int64_t watchedNow, watchLimit;
+        spaceWidget->getWatcherLimits(watchedNow, watchLimit);
+        int64_t dirCount = spaceWidget->getScannedDirs();
+        auto newLimit = watchLimit + dirCount - watchedNow + 2048; // add some extra
+        watchLimitReported = true;
+        auto msg = string_format("Current watch limit (%d) is exceeded, not all changes "
+                                 "will be detected.\nIncrease limit to at least %d using following "
+                                 "command:\nsudo echo %d > /proc/sys/fs/inotify/max_user_watches",
+                                 watchLimit, newLimit, newLimit);
+        std::cout << msg << "\n";
+        //TODO add option to hide these messages
+        UtilsGui::message_box("Watch limit is exceeded", msg);
+    }
 }
 
 void MainWindow::updateStatusView()
@@ -209,6 +227,7 @@ void MainWindow::startScan(const std::string& path)
     if(scanner->scan_dir(path) == ScannerError::NONE)
     {
         spaceWidget->setScanner(std::move(scanner));
+        watchLimitReported = false;
         onScanUpdate();
     } else
     {

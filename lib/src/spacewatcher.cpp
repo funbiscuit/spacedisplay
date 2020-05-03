@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-SpaceWatcher::SpaceWatcher() : runThread(false)
+SpaceWatcher::SpaceWatcher() : runThread(false), watchedDirCount(0)
 {
 
 }
@@ -33,6 +33,23 @@ void SpaceWatcher::stopThread()
 
     runThread = false;
     watchThread.join();
+}
+
+int64_t SpaceWatcher::getWatchedDirCount() const
+{
+    return watchedDirCount;
+}
+
+SpaceWatcher::AddDirStatus SpaceWatcher::addDir(const std::string& path)
+{
+    ++watchedDirCount;
+    return AddDirStatus::ADDED;
+}
+
+void SpaceWatcher::rmDir(const std::string& path)
+{
+    if(watchedDirCount>0)
+        --watchedDirCount;
 }
 
 std::unique_ptr<SpaceWatcher::FileEvent> SpaceWatcher::popEvent()

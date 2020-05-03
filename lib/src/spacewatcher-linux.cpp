@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <fstream>
 
 SpaceWatcherLinux::SpaceWatcherLinux() : inotifyFd(-1), watchBuffer(watchBufferSize, 0)
 {
@@ -24,7 +25,7 @@ bool SpaceWatcherLinux::beginWatch(const std::string& path)
 
     inotifyFd = inotify_init1(IN_NONBLOCK);
     if(inotifyFd != -1)
-        return addDir(path);
+        return addDir(path) == SpaceWatcher::AddDirStatus::ADDED;
     return false;
 }
 
@@ -49,10 +50,20 @@ bool SpaceWatcherLinux::isWatching()
     return inotifyFd != -1;
 }
 
-bool SpaceWatcherLinux::addDir(const std::string &path)
+int64_t SpaceWatcherLinux::getDirCountLimit()
+{
+    int64_t limit = 0;
+
+    std::ifstream file("/proc/sys/fs/inotify/max_user_watches");
+    file >> limit;
+
+    return limit;
+}
+
+SpaceWatcher::AddDirStatus SpaceWatcherLinux::addDir(const std::string &path)
 {
     if(inotifyFd == -1)
-        return false;
+        return AddDirStatus::NOT_INITIALIZED;
 
     int wd;
 
@@ -63,20 +74,43 @@ bool SpaceWatcherLinux::addDir(const std::string &path)
     //TODO we should detect when process runs out of available inotify watches
     // so client could notify user about it
     if (wd == -1)
-        return false;
+    {
+        switch (errno)
+        {
+            case ENOSPC:
+                return AddDirStatus::DIR_LIMIT_REACHED;
+            case EBADF:
+                return AddDirStatus::NOT_INITIALIZED;
+        }
+        return AddDirStatus::ACCESS_DENIED; //this is a default, although not very accurate
+    }
     std::lock_guard<std::mutex> lock(inotifyWdsMtx);
     inotifyWds[wd]=path;
-    return true;
+    SpaceWatcher::addDir(path);
+    return AddDirStatus::ADDED;
 }
 
 void SpaceWatcherLinux::rmDir(const std::string &path)
 {
     //TODO
+    SpaceWatcher::rmDir(path);
 }
 
 void SpaceWatcherLinux::_addEvent(struct inotify_event *inotifyEvent)
 {
-    if ((inotifyEvent->mask & IN_IGNORED) || inotifyEvent->len == 0)
+    if (inotifyEvent->mask & IN_IGNORED)
+    {
+        //watch was removed so remove it from our map
+        std::lock_guard<std::mutex> lock(inotifyWdsMtx);
+        auto it = inotifyWds.find(inotifyEvent->wd);
+        if(it != inotifyWds.end())
+        {
+            inotifyWds.erase(it);
+        }
+        return;
+    }
+
+    if (inotifyEvent->len == 0)
         return;
 
     auto fileEvent = Utils::make_unique<FileEvent>();

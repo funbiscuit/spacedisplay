@@ -25,6 +25,8 @@ public:
     void setScanner(std::unique_ptr<SpaceScanner> _scanner);
     void setTheme(std::shared_ptr<ColorTheme> theme);
 
+    bool getWatcherLimits(int64_t& watchedNow, int64_t& watchLimit);
+
     void onScanUpdate();
 
     bool canRefresh();
@@ -48,6 +50,8 @@ public:
 
     int64_t getScannedFiles();
 
+    int64_t getScannedDirs();
+
     /**
      * Sets callback that will be called when any action occurs.
      * For example, user navigates to different directory or presses rescan dir
@@ -56,6 +60,14 @@ public:
      * @return
      */
     void setOnActionCallback(std::function<void(void)> callback);
+
+    /**
+     * Sets callback that will be called when watch limit is exceeded.
+     * This happens on linux when there is not big enough user limit for inotify watches
+     * @param callback
+     * @return
+     */
+    void setOnWatchLimitCallback(std::function<void(void)> callback);
 
     /**
      * Sets callback that will be called when this view requests new scan dialog
@@ -167,6 +179,7 @@ protected:
 
     std::function<void(void)> onActionCallback;
     std::function<void(void)> onNewScanRequestCallback;
+    std::function<void(void)> onWatchLimitCallback;
 
     void mousePressEvent(QMouseEvent *event) override;
 

@@ -76,6 +76,8 @@ private:
 
     void onScanUpdate();
 
+    void onWatchLimit();
+
     void startScan(const std::string& path);
 
 
@@ -104,6 +106,9 @@ private:
 
     ActionMask enabledActions;
     bool isRootScanned = false;
+
+    bool watchLimitReported = false;
+    bool watchLimitExceeded = false;
 
     std::unique_ptr<QVBoxLayout> layout;
     std::shared_ptr<ColorTheme> colorTheme;

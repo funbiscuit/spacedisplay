@@ -34,7 +34,8 @@ bool FileDB::setChildrenForPath(const FilePath &path,
     auto parentEntry = _findEntry(path);
     if(parentEntry)
     {
-        int deleteCount = 0;
+        int deletedDirCount = 0;
+        int deletedFileCount = 0;
         //Mark all children for deletion
         //We will unmark every child that should be kept and then will delete everything else
         for(auto& childBins : parentEntry->children)
@@ -42,7 +43,10 @@ bool FileDB::setChildrenForPath(const FilePath &path,
             auto child = childBins.firstEntry.get();
             while(child)
             {
-                ++deleteCount;
+                if(child->isDir)
+                    ++deletedDirCount;
+                else
+                    ++deletedFileCount;
                 child->pendingDelete = true;
                 child = child->nextEntry.get();
             }
@@ -55,10 +59,16 @@ bool FileDB::setChildrenForPath(const FilePath &path,
 
             if(existingChild)
             {
-                --deleteCount;
                 //child found, decide what to do with it. unmark it for deletion
                 existingChild->pendingDelete = false;
-                if(existingChild->isDir || existingChild->size == e->size)
+                if(existingChild->isDir)
+                {
+                    --deletedDirCount;
+                    // if entry is dir or file with the same size, just continue
+                    continue;
+                }
+                --deletedFileCount;
+                if(existingChild->size == e->size)
                 {
                     // if entry is dir or file with the same size, just continue
                     continue;
@@ -75,7 +85,11 @@ bool FileDB::setChildrenForPath(const FilePath &path,
             ePtr->updatePathCrc(parentEntry->pathCrc);
             auto crc = ePtr->pathCrc;
             parentEntry->add_child(std::move(e));
-            ++fileCount;
+
+            if(ePtr->isDir)
+                ++dirCount;
+            else
+                ++fileCount;
 
             // if directory is added, it should be put into newPaths vector so it gets scanned
             if(ePtr->isDir && newPaths)
@@ -97,16 +111,23 @@ bool FileDB::setChildrenForPath(const FilePath &path,
         }
 
         std::vector<std::unique_ptr<FileEntry>> deletedChildren;
-        deletedChildren.reserve(deleteCount);
+        deletedChildren.reserve(deletedDirCount+deletedFileCount);
 
-        if(deleteCount>0)
+        if(deletedFileCount+deletedDirCount>0)
             parentEntry->removePendingDelete(deletedChildren);
-        fileCount-=deletedChildren.size();
+        fileCount-=deletedFileCount;
+        dirCount-=deletedDirCount;
 
         //also delete all pointers to this children from crc map (since all children will be deleted)
         for(auto& child : deletedChildren)
         {
             auto crc = child->pathCrc;
+            //decrease counters back. after exiting loop they should be zero, otherwise not all children
+            //were actually deleted and we will need to fix fileCount and dirCount
+            if(child->isDir)
+                --deletedDirCount;
+            else
+                --deletedFileCount;
 
             auto it2 = entriesMap.find(crc);
             if(it2 != entriesMap.end())
@@ -123,6 +144,8 @@ bool FileDB::setChildrenForPath(const FilePath &path,
                 }
             }
         }
+        fileCount+=deletedFileCount;
+        dirCount+=deletedDirCount;
 
         usedSpace = rootFile->get_size();
         bHasChanges = true;
@@ -139,7 +162,8 @@ void FileDB::setNewRootPath(const std::string& path)
     rootPath = Utils::make_unique<FilePath>(path);
     rootFile = FileEntry::createEntry(rootPath->getPath(), true);
     rootFile->updatePathCrc(0);
-    fileCount = 1;
+    dirCount = 1;
+    fileCount = 0;
     rootValid = true;
 }
 
@@ -166,38 +190,6 @@ void FileDB::_clearDb()
     entriesMap.clear();
     FileEntry::deleteEntryChain(std::move(rootFile));
     bHasChanges = true;
-}
-
-const FileEntry* FileDB::clearEntry(const FilePath& path, uint64_t& childrenCount)
-{
-    std::lock_guard<std::mutex> lock_mtx(dbMtx);
-    childrenCount = 0;
-    if(!isReady())
-        return nullptr;
-
-    auto entry = _findEntry(path);
-    if(!entry)
-        return nullptr;
-
-    Utils::tic();
-    //remove all crcs for entry children
-
-    entry->forEach([this](const FileEntry& child)->bool {
-        _cleanupEntryCrc(child);
-        return true;
-    });
-
-    childrenCount = entry->deleteChildren();
-    if(childrenCount>=fileCount) // should not happen
-        childrenCount = fileCount-1;
-    fileCount -= childrenCount;
-    usedSpace=rootFile->get_size();
-    bHasChanges = true;
-
-    std::cout << "Moved " <<childrenCount<< " child entries to cache\n";
-    Utils::toc("Spent for clearing entry");
-
-    return entry;
 }
 
 void FileDB::_cleanupEntryCrc(const FileEntry& entry)
@@ -344,4 +336,9 @@ void FileDB::getSpace(uint64_t& used, uint64_t& available, uint64_t& total) cons
 uint64_t FileDB::getFileCount() const
 {
     return fileCount;
+}
+
+uint64_t FileDB::getDirCount() const
+{
+    return dirCount;
 }

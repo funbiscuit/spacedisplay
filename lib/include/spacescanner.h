@@ -72,6 +72,13 @@ public:
 
     bool getCurrentScanPath(std::unique_ptr<FilePath>& path);
 
+    /**
+     * Get current watcher limits
+     * @param watchedNow - how many directories are already watched
+     * @param watchLimit - limit on how many directories user can watch (-1 if no limit)
+     * @return true if limits are exceeded, false otherwise
+     */
+    bool getWatcherLimits(int64_t& watchedNow, int64_t& watchLimit);
 
     /**
      * Returns true if it possible to determine scan progress.
@@ -90,6 +97,7 @@ public:
     void getSpace(uint64_t& used, uint64_t& available, uint64_t& total) const;
 
     int64_t getFileCount() const;
+    int64_t getDirCount() const;
 
 private:
     std::thread workerThread;
@@ -119,6 +127,7 @@ private:
     std::shared_ptr<FileDB> db;
 
     std::unique_ptr<SpaceWatcher> watcher;
+    std::atomic<bool> watcherLimitExceeded;
 
     void worker_run();
 

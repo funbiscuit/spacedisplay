@@ -11,7 +11,8 @@
 #include <chrono>
 
 SpaceScanner::SpaceScanner() :
-        scannerStatus(ScannerStatus::IDLE), runWorker(false), isMountScanned(false)
+        scannerStatus(ScannerStatus::IDLE), runWorker(false), isMountScanned(false),
+        watcherLimitExceeded(false)
 {
     db = std::make_shared<FileDB>();
     watcher = SpaceWatcher::getWatcher();
@@ -93,7 +94,13 @@ void SpaceScanner::worker_run()
             scanLock.unlock();
 
             if(watcher)
-                watcher->addDir(scanRequest.path->getPath());
+            {
+                if(watcher->addDir(scanRequest.path->getPath()) == SpaceWatcher::AddDirStatus::DIR_LIMIT_REACHED)
+                {
+                    //dir was not added, should report this
+                    watcherLimitExceeded = true;
+                }
+            }
 
             // if we should perform recursive scan, store all paths to dirs in vector
             scanChildrenAt(*scanRequest.path, scannedEntries,
@@ -135,7 +142,8 @@ void SpaceScanner::worker_run()
         auto stop   = high_resolution_clock::now();
         auto mseconds = duration_cast<milliseconds>(stop - start).count();
         //TODO this outputs very frequently when watching for changes
-        std::cout << "Time taken: " << mseconds <<"ms, "<<db->getFileCount()<<" known file(s)/dir(s)\n";
+        std::cout << "Time taken: " << mseconds <<"ms. Stat: "<<db->getFileCount()<<" file(s), " <<
+                  db->getDirCount()<<" dir(s)\n";
         scannerStatus = ScannerStatus::IDLE;
     }
 
@@ -288,6 +296,17 @@ bool SpaceScanner::getCurrentScanPath(std::unique_ptr<FilePath>& path)
     }
     path = nullptr;
     return false;
+}
+
+bool SpaceScanner::getWatcherLimits(int64_t& watchedNow, int64_t& watchLimit)
+{
+    if(!watcher)
+        return false;
+    watchLimit = watcher->getDirCountLimit();
+    watchedNow = watcher->getWatchedDirCount();
+    if(watchLimit<0)
+        return false;
+    return watcherLimitExceeded;
 }
 
 bool SpaceScanner::can_refresh() const
@@ -447,6 +466,11 @@ void SpaceScanner::getSpace(uint64_t& used, uint64_t& available, uint64_t& total
 int64_t SpaceScanner::getFileCount() const
 {
     return db->getFileCount();
+}
+
+int64_t SpaceScanner::getDirCount() const
+{
+    return db->getDirCount();
 }
 
 const FilePath* SpaceScanner::getRootPath() const

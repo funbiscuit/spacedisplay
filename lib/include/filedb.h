@@ -57,15 +57,6 @@ public:
     void clearDb();
 
     /**
-     * Tries to find dir entry by given FilePath
-     * If it was found - clears all children
-     * @param path - path to entry that should be found
-     * @param childrenCount - number of deleted children, 0 if none
-     * @return pointer to entry if it was found, nullptr otherwise
-     */
-    const FileEntry* clearEntry(const FilePath& path, uint64_t& childrenCount);
-
-    /**
      * Tries to find file/dir entry by given FilePath
      * @param path - path to entry that should be found
      * @return pointer to entry if it was found, nullptr otherwise
@@ -95,6 +86,8 @@ public:
 
     uint64_t getFileCount() const;
 
+    uint64_t getDirCount() const;
+
 private:
 
     uint64_t totalSpace = 0;
@@ -105,6 +98,7 @@ private:
     std::atomic<bool> rootValid;
     std::atomic<uint64_t> usedSpace;
     std::atomic<uint64_t> fileCount;
+    std::atomic<uint64_t> dirCount;
 
     //TODO make it possible to access "has changes" info by some caller id
     mutable std::atomic<bool> bHasChanges;

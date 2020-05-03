@@ -19,6 +19,13 @@ public:
         NEW_NAME=6
     };
 
+    enum class AddDirStatus {
+        ADDED,
+        DIR_LIMIT_REACHED, //used when unable to add inotify watch in linux
+        ACCESS_DENIED,
+        NOT_INITIALIZED,
+    };
+
     struct FileEvent {
         FileAction action;
         std::string filepath;
@@ -35,6 +42,20 @@ public:
     virtual bool isWatching() = 0;
 
     /**
+     * Get a limit for a number of watched directories.
+     * Windows doesn't have such limit so -1 is returned.
+     * Linux is limited by user limit of inotify watch descriptors.
+     * @return limit of watched directories, -1 if there is no such limit.
+     */
+    virtual int64_t getDirCountLimit() = 0;
+
+    /**
+     * Get number of directories that are added to watch using addDir();
+     * @return
+     */
+    int64_t getWatchedDirCount() const;
+
+    /**
      * Returns event if any is present.
      * @return nullptr if there are no events
      */
@@ -45,14 +66,14 @@ public:
      * Used on platforms that can't watch recursively (e.g. linux)
      * @param path
      */
-    virtual bool addDir(const std::string& path) = 0;
+    virtual AddDirStatus addDir(const std::string& path);
 
     /**
      * Adds directory to watch. Watch should be already started.
      * Used on platforms that can't watch recursively (e.g. linux)
      * @param path
      */
-    virtual void rmDir(const std::string& path) = 0;
+    virtual void rmDir(const std::string& path);
 
 protected:
 
@@ -64,6 +85,8 @@ protected:
 
     void addEvent(std::unique_ptr<FileEvent> event);
 private:
+
+    int64_t watchedDirCount;
 
     std::mutex eventsMtx;
     std::list<std::unique_ptr<FileEvent>> eventQueue;
