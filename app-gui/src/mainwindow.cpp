@@ -104,10 +104,10 @@ void MainWindow::onScanUpdate()
         int64_t dirCount = spaceWidget->getScannedDirs();
         auto newLimit = watchLimit + dirCount - watchedNow + 2048; // add some extra
         watchLimitReported = true;
-        auto msg = string_format("Current watch limit (%d) is exceeded, not all changes "
-                                 "will be detected.\nIncrease limit to at least %d using following "
-                                 "command:\nsudo echo %d > /proc/sys/fs/inotify/max_user_watches",
-                                 watchLimit, newLimit, newLimit);
+        auto msg = Utils::strFormat("Current watch limit (%d) is exceeded, not all changes "
+                                    "will be detected.\nIncrease limit to at least %d using following "
+                                    "command:\nsudo echo %d > /proc/sys/fs/inotify/max_user_watches",
+                                    watchLimit, newLimit, newLimit);
         std::cout << msg << "\n";
         //TODO add option to hide these messages
         UtilsGui::message_box("Watch limit is exceeded", msg);

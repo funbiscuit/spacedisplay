@@ -56,7 +56,7 @@ std::string StatusView::getScanStatusText()
     // progress can't be 100% because then it will be ready
     if(scanProgress>99)
         scanProgress=99;
-    return string_format("%d%%", scanProgress);
+    return Utils::strFormat("%d%%", scanProgress);
 }
 
 std::string StatusView::getScannedFilesText()
@@ -64,7 +64,7 @@ std::string StatusView::getScannedFilesText()
     if(currentMode==Mode::NO_SCAN)
         return "";
 
-    return string_format("%d files", scannedFiles);
+    return Utils::strFormat("%d files", scannedFiles);
 }
 
 void StatusView::paintEvent(QPaintEvent *event)
@@ -99,22 +99,22 @@ void StatusView::paintEvent(QPaintEvent *event)
 
     partScannedVisible.color = colorTheme->viewFileFill;
     partScannedVisible.isHidden = false;
-    partScannedVisible.label = Utils::format_size((int64_t)scannedSpaceVisible);
+    partScannedVisible.label = Utils::formatSize((int64_t) scannedSpaceVisible);
     partScannedVisible.weight = scannedSpaceVisible;
 
     partScannedHidden.color = colorTheme->viewFileFill;
     partScannedHidden.isHidden = true;
-    partScannedHidden.label = Utils::format_size((int64_t)scannedSpaceHidden);
+    partScannedHidden.label = Utils::formatSize((int64_t) scannedSpaceHidden);
     partScannedHidden.weight = scannedSpaceHidden;
 
     partFree.color = colorTheme->viewFreeFill;
     partFree.isHidden = !highlightAvailable;
-    partFree.label = Utils::format_size((int64_t)availableSpace);
+    partFree.label = Utils::formatSize((int64_t) availableSpace);
     partFree.weight = maximizeSpace ? -1.f : availableSpace;
 
     partUnknown.color = colorTheme->viewUnknownFill;
     partUnknown.isHidden = !highlightUnknown;
-    partUnknown.label = Utils::format_size((int64_t)unknownSpace);
+    partUnknown.label = Utils::formatSize((int64_t) unknownSpace);
     partUnknown.weight = maximizeSpace ? -1.f : unknownSpace;
 
     parts.push_back(partScannedVisible);

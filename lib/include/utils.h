@@ -9,23 +9,20 @@
 
 namespace Utils
 {
-    struct RectF{
-        float x,y;
-        float w,h;
-    };
     struct RectI{
         int x,y;
         int w,h;
     };
 
-
-    int _prof_meas(bool star, const char* message = nullptr, int threshold = 0);
-    void tic();
-    int toc(const char* message = nullptr, int threshold = 0);
-
     uint16_t strCrc16(const std::string& str);
 
-    std::string format_size(int64_t size);
+    std::string formatSize(int64_t size);
+
+    /**
+     * Returns available mount points (that can be scanned)
+     * @param availableMounts vector containing paths of safe mount points
+     */
+    void getMountPoints(std::vector<std::string>& availableMounts);
 
     //todo we don't need anything from C++14, just make_unique, so use this simple version with C++11
     template<typename T, typename... Args>
@@ -55,39 +52,14 @@ namespace Utils
         return std::max(lower, std::min(n, upper));
     }
 
-    /**
-     * Returns available mount points (that can be scanned)
-     * @param availableMounts vector containing paths of safe mount points
-     */
-    void getMountPoints(std::vector<std::string>& availableMounts);
-}
-
-void hex_to_rgb(int hex_color, float (&rgb)[3]);
-void hex_to_rgbi(int hex_color, int (&rgb)[3]);
-
-/**
- * Convert hex color to rgb and lighten it
- * newRGB = currentRGB + (1.f - currentRGB) * tint_factor
- * @param hex_color - 0xrrggbb color value
- * @param rgb       - output of rgb values
- * @param tint_factor     - how much to lighten (0 to 1)
- */
-void hex_to_rgb_tint(int hex_color, float (&rgb)[3], float tint_factor);
-void hex_to_rgbi_tint(int hex_color, int (&rgb)[3], float tint_factor);
-
-template<typename ... Args>
-std::string string_format( const std::string& format, Args ... args )
-{
-    return string_format(format.c_str(), args ...);
-}
-
-template<typename ... Args>
-std::string string_format( const char* format, Args ... args )
-{
-    size_t size = snprintf( nullptr, 0, format, args ... ) + 1; // Extra space for '\0'
-    std::unique_ptr<char[]> buf( new char[ size ] );
-    snprintf( buf.get(), size, format, args ... );
-    return std::string( buf.get(), buf.get() + size - 1 ); // We don't want the '\0' inside
+    template<typename ... Args>
+    std::string strFormat(const char* format, Args ... args)
+    {
+        size_t size = snprintf( nullptr, 0, format, args ... ) + 1; // Extra space for '\0'
+        std::unique_ptr<char[]> buf( new char[ size ] );
+        snprintf( buf.get(), size, format, args ... );
+        return std::string( buf.get(), buf.get() + size - 1 ); // We don't want the '\0' inside
+    }
 }
 
 #endif //SPACEDISPLAY_UTILS_H

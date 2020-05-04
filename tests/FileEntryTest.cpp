@@ -39,7 +39,7 @@ TEST_CASE( "FileEntry simple tree construction", "[fileentry]" )
     FileEntry* lastChild;
     for(int i = 0; i < 100; ++i)
     {
-        auto childName = string_format("Child%d", i);
+        auto childName = Utils::strFormat("Child%d", i);
         auto child = Utils::make_unique<FileEntry>(childName, false, i*10);
         totalSize += child->getSize();
         lastChild = child.get();
@@ -63,7 +63,7 @@ TEST_CASE( "FileEntry simple tree construction", "[fileentry]" )
     INFO( "Add new children" );
     for(int i = 0; i < 200; ++i)
     {
-        auto childName = string_format("Child%d", i+100);
+        auto childName = Utils::strFormat("Child%d", i + 100);
         auto child = Utils::make_unique<FileEntry>(childName, false, i*5);
         totalSize += child->getSize();
         lastChild = child.get();
@@ -181,7 +181,7 @@ TEST_CASE( "FileEntry deep tree construction", "[fileentry]" )
     std::vector<FileEntry*> children;
     for(int i = 0; i < 5; ++i)
     {
-        auto childName = string_format("Child_%d", i);
+        auto childName = Utils::strFormat("Child_%d", i);
         auto child = Utils::make_unique<FileEntry>(childName, true);
         totalSize += child->getSize();
         auto lastChild = child.get();
@@ -199,7 +199,7 @@ TEST_CASE( "FileEntry deep tree construction", "[fileentry]" )
     {
         for(int i = 0; i < 5; ++i)
         {
-            auto childName = string_format("Child_%d", i);
+            auto childName = Utils::strFormat("Child_%d", i);
             auto newChild = Utils::make_unique<FileEntry>(childName, true, intDistr(randEngine));
             totalSize += newChild->getSize();
             auto lastChild = newChild.get();

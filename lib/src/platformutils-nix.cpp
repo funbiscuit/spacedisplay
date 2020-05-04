@@ -237,7 +237,7 @@ std::string PlatformUtils::exec(const char* cmd)
 
 void PlatformUtils::open_folder_in_file_manager(const char* folder_path)
 {
-    auto command = string_format("xdg-open \"%s\"", folder_path);
+    auto command = Utils::strFormat("xdg-open \"%s\"", folder_path);
     system_async(command);
 }
 
@@ -281,7 +281,7 @@ PlatformUtils::FileManager PlatformUtils::get_default_manager()
 
 
     std::vector<std::string> desktopLocations;
-    desktopLocations.push_back(string_format("%s/.local/share/applications", homedir));
+    desktopLocations.push_back(Utils::strFormat("%s/.local/share/applications", homedir));
     desktopLocations.emplace_back("/usr/local/share/applications");
     desktopLocations.emplace_back("/usr/share/applications");
 
@@ -300,7 +300,7 @@ PlatformUtils::FileManager PlatformUtils::get_default_manager()
         {
             if(it.name == fileManager)
             {
-                auto path = string_format("%s/%s", loc.c_str(), it.name.c_str());
+                auto path = Utils::strFormat("%s/%s", loc.c_str(), it.name.c_str());
                 return parse_fm_desktop_file(path);
             }
         }
@@ -320,13 +320,13 @@ void PlatformUtils::show_file_in_file_manager(const char* file_path)
     switch (get_default_manager())
     {
         case FileManager::DOLPHIN:
-            command = string_format("dolphin --select \"%s\"", file_path);
+            command = Utils::strFormat("dolphin --select \"%s\"", file_path);
             break;
         case FileManager::NAUTILUS:
-            command = string_format("nautilus --select \"%s\"", file_path);
+            command = Utils::strFormat("nautilus --select \"%s\"", file_path);
             break;
         case FileManager::NEMO:
-            command = string_format("nemo \"%s\"", file_path);
+            command = Utils::strFormat("nemo \"%s\"", file_path);
             break;
         case FileManager::UNKNOWN:
         default:
@@ -334,7 +334,7 @@ void PlatformUtils::show_file_in_file_manager(const char* file_path)
             auto last_slash = dir_path.find_last_of('/');
             if(last_slash != std::string::npos)
                 dir_path = dir_path.substr(0,last_slash);
-            command = string_format("xdg-open \"%s\"", dir_path.c_str());
+            command = Utils::strFormat("xdg-open \"%s\"", dir_path.c_str());
             break;
     }
 

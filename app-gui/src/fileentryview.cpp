@@ -145,9 +145,9 @@ std::string FileEntryView::get_tooltip() const
     std::string str;
 
     if(is_dir())
-        str=string_format("<center>%s<br />%s<br />(Click to zoom)</center>",name.c_str(),sizeStr.c_str());
+        str= Utils::strFormat("<center>%s<br />%s<br />(Click to zoom)</center>", name.c_str(), sizeStr.c_str());
     else if(is_file())
-        str=string_format("<center>%s<br />%s</center>",name.c_str(),sizeStr.c_str());
+        str= Utils::strFormat("<center>%s<br />%s</center>", name.c_str(), sizeStr.c_str());
 
     return str;
 }
@@ -206,7 +206,7 @@ FileEntryView* FileEntryView::getClosestView(const FilePath& filepath, int maxDe
 
 std::string FileEntryView::format_size() const
 {
-    return Utils::format_size(size);
+    return Utils::formatSize(size);
 }
 
 void FileEntryView::allocate_view(Utils::RectI rect, int titleHeight)
@@ -425,7 +425,7 @@ void FileEntryView::createTitlePixmap(QPainter &painter, const QColor& color, co
 
     if(path)
     {
-        title = string_format("%s - %s",path,sizeStr.c_str());
+        title = Utils::strFormat("%s - %s", path, sizeStr.c_str());
 
         //check if available width is enough to show full title
         sz = painter.fontMetrics().size(0, title.c_str());
@@ -441,7 +441,7 @@ void FileEntryView::createTitlePixmap(QPainter &painter, const QColor& color, co
             title.insert(15,"...");
         }
     } else
-        title = string_format("%s - %s",name.c_str(),sizeStr.c_str());
+        title = Utils::strFormat("%s - %s", name.c_str(), sizeStr.c_str());
 
 
     if(cachedTitle!=title)
