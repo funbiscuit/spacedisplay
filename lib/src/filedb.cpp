@@ -25,7 +25,7 @@ bool FileDB::setChildrenForPath(const FilePath &path,
     std::sort(entries.begin(), entries.end(),
               [](const std::unique_ptr<FileEntry>& e1, const std::unique_ptr<FileEntry>& e2)
               {
-                  return e1->get_size() > e2->get_size();
+                  return e1->getSize() > e2->getSize();
               });
     std::lock_guard<std::mutex> lock(dbMtx);
     if(!isReady() || entries.empty())
@@ -43,7 +43,7 @@ bool FileDB::setChildrenForPath(const FilePath &path,
             auto child = childBins.firstEntry.get();
             while(child)
             {
-                if(child->isDir)
+                if(child->bIsDir)
                     ++deletedDirCount;
                 else
                     ++deletedFileCount;
@@ -61,7 +61,7 @@ bool FileDB::setChildrenForPath(const FilePath &path,
             {
                 //child found, decide what to do with it. unmark it for deletion
                 existingChild->pendingDelete = false;
-                if(existingChild->isDir)
+                if(existingChild->bIsDir)
                 {
                     --deletedDirCount;
                     // if entry is dir or file with the same size, just continue
@@ -76,7 +76,7 @@ bool FileDB::setChildrenForPath(const FilePath &path,
                 auto sizeChange = e->size-existingChild->size;
                 // if size changed, tell about it to parent, but we need to increase child size by ourself
                 existingChild->size = e->size;
-                parentEntry->on_child_size_changed(existingChild, sizeChange);
+                parentEntry->onChildSizeChanged(existingChild, sizeChange);
                 continue;
             }
             // if entry was not found, we need to add it
@@ -84,15 +84,15 @@ bool FileDB::setChildrenForPath(const FilePath &path,
             auto ePtr = e.get();
             ePtr->updatePathCrc(parentEntry->pathCrc);
             auto crc = ePtr->pathCrc;
-            parentEntry->add_child(std::move(e));
+            parentEntry->addChild(std::move(e));
 
-            if(ePtr->isDir)
+            if(ePtr->bIsDir)
                 ++dirCount;
             else
                 ++fileCount;
 
             // if directory is added, it should be put into newPaths vector so it gets scanned
-            if(ePtr->isDir && newPaths)
+            if(ePtr->bIsDir && newPaths)
             {
                 auto childPath = Utils::make_unique<FilePath>(path);
                 childPath->addDir(ePtr->name.get(), ePtr->nameCrc);
@@ -124,7 +124,7 @@ bool FileDB::setChildrenForPath(const FilePath &path,
             auto crc = child->pathCrc;
             //decrease counters back. after exiting loop they should be zero, otherwise not all children
             //were actually deleted and we will need to fix fileCount and dirCount
-            if(child->isDir)
+            if(child->bIsDir)
                 --deletedDirCount;
             else
                 --deletedFileCount;
@@ -147,7 +147,7 @@ bool FileDB::setChildrenForPath(const FilePath &path,
         fileCount+=deletedFileCount;
         dirCount+=deletedDirCount;
 
-        usedSpace = rootFile->get_size();
+        usedSpace = rootFile->getSize();
         bHasChanges = true;
     }
 
@@ -190,7 +190,8 @@ void FileDB::_clearDb()
     fileCount = 0;
     rootPath.reset();
     entriesMap.clear();
-    FileEntry::deleteEntryChain(std::move(rootFile));
+    rootFile.reset();
+//    FileEntry::deleteEntryChain(std::move(rootFile));
     bHasChanges = true;
 }
 

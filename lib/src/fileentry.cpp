@@ -4,63 +4,46 @@
 
 #include "fileentry.h"
 #include "filepath.h"
-#include "fileentrypool.h"
 #include "utils.h"
 
 extern "C" {
 #include <crc.h>
 }
 
-std::unique_ptr<FileEntryPool> FileEntry::entryPool;
-
 FileEntry::FileEntry(std::unique_ptr<char[]> name_, bool isDir_) :
-        isDir(false), pendingDelete(false), size(0), parent(nullptr), nameCrc(0), pathCrc(0)
+        bIsDir(isDir_), pendingDelete(false), size(0), parent(nullptr), nameCrc(0), pathCrc(0),
+        name(std::move(name_))
 {
-    reconstruct(std::move(name_), isDir_);
-}
-
-void FileEntry::reconstruct(std::unique_ptr<char[]> name_, bool isDir_)
-{
-    size = 0;
-    name = std::move(name_);
-    pathCrc = nameCrc;
     nameCrc = crc16(name.get(), (uint16_t) strlen(name.get()));
-    isDir = isDir_;
-    parent = nullptr;
+    pathCrc = nameCrc;
 }
 
 std::unique_ptr<FileEntry> FileEntry::createEntry(const std::string& name_, bool isDir_)
 {
-    // it should be safe to initialize here since entries should be created only from this function
-    // so no entry methods could be called before this initialization
-    //TODO probably should make thread safe
-    if(!entryPool)
-        entryPool = Utils::make_unique<FileEntryPool>();
-    return entryPool->create_entry(name_, isDir_);
+    auto nameLen=name_.length();
+
+    auto chars=Utils::make_unique_arr<char>(nameLen+1);
+    memcpy(chars.get(), name_.c_str(), (nameLen+1)*sizeof(char));
+
+    // using manual creation because constructor of FileEntry is private
+    return std::unique_ptr<FileEntry>(new FileEntry(std::move(chars), isDir_));
 }
 
-int64_t FileEntry::deleteEntryChain(std::unique_ptr<FileEntry> firstEntry)
-{
-    if(firstEntry)
-        return entryPool->cache_children(std::move(firstEntry));
-    return 0;
-}
-
-void FileEntry::set_size(int64_t size_) {
+void FileEntry::setSize(int64_t size_) {
     size=size_;
 }
 
-void FileEntry::add_child(std::unique_ptr<FileEntry> child) {
+void FileEntry::addChild(std::unique_ptr<FileEntry> child) {
     if(!child)
         return;
 
     auto childSize = child->size;
     //this will only insert child without changing our size or any callbacks to parent
-    _addChild(std::move(child), true);
+    _addChild(std::move(child));
     size += childSize;
 
     if(parent)
-        parent->on_child_size_changed(this, childSize);
+        parent->onChildSizeChanged(this, childSize);
 }
 
 void FileEntry::removePendingDelete(std::vector<std::unique_ptr<FileEntry>>& deletedChildren)
@@ -106,11 +89,11 @@ void FileEntry::removePendingDelete(std::vector<std::unique_ptr<FileEntry>>& del
     {
         size-=changedSize;
         if(parent)
-            parent->on_child_size_changed(this, -changedSize);
+            parent->onChildSizeChanged(this, -changedSize);
     }
 }
 
-void FileEntry::_addChild(std::unique_ptr<FileEntry> child, bool addCrc) {
+void FileEntry::_addChild(std::unique_ptr<FileEntry> child) {
     if(!child)
         return;
 
@@ -133,29 +116,7 @@ void FileEntry::_addChild(std::unique_ptr<FileEntry> child, bool addCrc) {
     }
 }
 
-int64_t FileEntry::deleteChildren()
-{
-    int64_t childrenSize = size;
-
-    int64_t count = 0;
-    for(auto& bin : children)
-    {
-        //reclaim pointer to entry chain
-        auto p = std::unique_ptr<FileEntry>(
-                const_cast<std::unique_ptr<FileEntry>&>(bin.firstEntry).release());
-
-        count += deleteEntryChain(std::move(p));
-    }
-    children.clear();
-    size -= childrenSize;
-
-    if(parent)
-        parent->on_child_size_changed(this, -childrenSize);
-
-    return count;
-}
-
-int64_t FileEntry::get_size() const
+int64_t FileEntry::getSize() const
 {
     return size;
 }
@@ -197,7 +158,7 @@ bool FileEntry::forEach(const std::function<bool(const FileEntry&)>& func) const
     return true;
 }
 
-void FileEntry::on_child_size_changed(FileEntry* child, int64_t sizeChange) {
+void FileEntry::onChildSizeChanged(FileEntry* child, int64_t sizeChange) {
 
     if(!child || sizeChange == 0)
         return;
@@ -248,9 +209,9 @@ void FileEntry::on_child_size_changed(FileEntry* child, int64_t sizeChange) {
     }
 
     // now just add child back
-    _addChild(std::move(childPtr), false);
+    _addChild(std::move(childPtr));
     size += sizeChange;
 
     if(parent)
-        parent->on_child_size_changed(this, sizeChange);
+        parent->onChildSizeChanged(this, sizeChange);
 }

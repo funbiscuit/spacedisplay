@@ -34,10 +34,10 @@ FileEntryView::~FileEntryView() {
 
 void FileEntryView::init_from(const FileEntry* entry)
 {
-    size=entry->get_size();
+    size = entry->getSize();
     name=entry->getName();
     id = ++idCounter;
-    entryType=entry->is_dir() ? EntryType::DIRECTORY : EntryType::FILE;
+    entryType = entry->isDir() ? EntryType::DIRECTORY : EntryType::FILE;
     drawArea.x=0;
     drawArea.y=0;
     drawArea.w=0;
@@ -61,7 +61,7 @@ void FileEntryView::reconstruct_from(const FileEntry* entry, const ViewOptions& 
             if(childCount>=MAX_CHILD_COUNT)
                 return false;
 
-            auto childSize = child.get_size();
+            auto childSize = child.getSize();
             if(childSize<options.minSize)
                 return false;
 

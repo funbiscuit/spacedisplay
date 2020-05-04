@@ -49,7 +49,7 @@ bool FileViewDB::update(bool includeUnknown, bool includeAvailable)
 
         float minSizeRatio = (7.f*7.f)/float(viewRect.h*viewRect.w);
 
-        totalSpace+=entry.get_size();
+        totalSpace += entry.getSize();
 
         options.minSize = int64_t(float(totalSpace)*minSizeRatio);
         if(rootFile)

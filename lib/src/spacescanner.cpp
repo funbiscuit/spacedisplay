@@ -177,7 +177,7 @@ void SpaceScanner::scanChildrenAt(const FilePath& path,
             }
         }
         auto fe=FileEntry::createEntry(it.name, it.isDir);
-        fe->set_size(it.size);
+        fe->setSize(it.size);
         if(doScan && newPaths)
         {
             entryPath = Utils::make_unique<FilePath>(path);

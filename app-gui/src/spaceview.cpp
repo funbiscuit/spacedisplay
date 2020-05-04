@@ -654,27 +654,6 @@ void SpaceView::mousePressEvent(QMouseEvent *event) {
             return;
         }
     }
-//    else if(event->button() == Qt::RightButton)
-//    {
-//        if(hoveredEntry && (hoveredEntry->is_dir() || hoveredEntry->is_file() ))
-//        {
-//            event->accept();
-//
-//            auto currentPath = getCurrentPath();
-//            std::string entryPath;
-//            if(currentPath.length()>0)
-//            {
-//                if(currentPath.back()!='/' && currentPath.back()!='\\')
-//                    currentPath.append("/");
-//                entryPath = currentPath + hoveredEntry->get_path(false);
-//            }
-//            else
-//                entryPath = hoveredEntry->get_path();
-//
-//            showEntryPopup(entryPath, hoveredEntry->is_dir())
-//            return;
-//        }
-//    }
     QWidget::mousePressEvent(event);
 }
 

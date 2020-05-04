@@ -13,7 +13,6 @@ find_package(Qt5 COMPONENTS Core Widgets Svg REQUIRED)
 add_library(spacedisplay_lib STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/fileentry.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/filedb.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/fileentrypool.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/filepath.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/spacescanner.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/spacewatcher.cpp

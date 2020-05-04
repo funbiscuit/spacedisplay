@@ -10,7 +10,6 @@
 #include <set>
 #include <unordered_map>
 
-class FileEntryPool;
 class FilePath;
 
 class FileEntry {
@@ -18,21 +17,11 @@ class FileEntry {
     FileEntry(std::unique_ptr<char[]> name_, bool isDir_);
 public:
 
-    void reconstruct(std::unique_ptr<char[]> name_, bool isDir_);
-
     static std::unique_ptr<FileEntry> createEntry(const std::string& name_, bool isDir_);
 
-    /**
-     * Deletes (or caches) all entries (and their children) in chain
-     * entry->nextEntry->nextEntry and so on
-     * @param firstEntry
-     * @@return number of deleted (or cached) entries
-     */
-    static int64_t deleteEntryChain(std::unique_ptr<FileEntry> firstEntry);
+    void setSize(int64_t size);
 
-    void set_size(int64_t size);
-
-    int64_t get_size() const;
+    int64_t getSize() const;
 
     const char* getName() const;
 
@@ -57,7 +46,7 @@ public:
      * Adds to relevant place so all children are sorted by size (in decreasing order)
      * @param child
      */
-    void add_child(std::unique_ptr<FileEntry> child);
+    void addChild(std::unique_ptr<FileEntry> child);
 
     /**
      * Remove all children, that are marked for deletion
@@ -65,10 +54,8 @@ public:
      */
     void removePendingDelete(std::vector<std::unique_ptr<FileEntry>>& deletedChildren);
 
-    int64_t deleteChildren();
-    
-    bool is_dir() const {
-        return isDir;
+    bool isDir() const {
+        return bIsDir;
     }
 
     bool isRoot() const {
@@ -77,9 +64,9 @@ public:
 
 private:
 
-    void _addChild(std::unique_ptr<FileEntry> child, bool addCrc);
+    void _addChild(std::unique_ptr<FileEntry> child);
 
-    void on_child_size_changed(FileEntry* child, int64_t sizeChange);
+    void onChildSizeChanged(FileEntry* child, int64_t sizeChange);
 
     struct EntryBin {
         uint64_t size;
@@ -95,12 +82,6 @@ private:
         }
     };
 
-    /**
-     * Pool for creating and caching entries.
-     * Entries should not be destroyed
-     */
-    static std::unique_ptr<FileEntryPool> entryPool;
-
     FileEntry* parent;
 
     //used only inside EntryBin to point to the next entry with the same size
@@ -110,7 +91,7 @@ private:
     //used to mark entry to delete in function removePendingDelete
     bool pendingDelete;
 
-    bool isDir;
+    bool bIsDir;
     uint16_t nameCrc;
 
     // path crc is xor of all names in path (without trailing slashes, except root)
@@ -119,8 +100,6 @@ private:
     //not using std::string to reduce memory consumption (there are might be millions of entries so each byte counts)
     std::unique_ptr<char[]> name;
 
-
-    friend class FileEntryPool;
     friend class FileDB;
 };
 
