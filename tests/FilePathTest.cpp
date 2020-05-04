@@ -225,23 +225,46 @@ TEST_CASE( "Filepath operations", "[filepath]" )
         REQUIRE( path.getPathCrc() == newPath.getPathCrc() );
     }
     SECTION( "Path comparison" ) {
-        FilePath newPath("D:\\");
-        REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::EQUAL );
-        REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::EQUAL );
-        newPath.addDir("test");
-        REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::PARENT );
-        REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::CHILD );
-        path.addDir("test");
-        REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::EQUAL );
-        REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::EQUAL );
-        path.goUp();
-        path.addFile("test");
-        REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::DIFFERENT );
-        REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::DIFFERENT );
-        newPath.goUp();
-        newPath.addFile("test");
-        REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::EQUAL );
-        REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::EQUAL );
+        FilePath newPath = path;
+
+        SECTION( "Equal paths" )
+        {
+            REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::EQUAL );
+            REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::EQUAL );
+            newPath.addDir("test");
+            path.addDir("test");
+            REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::EQUAL );
+            REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::EQUAL );
+            newPath.addFile("test_file");
+            path.addFile("test_file");
+            REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::EQUAL );
+            REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::EQUAL );
+        }
+        SECTION( "Parent with child" )
+        {
+            newPath.addDir("test");
+            REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::PARENT );
+            REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::CHILD );
+        }
+        SECTION( "Dir and file with equal names" )
+        {
+            newPath.addDir("test");
+            path.addFile("test");
+            REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::DIFFERENT );
+            REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::DIFFERENT );
+        }
+        SECTION( "Different paths" )
+        {
+            newPath.addDir("test");
+            newPath.addFile("test");
+            path.addFile("test2");
+            REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::DIFFERENT );
+            REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::DIFFERENT );
+            path.goUp();
+            path.addFile("test");
+            REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::DIFFERENT );
+            REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::DIFFERENT );
+        }
     }
     SECTION( "Make relative path" ) {
         FilePath rootPath("D:\\");
