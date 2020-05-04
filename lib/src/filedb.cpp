@@ -162,7 +162,7 @@ void FileDB::setNewRootPath(const std::string& path)
     auto newRootPath = Utils::make_unique<FilePath>(path);
     _clearDb();
     rootPath = std::move(newRootPath);
-    rootFile = FileEntry::createEntry(rootPath->getPath(), true);
+    rootFile = Utils::make_unique<FileEntry>(rootPath->getPath(), true);
     rootFile->updatePathCrc(0);
     dirCount = 1;
     fileCount = 0;

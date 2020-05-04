@@ -57,7 +57,7 @@ private:
         {
             auto cname=PlatformUtils::wstr2str(fileData->cFileName);
 
-            while(found && (cname == "." || cname == ".."))
+            while(found && (cname.empty() || cname == "." || cname == ".."))
             {
                 found = FindNextFileW(dirHandle, fileData) != 0;
                 cname=PlatformUtils::wstr2str(fileData->cFileName);

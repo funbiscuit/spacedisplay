@@ -83,21 +83,25 @@ private:
         struct stat file_stat{};
         struct dirent *dp;
 
-        while((dp = readdir(dirp)) != nullptr &&
-              (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0));
+        while((dp = readdir(dirp)) != nullptr)
+        {
+            name = dp->d_name;
+            if(name.empty() || name == "." || name == "..")
+                continue;
+            break;
+        }
 
         if(dp != nullptr)
         {
             // to get file info we need full path
             std::string child = path;
-            child.append("/");
-            child.append( dp->d_name);
+            child.push_back('/');
+            child.append(name);
 
             if(lstat(child.c_str(), &file_stat)==0)
             {
                 isValid = true;
-                isDir=S_ISDIR(file_stat.st_mode);
-                name = dp->d_name;
+                isDir = S_ISDIR(file_stat.st_mode);
                 size = file_stat.st_size;
             }
         }

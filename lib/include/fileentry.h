@@ -13,13 +13,16 @@
 class FilePath;
 
 class FileEntry {
-
-    FileEntry(std::unique_ptr<char[]> name_, bool isDir_);
 public:
-
-    static std::unique_ptr<FileEntry> createEntry(const std::string& name_, bool isDir_);
-
-    void setSize(int64_t size);
+    /**
+     * Constructs new FileEntry object.
+     * Name must be non empty
+     * @param name
+     * @param isDir
+     * @param size
+     * @throws std::invalid_argument if name is empty
+     */
+    FileEntry(const std::string& name, bool isDir, int64_t size = 0);
 
     int64_t getSize() const;
 

@@ -10,27 +10,19 @@ extern "C" {
 #include <crc.h>
 }
 
-FileEntry::FileEntry(std::unique_ptr<char[]> name_, bool isDir_) :
-        bIsDir(isDir_), pendingDelete(false), size(0), parent(nullptr), nameCrc(0), pathCrc(0),
-        name(std::move(name_))
-{
-    nameCrc = crc16(name.get(), (uint16_t) strlen(name.get()));
-    pathCrc = nameCrc;
-}
-
-std::unique_ptr<FileEntry> FileEntry::createEntry(const std::string& name_, bool isDir_)
+FileEntry::FileEntry(const std::string& name_, bool isDir_, int64_t size_) :
+        bIsDir(isDir_), pendingDelete(false), parent(nullptr),
+        nameCrc(0), pathCrc(0), size(size_)
 {
     auto nameLen=name_.length();
+    if(nameLen == 0)
+        throw std::invalid_argument("Can't create FileEntry with empty name");
 
     auto chars=Utils::make_unique_arr<char>(nameLen+1);
     memcpy(chars.get(), name_.c_str(), (nameLen+1)*sizeof(char));
-
-    // using manual creation because constructor of FileEntry is private
-    return std::unique_ptr<FileEntry>(new FileEntry(std::move(chars), isDir_));
-}
-
-void FileEntry::setSize(int64_t size_) {
-    size=size_;
+    nameCrc = crc16(chars.get(), (uint16_t) nameLen);
+    pathCrc = nameCrc;
+    name = std::move(chars);
 }
 
 void FileEntry::addChild(std::unique_ptr<FileEntry> child) {

@@ -176,8 +176,7 @@ void SpaceScanner::scanChildrenAt(const FilePath& path,
                 std::cout<<"Skip scan of: "<<newPath<<"\n";
             }
         }
-        auto fe=FileEntry::createEntry(it.name, it.isDir);
-        fe->setSize(it.size);
+        auto fe = Utils::make_unique<FileEntry>(it.name, it.isDir, it.size);
         if(doScan && newPaths)
         {
             entryPath = Utils::make_unique<FilePath>(path);
