@@ -1,138 +1,98 @@
 
 #include <catch.hpp>
-#include <iostream>
-#include <sstream>
 
 #include "filepath.h"
 #include "platformutils.h"
 
-// helper for redirecting cerr since FilePath may output some warnings when
-// we do negative checking
-struct CerrRedirect
+
+TEST_CASE( "Filepath construction", "[filepath]" )
 {
-    CerrRedirect(std::streambuf* new_buffer) : old(std::cerr.rdbuf(new_buffer)) {}
-
-    ~CerrRedirect()
-    {
-        std::cerr.rdbuf(old);
-    }
-
-private:
-    std::streambuf* old;
-};
-
-TEST_CASE( "Creating and editing filepath", "[filepath]" )
-{
-    std::stringstream cerrBuf;
-
     std::string root = "D:";
     root.push_back(PlatformUtils::filePathSeparator);
 
-    FilePath path(root);
-    REQUIRE( path.getRoot() == root );
-    REQUIRE( path.getPath() == root );
-    REQUIRE( path.isDir() );
-
-    SECTION( "Can't go up when at root" ) {
-        REQUIRE( !path.canGoUp() );
-        REQUIRE( !path.goUp() );
-    }
-    SECTION( "Adding directory" ) {
-        auto newPath = root;
-        newPath.append("some dir");
-        REQUIRE( path.addDir("some dir"));
-        REQUIRE( path.canGoUp() );
-        REQUIRE( path.isDir() );
-        REQUIRE( path.getName() == "some dir" );
-        REQUIRE( path.getPath(false) == newPath );
-        newPath.push_back(PlatformUtils::filePathSeparator);
-        REQUIRE( path.getPath(true) == newPath );
-        REQUIRE( path.goUp() );
-        REQUIRE( !path.canGoUp() );
-    }
-    SECTION( "Adding file" ) {
-        auto newPath = root;
-        newPath.append("some file");
-        REQUIRE( path.addFile("some file"));
-        REQUIRE( path.canGoUp() );
-        REQUIRE( !path.isDir() );
-        REQUIRE( path.getName() == "some file" );
-        REQUIRE( path.getPath(false) == newPath );
-        REQUIRE( path.getPath(true) == newPath );
-        REQUIRE( path.goUp() );
-        REQUIRE( !path.canGoUp() );
-    }
-    SECTION( "Adding file twice" ) {
-        auto newPath = root;
-        newPath.append("some file");
-        REQUIRE( path.addFile("some file"));
+    SECTION( "Creating from root" )
+    {
+        SECTION( "Arguments check" )
         {
-            CerrRedirect redirGuard(cerrBuf.rdbuf());
-            REQUIRE( !path.addFile("some second file"));
+            bool thrown;
+            try{
+                FilePath emptyPath("");
+                thrown = false;
+            } catch (std::exception& e) { thrown = true; }
+            REQUIRE( thrown );
         }
-        REQUIRE( path.getName() == "some file" );
-        REQUIRE( path.getPath() == newPath );
+        SECTION( "Root with slash" )
+        {
+            FilePath path(root);
+            REQUIRE( path.getRoot() == root );
+            REQUIRE( path.getPath() == root );
+            REQUIRE( path.isDir() );
+            REQUIRE( !path.canGoUp() );
+        }
+        SECTION( "Root without slash" )
+        {
+            auto root2 = root;
+            root2.pop_back();
+            FilePath path(root2);
+            REQUIRE( path.getRoot() == root );
+            REQUIRE( path.getPath() == root );
+            REQUIRE( path.isDir() );
+            REQUIRE( !path.canGoUp() );
+        }
     }
-    SECTION( "Creating and using empty path" ) {
-        CerrRedirect redirGuard(cerrBuf.rdbuf());
-        FilePath emptyPath("");
-        REQUIRE( emptyPath.getPath().empty() );
-        REQUIRE( emptyPath.getRoot().empty() );
-        REQUIRE( emptyPath.getName().empty() );
-        REQUIRE( emptyPath.getParts().empty() );
-        REQUIRE( !emptyPath.addFile("any") );
-        REQUIRE( !emptyPath.addDir("any") );
-    }
-    SECTION( "Creating from path and root. Arguments check." ) {
-        bool thrown;
-        try{
-            FilePath newPath("", "");
-            thrown = false;
-        } catch (std::exception& e) { thrown = true; }
-        REQUIRE( thrown );
+    SECTION( "Creating from path and root" )
+    {
+        SECTION( "Arguments check" )
+        {
+            bool thrown;
+            try{
+                FilePath newPath("", "");
+                thrown = false;
+            } catch (std::exception& e) { thrown = true; }
+            REQUIRE( thrown );
 
-        try{
-            FilePath newPath("", "D:\\Windows");
-            thrown = false;
-        } catch (std::exception& e) { thrown = true; }
-        REQUIRE( thrown );
+            try{
+                FilePath newPath("", "D:\\Windows");
+                thrown = false;
+            } catch (std::exception& e) { thrown = true; }
+            REQUIRE( thrown );
 
-        try{
-            FilePath newPath("D:\\Windows", "");
-            thrown = false;
-        } catch (std::exception& e) { thrown = true; }
-        REQUIRE( thrown );
+            try{
+                FilePath newPath("D:\\Windows", "");
+                thrown = false;
+            } catch (std::exception& e) { thrown = true; }
+            REQUIRE( thrown );
 
-        try{
-            FilePath newPath("D:\\Windows", "C:\\");
-            thrown = false;
-        } catch (std::exception& e) { thrown = true; }
-        REQUIRE( thrown );
+            try{
+                FilePath newPath("D:\\Windows", "C:\\");
+                thrown = false;
+            } catch (std::exception& e) { thrown = true; }
+            REQUIRE( thrown );
 
-        try{
-            FilePath newPath("D:\\Windows", "D:\\Windows\\System32");
-            thrown = false;
-        } catch (std::exception& e) { thrown = true; }
-        REQUIRE( thrown );
+            try{
+                FilePath newPath("D:\\Windows", "D:\\Windows\\System32");
+                thrown = false;
+            } catch (std::exception& e) { thrown = true; }
+            REQUIRE( thrown );
 
-        try{
-            //if path doesn't have slash at the end, it is considered to be a file
-            //while root is always considered to be a directory
-            FilePath newPath("D:\\Windows", "D:\\Windows\\");
-            thrown = false;
-        } catch (std::exception& e) { thrown = true; }
-        REQUIRE( thrown );
+            try{
+                //if path doesn't have slash at the end, it is considered to be a file
+                //while root is always considered to be a directory
+                FilePath newPath("D:\\Windows", "D:\\Windows\\");
+                thrown = false;
+            } catch (std::exception& e) { thrown = true; }
+            REQUIRE( thrown );
 
-        try{
-            FilePath newPath("D:\\Windows\\", "D:\\Windows");
-            FilePath newPath2("D:\\Windows\\", "D:\\Windows\\");
-            FilePath newPath3("D:\\Windows", "D:\\");
-            thrown = false;
-        } catch (std::exception& e) { thrown = true; }
-        REQUIRE( !thrown );
+            try{
+                FilePath newPath("D:\\Windows\\", "D:\\Windows");
+                FilePath newPath2("D:\\Windows\\", "D:\\Windows\\");
+                FilePath newPath3("D:\\Windows", "D:\\");
+                thrown = false;
+            } catch (std::exception& e) { thrown = true; }
+            REQUIRE( !thrown );
 
-    }
-    SECTION( "Creating from path and root" ) {
+        }
+        FilePath path(root);
         SECTION( "Creating path to file" ) {
             path.addFile("Windows");
             FilePath filePath("D:\\Windows", "D:\\");
@@ -154,24 +114,117 @@ TEST_CASE( "Creating and editing filepath", "[filepath]" )
         SECTION( "Creating path to root" ) {
             FilePath rootPath("D:\\", "D:\\");
             REQUIRE( rootPath.isDir() );
-            REQUIRE( !rootPath.canGoUp() );
+            REQUIRE( !path.canGoUp() );
             REQUIRE( rootPath.compareTo(path) == FilePath::CompareResult::EQUAL );
         }
     }
-    SECTION( "Check crcs work" ) {
-        FilePath newPath("/home");
-        auto rootCrc = path.getPathCrc();
+}
+
+TEST_CASE( "Filepath operations", "[filepath]" )
+{
+    std::string root = "D:";
+    root.push_back(PlatformUtils::filePathSeparator);
+
+    FilePath path(root);
+
+    SECTION( "Adding dir/file" )
+    {
+        auto newPath = root;
+        SECTION( "Add to dir path" )
+        {
+            REQUIRE( path.isDir() );
+
+            SECTION( "Empty dir" )
+            {
+                bool canAddEmptyDir;
+                try{
+                    path.addDir("");
+                    canAddEmptyDir = true;
+                } catch (std::exception& e) { canAddEmptyDir = false; }
+                REQUIRE( !canAddEmptyDir );
+            }
+            SECTION( "Non-empty dir" )
+            {
+                newPath.append("some dir");
+                REQUIRE( path.addDir("some dir"));
+                REQUIRE( path.canGoUp() );
+                REQUIRE( path.isDir() );
+                REQUIRE( path.getName() == "some dir" );
+                REQUIRE( path.getPath(false) == newPath );
+                newPath.push_back(PlatformUtils::filePathSeparator);
+                REQUIRE( path.getPath(true) == newPath );
+                REQUIRE( path.goUp() );
+                REQUIRE( !path.canGoUp() );
+            }
+            SECTION( "Empty file" )
+            {
+                bool canAddEmptyFile;
+                try{
+                    path.addFile("");
+                    canAddEmptyFile = true;
+                } catch (std::exception& e) { canAddEmptyFile = false; }
+                REQUIRE( !canAddEmptyFile );
+            }
+            SECTION( "Non-empty file" )
+            {
+                newPath.append("some file");
+                REQUIRE( path.addFile("some file"));
+                REQUIRE( path.canGoUp() );
+                REQUIRE( !path.isDir() );
+                REQUIRE( path.getName() == "some file" );
+                REQUIRE( path.getPath(false) == newPath );
+                REQUIRE( path.getPath(true) == newPath );
+                REQUIRE( path.goUp() );
+                REQUIRE( !path.canGoUp() );
+            }
+        }
+
+        SECTION( "Add to file path" )
+        {
+            newPath.append("some_file");
+            path.addFile("some_file");
+            REQUIRE( !path.isDir() );
+
+            SECTION( "Dir" )
+            {
+                bool canAddDirToFile;
+                try{
+                    path.addDir("test");
+                    canAddDirToFile = true;
+                } catch (std::exception& e) { canAddDirToFile = false; }
+                REQUIRE( !canAddDirToFile );
+            }
+            SECTION( "File" )
+            {
+                bool canAddFileToFile;
+                try{
+                    path.addFile("test");
+                    canAddFileToFile = true;
+                } catch (std::exception& e) { canAddFileToFile = false; }
+                REQUIRE( !canAddFileToFile );
+            }
+            //path didn't change
+            REQUIRE( path.getName() == "some_file" );
+            REQUIRE( path.getPath() == newPath );
+        }
+    }
+
+    SECTION( "Path crcs" ) {
+        FilePath newPath = path;
         path.addDir("test");
         // actually it could collide and be the same, but not with provided paths
-        REQUIRE( path.getPathCrc() != rootCrc );
+        REQUIRE( path.getPathCrc() != newPath.getPathCrc() );
+        newPath.addDir("test");
+        REQUIRE( path.getPathCrc() == newPath.getPathCrc() );
         path.goUp();
-        REQUIRE( path.getPathCrc() == rootCrc );
         path.addFile("test2");
-        REQUIRE( path.getPathCrc() != rootCrc );
-        path.setRoot(newPath.getRoot());
+        REQUIRE( path.getPathCrc() != newPath.getPathCrc() );
+        path.goUp();
+        path.addFile("test");
+        // path to dir/file with the same name has the same crc
         REQUIRE( path.getPathCrc() == newPath.getPathCrc() );
     }
-    SECTION( "Check compare work" ) {
+    SECTION( "Path comparison" ) {
         FilePath newPath("D:\\");
         REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::EQUAL );
         REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::EQUAL );
@@ -190,29 +243,33 @@ TEST_CASE( "Creating and editing filepath", "[filepath]" )
         REQUIRE( path.compareTo(newPath) == FilePath::CompareResult::EQUAL );
         REQUIRE( newPath.compareTo(path) == FilePath::CompareResult::EQUAL );
     }
-    SECTION( "Check make relative" ) {
-        std::string relPathStr = "Windows";
-        relPathStr.push_back(PlatformUtils::filePathSeparator);
-        relPathStr.append("System32");
-        relPathStr.push_back(PlatformUtils::filePathSeparator);
+    SECTION( "Make relative path" ) {
+        FilePath rootPath("D:\\");
+        SECTION( "Using correct root" )
+        {
+            std::string relPathStr = "Windows";
+            relPathStr.push_back(PlatformUtils::filePathSeparator);
+            relPathStr.append("System32");
+            relPathStr.push_back(PlatformUtils::filePathSeparator);
 
-        FilePath newPath("D:\\");
-        newPath.addDir("Windows");
-        newPath.addDir("System32");
+            FilePath newPath("D:\\");
+            newPath.addDir("Windows");
+            newPath.addDir("System32");
 
-        REQUIRE( newPath.makeRelativeTo(path) );
-        REQUIRE( newPath.getPath() == relPathStr );
-        REQUIRE( newPath.goUp() );
-        REQUIRE( newPath.getPath(false) == "Windows" );
-    }
-    SECTION( "Check make relative with bad child" ) {
-        FilePath newPath("C:\\");
-        newPath.addDir("Windows");
-        newPath.addDir("System32");
-        auto prevPath = newPath.getPath();
+            REQUIRE( newPath.makeRelativeTo(rootPath) );
+            REQUIRE( newPath.getPath() == relPathStr );
+            REQUIRE( newPath.goUp() );
+            REQUIRE( newPath.getPath(false) == "Windows" );
+        }
+        SECTION( "Using different root" ) {
+            FilePath newPath("C:\\");
+            newPath.addDir("Windows");
+            newPath.addDir("System32");
+            auto prevPath = newPath.getPath();
 
-        REQUIRE( !newPath.makeRelativeTo(path) );
-        REQUIRE( newPath.getPath() == prevPath );
+            REQUIRE( !newPath.makeRelativeTo(path) );
+            REQUIRE( newPath.getPath() == prevPath );
+        }
     }
 }
 

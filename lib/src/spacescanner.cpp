@@ -415,7 +415,13 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     //update info about mount points
     PlatformUtils::get_mount_points(availableRoots, excludedMounts);
     // clears database if it was populated and sets new root
-    db->setNewRootPath(path);
+
+    try{
+        db->setNewRootPath(path);
+    } catch (std::exception&) {
+        std::cout<<"Can't set as root: "<<path<<"\n";
+        return ScannerError::CANT_OPEN_DIR;
+    }
 
     if(watcher)
         watcher->beginWatch(path);

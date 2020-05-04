@@ -339,24 +339,28 @@ void PlatformUtils::show_file_in_file_manager(const char* file_path)
 
 bool PlatformUtils::deleteDir(const std::string &path)
 {
-    FilePath fpath(path);
     bool deleted = true;
+    try {
+        FilePath fpath(path);
 
-    for(FileIterator it(path); it.is_valid(); ++it)
-    {
-        if(it.isDir)
+        for(FileIterator it(path); it.is_valid(); ++it)
         {
-            fpath.addDir(it.name);
-            deleted &= deleteDir(fpath.getPath());
-        } else {
-            fpath.addFile(it.name);
-            deleted &= unlink(fpath.getPath().c_str()) == 0;
+            if(it.isDir)
+            {
+                fpath.addDir(it.name);
+                deleted &= deleteDir(fpath.getPath());
+            } else {
+                fpath.addFile(it.name);
+                deleted &= unlink(fpath.getPath().c_str()) == 0;
+            }
+            fpath.goUp();
         }
-        fpath.goUp();
+        //after all children are removed, remove this directory
+        if(deleted)
+            deleted &= rmdir(fpath.getPath().c_str()) == 0;
+    } catch (std::exception&) {
+        return false;
     }
-    //after all children are removed, remove this directory
-    if(deleted)
-        deleted &= rmdir(fpath.getPath().c_str()) == 0;
 
     return deleted;
 }

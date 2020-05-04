@@ -32,8 +32,6 @@ public:
 
     void set_size(int64_t size);
 
-    void getPath(FilePath& _path);
-
     int64_t get_size() const;
 
     const char* getName() const;

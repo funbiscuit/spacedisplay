@@ -157,9 +157,11 @@ bool FileDB::setChildrenForPath(const FilePath &path,
 void FileDB::setNewRootPath(const std::string& path)
 {
     std::lock_guard<std::mutex> lock(dbMtx);
-    _clearDb();
 
-    rootPath = Utils::make_unique<FilePath>(path);
+    // clearing db resets rootPath so store to temp var (constructor of FilePath can throw exception if path is empty)
+    auto newRootPath = Utils::make_unique<FilePath>(path);
+    _clearDb();
+    rootPath = std::move(newRootPath);
     rootFile = FileEntry::createEntry(rootPath->getPath(), true);
     rootFile->updatePathCrc(0);
     dirCount = 1;

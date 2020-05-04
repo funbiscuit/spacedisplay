@@ -155,20 +155,6 @@ int64_t FileEntry::deleteChildren()
     return count;
 }
 
-void FileEntry::getPath(FilePath& _path) {
-
-    if(parent)
-    {
-        parent->getPath(_path);
-        if(isDir)
-            _path.addDir(name.get(), nameCrc);
-        else
-            _path.addFile(name.get(), nameCrc);
-    }
-    else
-        _path.setRoot(name.get(), nameCrc);
-}
-
 int64_t FileEntry::get_size() const
 {
     return size;

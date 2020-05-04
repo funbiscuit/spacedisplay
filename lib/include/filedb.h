@@ -41,6 +41,7 @@ public:
     /**
      * Clears database and sets new root, making db initialized
      * @param path
+     * @throws std::invalid_argument if construction from given path failed
      */
     void setNewRootPath(const std::string& path);
 
