@@ -180,7 +180,7 @@ void SpaceScanner::scanChildrenAt(const FilePath& path,
         if(doScan && newPaths)
         {
             entryPath = Utils::make_unique<FilePath>(path);
-            entryPath->addDir(it.name, fe->getNameCrc16());
+            entryPath->addDir(it.name, fe->getNameCrc());
             //TODO it would be faster to save all adding for later and then just check if
             // parent path exist in entry (or any of its child paths)
             // if it is not (and most of the times this will be true), we can just push all

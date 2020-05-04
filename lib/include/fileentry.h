@@ -10,8 +10,6 @@
 #include <set>
 #include <unordered_map>
 
-class FilePath;
-
 class FileEntry {
 public:
     /**
@@ -24,11 +22,23 @@ public:
      */
     FileEntry(const std::string& name, bool isDir, int64_t size = 0);
 
+    /**
+     * Sets new size for this entry.
+     * If entry has a parent, this will be a slow operation
+     * since parent will need to reorder this entry
+     * @param newSize
+     */
+    void setSize(int64_t newSize);
+
     int64_t getSize() const;
 
     const char* getName() const;
 
-    uint16_t getNameCrc16() const;
+    const FileEntry* getParent() const;
+
+    uint16_t getNameCrc() const;
+
+    uint16_t getPathCrc() const;
 
     /**
      * Executes provided function for each child until all children are processed
@@ -37,12 +47,6 @@ public:
      * @return false if entry doesn't have children, true otherwise
      */
     bool forEach(const std::function<bool(const FileEntry&)>& func) const;
-
-    /**
-     * Recalculates crc of path to this entry given path crc of entry parent
-     * @param parentPathCrc
-     */
-    void updatePathCrc(uint16_t parentPathCrc);
 
     /**
      * Adds child to children of this entry.
@@ -57,19 +61,34 @@ public:
      */
     void removePendingDelete(std::vector<std::unique_ptr<FileEntry>>& deletedChildren);
 
-    bool isDir() const {
-        return bIsDir;
-    }
+    /**
+     * Mark all children for deletion.
+     * All marked children will be deleted with call to removePendingDelete()
+     * @param files - how much files are marked
+     * @param dirs - how much directories are marked
+     */
+    void markChildrenPendingDelete(int& files, int& dirs);
 
-    bool isRoot() const {
-        return parent == nullptr;
-    }
+    /**
+     * Unmark this entry so it is not deleted with removePendingDelete()
+     */
+    void unmarkPendingDelete();
+
+    bool isDir() const;
+
+    bool isRoot() const;
 
 private:
 
     void _addChild(std::unique_ptr<FileEntry> child);
 
     void onChildSizeChanged(FileEntry* child, int64_t sizeChange);
+
+    /**
+     * Recalculates crc of path to this entry given path crc of entry parent
+     * @param parentPathCrc
+     */
+    void updatePathCrc(uint16_t parentPathCrc);
 
     struct EntryBin {
         uint64_t size;
@@ -102,8 +121,6 @@ private:
     int64_t size;
     //not using std::string to reduce memory consumption (there are might be millions of entries so each byte counts)
     std::unique_ptr<char[]> name;
-
-    friend class FileDB;
 };
 
 

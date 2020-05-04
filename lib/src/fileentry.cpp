@@ -3,7 +3,6 @@
 #include <cstring>
 
 #include "fileentry.h"
-#include "filepath.h"
 #include "utils.h"
 
 extern "C" {
@@ -91,6 +90,7 @@ void FileEntry::_addChild(std::unique_ptr<FileEntry> child) {
 
     const auto childSize = child->size;
     child->parent = this;
+    child->updatePathCrc(pathCrc);
     // first try to find existing bin for appropriate size
     auto it = children.find(EntryBin(childSize));
     if(it!=children.end())
@@ -108,14 +108,27 @@ void FileEntry::_addChild(std::unique_ptr<FileEntry> child) {
     }
 }
 
+void FileEntry::setSize(int64_t newSize)
+{
+    auto sizeChange = newSize-size;
+    size = newSize;
+    // if size changed, tell about it to parent
+    if(parent && sizeChange != 0)
+        parent->onChildSizeChanged(this, sizeChange);
+}
+
 int64_t FileEntry::getSize() const
 {
     return size;
 }
 
-uint16_t FileEntry::getNameCrc16() const
+uint16_t FileEntry::getNameCrc() const
 {
     return nameCrc;
+}
+uint16_t FileEntry::getPathCrc() const
+{
+    return pathCrc;
 }
 
 void FileEntry::updatePathCrc(uint16_t parentPathCrc)
@@ -126,6 +139,11 @@ void FileEntry::updatePathCrc(uint16_t parentPathCrc)
 const char* FileEntry::getName() const
 {
     return name.get();
+}
+
+const FileEntry* FileEntry::getParent() const
+{
+    return parent;
 }
 
 bool FileEntry::forEach(const std::function<bool(const FileEntry&)>& func) const
@@ -148,6 +166,39 @@ bool FileEntry::forEach(const std::function<bool(const FileEntry&)>& func) const
     }
 
     return true;
+}
+
+void FileEntry::markChildrenPendingDelete(int& files, int& dirs)
+{
+    files = 0;
+    dirs = 0;
+
+    for(auto& bin : children)
+    {
+        auto child = bin.firstEntry.get();
+        while(child)
+        {
+            if(child->bIsDir)
+                ++dirs;
+            else
+                ++files;
+            child->pendingDelete = true;
+            child = child->nextEntry.get();
+        }
+    }
+}
+
+void FileEntry::unmarkPendingDelete()
+{
+    pendingDelete = false;
+}
+
+bool FileEntry::isDir() const {
+    return bIsDir;
+}
+
+bool FileEntry::isRoot() const {
+    return parent == nullptr;
 }
 
 void FileEntry::onChildSizeChanged(FileEntry* child, int64_t sizeChange) {

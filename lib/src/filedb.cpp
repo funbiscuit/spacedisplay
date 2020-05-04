@@ -38,64 +38,47 @@ bool FileDB::setChildrenForPath(const FilePath &path,
         int deletedFileCount = 0;
         //Mark all children for deletion
         //We will unmark every child that should be kept and then will delete everything else
-        for(auto& childBins : parentEntry->children)
-        {
-            auto child = childBins.firstEntry.get();
-            while(child)
-            {
-                if(child->bIsDir)
-                    ++deletedDirCount;
-                else
-                    ++deletedFileCount;
-                child->pendingDelete = true;
-                child = child->nextEntry.get();
-            }
-        }
-
+        parentEntry->markChildrenPendingDelete(deletedFileCount, deletedDirCount);
 
         for(auto& e : entries)
         {
-            auto existingChild = _findEntry(e->name.get(), e->nameCrc, parentEntry);
+            auto existingChild = _findEntry(e->getName(), e->getNameCrc(), parentEntry);
 
             if(existingChild)
             {
                 //child found, decide what to do with it. unmark it for deletion
-                existingChild->pendingDelete = false;
-                if(existingChild->bIsDir)
+                existingChild->unmarkPendingDelete();
+                if(existingChild->isDir())
                 {
                     --deletedDirCount;
-                    // if entry is dir or file with the same size, just continue
+                    // if entry is dir, just continue
                     continue;
                 }
                 --deletedFileCount;
-                if(existingChild->size == e->size)
+                if(existingChild->getSize() == e->getSize())
                 {
-                    // if entry is dir or file with the same size, just continue
+                    // if entry is file with the same size, just continue
                     continue;
                 }
-                auto sizeChange = e->size-existingChild->size;
-                // if size changed, tell about it to parent, but we need to increase child size by ourself
-                existingChild->size = e->size;
-                parentEntry->onChildSizeChanged(existingChild, sizeChange);
+                existingChild->setSize(e->getSize());
                 continue;
             }
             // if entry was not found, we need to add it
 
             auto ePtr = e.get();
-            ePtr->updatePathCrc(parentEntry->pathCrc);
-            auto crc = ePtr->pathCrc;
             parentEntry->addChild(std::move(e));
+            auto crc = ePtr->getPathCrc(); //path crc will be correct after adding to parent
 
-            if(ePtr->bIsDir)
+            if(ePtr->isDir())
                 ++dirCount;
             else
                 ++fileCount;
 
             // if directory is added, it should be put into newPaths vector so it gets scanned
-            if(ePtr->bIsDir && newPaths)
+            if(ePtr->isDir() && newPaths)
             {
                 auto childPath = Utils::make_unique<FilePath>(path);
-                childPath->addDir(ePtr->name.get(), ePtr->nameCrc);
+                childPath->addDir(ePtr->getName(), ePtr->getNameCrc());
                 newPaths->push_back(std::move(childPath));
             }
 
@@ -121,10 +104,10 @@ bool FileDB::setChildrenForPath(const FilePath &path,
         //also delete all pointers to this children from crc map (since all children will be deleted)
         for(auto& child : deletedChildren)
         {
-            auto crc = child->pathCrc;
+            auto crc = child->getPathCrc();
             //decrease counters back. after exiting loop they should be zero, otherwise not all children
             //were actually deleted and we will need to fix fileCount and dirCount
-            if(child->bIsDir)
+            if(child->isDir())
                 --deletedDirCount;
             else
                 --deletedFileCount;
@@ -163,7 +146,6 @@ void FileDB::setNewRootPath(const std::string& path)
     _clearDb();
     rootPath = std::move(newRootPath);
     rootFile = Utils::make_unique<FileEntry>(rootPath->getPath(), true);
-    rootFile->updatePathCrc(0);
     dirCount = 1;
     fileCount = 0;
     rootValid = true;
@@ -191,7 +173,6 @@ void FileDB::_clearDb()
     rootPath.reset();
     entriesMap.clear();
     rootFile.reset();
-//    FileEntry::deleteEntryChain(std::move(rootFile));
     bHasChanges = true;
 }
 
@@ -201,7 +182,7 @@ void FileDB::_cleanupEntryCrc(const FileEntry& entry)
         _cleanupEntryCrc(child);
         return true;
     });
-    auto it = entriesMap.find(entry.pathCrc);
+    auto it = entriesMap.find(entry.getPathCrc());
     if(it != entriesMap.end())
     {
         for(auto it2=it->second.begin(); it2 != it->second.end(); ++it2)
@@ -220,12 +201,12 @@ FileEntry* FileDB::_findEntry(const char* entryName, uint16_t nameCrc, FileEntry
     if(!parent)
     {
         //only root can be without parents
-        if(strcmp(entryName, rootFile->name.get()) == 0)
+        if(strcmp(entryName, rootFile->getName()) == 0)
             return rootFile.get();
         return nullptr;
     }
 
-    auto pathCrc = parent->pathCrc ^ nameCrc;
+    auto pathCrc = parent->getPathCrc() ^ nameCrc;
     auto it = entriesMap.find(pathCrc);
     if(it == entriesMap.end())
         return nullptr;
@@ -233,7 +214,7 @@ FileEntry* FileDB::_findEntry(const char* entryName, uint16_t nameCrc, FileEntry
     auto vIt = it->second.begin();
     while(vIt != it->second.end())
     {
-        if((*vIt)->parent == parent && strcmp(entryName, (*vIt)->name.get()) == 0)
+        if((*vIt)->getParent() == parent && strcmp(entryName, (*vIt)->getName()) == 0)
             return (*vIt);
         ++vIt;
     }
@@ -252,10 +233,6 @@ FileEntry* FileDB::_findEntry(const FilePath& path) const
     if(parts.size() == 1)
         return rootFile.get();
 
-    auto name = parts.back();
-    if(name.back() == PlatformUtils::filePathSeparator)
-        name.pop_back();
-
     auto pathCrc = path.getPathCrc();
 
     auto it = entriesMap.find(pathCrc);
@@ -266,7 +243,7 @@ FileEntry* FileDB::_findEntry(const FilePath& path) const
 
     while(vIt != it->second.end())
     {
-        auto currentEntry = *vIt;
+        const FileEntry* currentEntry = *vIt;
 
         // for each possible entry check its name and names of all parents that they
         // are the same as in provided path
@@ -277,11 +254,13 @@ FileEntry* FileDB::_findEntry(const FilePath& path) const
             // part that is dir will have slash at the end so its length will be bigger by 1
             auto partLen = isPartDir ? (part.length()-1) : part.length();
 
-            if(currentEntry->parent != nullptr // only root is without parent and we already checked it
-               && strncmp(part.c_str(), currentEntry->name.get(), partLen) == 0
-               && currentEntry->name[partLen] == '\0')
+            auto name = currentEntry->getName();
+
+            if(currentEntry->getParent() != nullptr // only root is without parent and we already checked it
+               && strncmp(part.c_str(), name, partLen) == 0
+               && name[partLen] == '\0')
             {
-                currentEntry = currentEntry->parent;
+                currentEntry = currentEntry->getParent();
             } else
                 break;
         }
