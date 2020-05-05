@@ -39,7 +39,7 @@ public:
 
     virtual bool beginWatch(const std::string& path) = 0;
     virtual void endWatch() = 0;
-    virtual bool isWatching() = 0;
+    virtual bool isWatching() const = 0;
 
     /**
      * Get a limit for a number of watched directories.
@@ -47,10 +47,12 @@ public:
      * Linux is limited by user limit of inotify watch descriptors.
      * @return limit of watched directories, -1 if there is no such limit.
      */
-    virtual int64_t getDirCountLimit() = 0;
+    virtual int64_t getDirCountLimit() const = 0;
 
     /**
      * Get number of directories that are added to watch using addDir();
+     * If this watcher doesn't have a limit on watched dirs, this will always
+     * return 1 if watching and 0 if not watching
      * @return
      */
     int64_t getWatchedDirCount() const;

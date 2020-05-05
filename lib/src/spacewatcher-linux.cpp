@@ -45,12 +45,12 @@ void SpaceWatcherLinux::_endWatch()
     }
 }
 
-bool SpaceWatcherLinux::isWatching()
+bool SpaceWatcherLinux::isWatching() const
 {
     return inotifyFd != -1;
 }
 
-int64_t SpaceWatcherLinux::getDirCountLimit()
+int64_t SpaceWatcherLinux::getDirCountLimit() const
 {
     int64_t limit = 0;
 

@@ -105,12 +105,18 @@ TEST_CASE( "Scanner tests", "[scanner]" )
         int64_t watchedNow, limit;
         bool exceeded = scanner->getWatcherLimits(watchedNow, limit);
         REQUIRE_FALSE( exceeded );
-        REQUIRE( watchedNow == scanner->getDirCount() );
+        if(limit >= 0)
+            REQUIRE( watchedNow == scanner->getDirCount() );
+        else
+            REQUIRE( watchedNow == 1 );
 
         dh.deleteDir("test3/test10");
         std::this_thread::sleep_for(std::chrono::milliseconds(60));
         scanner->getWatcherLimits(watchedNow, limit);
-        REQUIRE( watchedNow == scanner->getDirCount() );
+        if(limit >= 0)
+            REQUIRE( watchedNow == scanner->getDirCount() );
+        else
+            REQUIRE( watchedNow == 1 );
     }
     SECTION( "Scan root" )
     {

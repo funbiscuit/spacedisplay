@@ -35,6 +35,8 @@ bool SpaceWatcherWin::beginWatch(const std::string& path)
     if(watchedDir != INVALID_HANDLE_VALUE)
     {
         watchedPath = path;
+        if(watchedPath.back() != PlatformUtils::filePathSeparator)
+            watchedPath.push_back(PlatformUtils::filePathSeparator);
         return true;
     }
     return false;
@@ -55,7 +57,7 @@ void SpaceWatcherWin::_endWatch()
     }
 }
 
-bool SpaceWatcherWin::isWatching()
+bool SpaceWatcherWin::isWatching() const
 {
     return watchedDir != INVALID_HANDLE_VALUE;
 }

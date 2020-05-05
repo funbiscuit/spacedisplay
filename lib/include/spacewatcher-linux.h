@@ -18,9 +18,9 @@ public:
 
     bool beginWatch(const std::string& path) override;
     void endWatch() override;
-    bool isWatching() override;
+    bool isWatching() const override;
 
-    int64_t getDirCountLimit() override;
+    int64_t getDirCountLimit() const override;
 
     AddDirStatus addDir(const std::string& path) override;
     void rmDir(const std::string& path) override;

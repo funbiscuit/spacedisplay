@@ -37,6 +37,8 @@ void SpaceWatcher::stopThread()
 
 int64_t SpaceWatcher::getWatchedDirCount() const
 {
+    if(getDirCountLimit()<0)
+        return isWatching() ? 1 : 0;
     return watchedDirCount;
 }
 

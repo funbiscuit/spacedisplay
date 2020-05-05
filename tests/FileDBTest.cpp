@@ -112,7 +112,7 @@ TEST_CASE( "FileDB searching", "[filedb]" )
 
     entry = db.findEntry(path);
     REQUIRE( entry != nullptr );
-    REQUIRE( strcmp(entry->getName(), "/home/") == 0 );
+    REQUIRE( path.getPath() == entry->getName() );
 
     entry = db.findEntry(FilePath("/home2"));
     REQUIRE( entry == nullptr );
