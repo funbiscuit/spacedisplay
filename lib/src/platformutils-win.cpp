@@ -178,7 +178,7 @@ bool PlatformUtils::get_mount_space(const std::string& path, uint64_t& totalSpac
 
 void PlatformUtils::open_folder_in_file_manager(const char* folder_path)
 {
-    auto pars = string_format("/n,\"%s\"", folder_path);
+    auto pars = Utils::strFormat("/n,\"%s\"", folder_path);
     auto parsw = str2wstr(pars);
 
     std::wcout << L"Launch explorer with args: " << parsw << '\n';
@@ -188,7 +188,7 @@ void PlatformUtils::open_folder_in_file_manager(const char* folder_path)
 
 void PlatformUtils::show_file_in_file_manager(const char* file_path)
 {
-    auto pars = string_format("/select,\"%s\"", file_path);
+    auto pars = Utils::strFormat("/select,\"%s\"", file_path);
     auto parsw = str2wstr(pars);
 
     std::wcout << L"Launch explorer with args: " << parsw << '\n';

@@ -92,7 +92,7 @@ void SpaceWatcherWin::readEvents()
     // minimum size is 4, so do nothing until we receive it
     if(dwords>3)
     {
-        int currentDword=0;
+        size_t currentDword=0;
 
         while(true)
         {

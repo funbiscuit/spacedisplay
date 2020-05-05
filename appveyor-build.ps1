@@ -26,10 +26,10 @@ for($i = 0; $i -lt $vc_arch.length; $i++){
         $cv = $cmd_var[$k]
         # create build dir if it was not restored from cache
         if(!(test-path "build$cs-$vc")){ mkdir "build$cs-$vc" }
-        cd "build$cs-$vc"
+        Set-Location "build$cs-$vc"
         cmake -DQT_WIN_PATH="$qt_path" -DWIN32_CONSOLE="$cv" -G "Visual Studio 15 2017$vc_gen_sfx" ..
         cmake --build . --config Release
-        cd ..
+        Set-Location ..
 
         # create folders for binaries
         mkdir "bin$cs-$vc"
@@ -37,14 +37,14 @@ for($i = 0; $i -lt $vc_arch.length; $i++){
         mkdir "bin$cs-$vc\styles"
 
         # copy executable and dll's
-        copy "build$cs-$vc\app-gui\Release\spacedisplay_gui.exe" "bin$cs-$vc\spacedisplay.exe"
+        Move-Item "build$cs-$vc\app-gui\Release\spacedisplay_gui.exe" "bin$cs-$vc\spacedisplay.exe"
         for($j = 0; $j -lt $qt_dlls.length; $j++){
             $dll = $qt_dlls[$j]
-            copy "$qt_path\bin\$dll" "bin$cs-$vc\$dll"
+            Copy-Item "$qt_path\bin\$dll" "bin$cs-$vc\$dll"
         }
         for($j = 0; $j -lt $qt_plug.length; $j++){
             $dll = $qt_plug[$j]
-            copy "$qt_path\plugins\$dll" "bin$cs-$vc\$dll"
+            Copy-Item "$qt_path\plugins\$dll" "bin$cs-$vc\$dll"
         }
     }
 }
