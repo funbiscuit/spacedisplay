@@ -85,8 +85,14 @@ SpaceWatcher::AddDirStatus SpaceWatcherLinux::addDir(const std::string &path)
         return AddDirStatus::ACCESS_DENIED; //this is a default, although not very accurate
     }
     std::lock_guard<std::mutex> lock(inotifyWdsMtx);
-    inotifyWds[wd]=path;
-    SpaceWatcher::addDir(path);
+    auto it = inotifyWds.find(wd);
+    if(it!=inotifyWds.end())
+        it->second = path;
+    else
+    {
+        inotifyWds[wd]=path;
+        SpaceWatcher::addDir(path);
+    }
     return AddDirStatus::ADDED;
 }
 
@@ -105,6 +111,7 @@ void SpaceWatcherLinux::_addEvent(struct inotify_event *inotifyEvent)
         auto it = inotifyWds.find(inotifyEvent->wd);
         if(it != inotifyWds.end())
         {
+            SpaceWatcher::rmDir(it->second);
             inotifyWds.erase(it);
         }
         return;

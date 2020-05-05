@@ -11,7 +11,7 @@
 #include <chrono>
 
 SpaceScanner::SpaceScanner() :
-        scannerStatus(ScannerStatus::IDLE), runWorker(false), isMountScanned(false),
+        scannerStatus(ScannerStatus::IDLE), runWorker(true), isMountScanned(false),
         watcherLimitExceeded(false)
 {
     db = std::make_shared<FileDB>();
@@ -59,7 +59,6 @@ void SpaceScanner::checkForEvents()
 void SpaceScanner::worker_run()
 {
     std::cout << "Start worker thread\n";
-    runWorker = true;
     while(runWorker)
     {
         std::unique_lock<std::mutex> scanLock(scanMtx, std::defer_lock);
@@ -82,7 +81,7 @@ void SpaceScanner::worker_run()
         std::vector<std::unique_ptr<FilePath>> newPaths;
 
         update_disk_space();
-        while(!scanQueue.empty() && scannerStatus==ScannerStatus::SCANNING)
+        while(!scanQueue.empty() && scannerStatus!=ScannerStatus::IDLE)
         {
             auto scanRequest = std::move(scanQueue.front());
             scanQueue.pop_front();
