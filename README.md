@@ -1,6 +1,8 @@
 Space Display
 -------------
 [![Build status](https://ci.appveyor.com/api/projects/status/3lr8534gpwa3u46n/branch/master?svg=true)](https://ci.appveyor.com/project/funbiscuit/spacedisplay/branch/master)
+[![Build Status](https://travis-ci.org/funbiscuit/spacedisplay.svg?branch=master)](https://travis-ci.org/funbiscuit/spacedisplay)
+[![codecov](https://codecov.io/gh/funbiscuit/spacedisplay/branch/master/graph/badge.svg)](https://codecov.io/gh/funbiscuit/spacedisplay)
 
 Almost cross-platform (no macOS support yet) way to analyze used disk space.
 
@@ -180,6 +182,8 @@ Space Display uses following open source software:
 Qt5, LGPLv3, <http://www.qt.io>
 
 resource-builder, MIT license, <https://github.com/funbiscuit/resource-builder>
+
+Catch2, Boost license, <https://github.com/catchorg/Catch2>
 
 crc, public domain, <https://github.com/panzi/CRC-and-checksum-functions>
 
