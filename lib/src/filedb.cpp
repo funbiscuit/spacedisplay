@@ -11,6 +11,12 @@ extern "C" {
 #include <crc.h>
 }
 
+FileDB::FileDB() : bHasChanges(false), rootValid(false), usedSpace(0),
+                   fileCount(0), dirCount(0)
+{
+
+}
+
 void FileDB::setSpace(uint64_t totalSpace_, uint64_t availableSpace_)
 {
     totalSpace = totalSpace_;
@@ -21,6 +27,8 @@ bool FileDB::setChildrenForPath(const FilePath &path,
                                 std::vector<std::unique_ptr<FileEntry>> entries,
                                 std::vector<std::unique_ptr<FilePath>>* newPaths)
 {
+    if(entries.empty() || !path.isDir())
+        return false;
     // Presorting entries by size so we can insert them much quicker
     std::sort(entries.begin(), entries.end(),
               [](const std::unique_ptr<FileEntry>& e1, const std::unique_ptr<FileEntry>& e2)
@@ -28,111 +36,88 @@ bool FileDB::setChildrenForPath(const FilePath &path,
                   return e1->getSize() > e2->getSize();
               });
     std::lock_guard<std::mutex> lock(dbMtx);
-    if(!isReady() || entries.empty())
+    if(!isReady())
         return false;
 
     auto parentEntry = _findEntry(path);
-    if(parentEntry)
+    if(!parentEntry)
+        return false;
+
+    int deletedDirCount = 0;
+    int deletedFileCount = 0;
+    //Mark all children for deletion
+    //We will unmark every child that should be kept and then will delete everything else
+    parentEntry->markChildrenPendingDelete(deletedFileCount, deletedDirCount);
+
+    for(auto& e : entries)
     {
-        int deletedDirCount = 0;
-        int deletedFileCount = 0;
-        //Mark all children for deletion
-        //We will unmark every child that should be kept and then will delete everything else
-        parentEntry->markChildrenPendingDelete(deletedFileCount, deletedDirCount);
+        auto existingChild = _findEntry(e->getName(), e->getNameCrc(), parentEntry);
 
-        for(auto& e : entries)
+        if(existingChild)
         {
-            auto existingChild = _findEntry(e->getName(), e->getNameCrc(), parentEntry);
-
-            if(existingChild)
+            //child found, decide what to do with it. unmark it for deletion
+            existingChild->unmarkPendingDelete();
+            if(existingChild->isDir())
             {
-                //child found, decide what to do with it. unmark it for deletion
-                existingChild->unmarkPendingDelete();
-                if(existingChild->isDir())
-                {
-                    --deletedDirCount;
-                    // if entry is dir, just continue
-                    continue;
-                }
-                --deletedFileCount;
-                if(existingChild->getSize() == e->getSize())
-                {
-                    // if entry is file with the same size, just continue
-                    continue;
-                }
-                existingChild->setSize(e->getSize());
+                --deletedDirCount;
+                // if entry is dir, just continue
                 continue;
             }
-            // if entry was not found, we need to add it
-
-            auto ePtr = e.get();
-            parentEntry->addChild(std::move(e));
-            auto crc = ePtr->getPathCrc(); //path crc will be correct after adding to parent
-
-            if(ePtr->isDir())
-                ++dirCount;
-            else
-                ++fileCount;
-
-            // if directory is added, it should be put into newPaths vector so it gets scanned
-            if(ePtr->isDir() && newPaths)
+            --deletedFileCount;
+            if(existingChild->getSize() == e->getSize())
             {
-                auto childPath = Utils::make_unique<FilePath>(path);
-                childPath->addDir(ePtr->getName(), ePtr->getNameCrc());
-                newPaths->push_back(std::move(childPath));
+                // if entry is file with the same size, just continue
+                continue;
             }
-
-            //TODO move out of lock?
-            auto it2 = entriesMap.find(crc);
-            if(it2 != entriesMap.end())
-                it2->second.push_back(ePtr);
-            else
-            {
-                std::vector<FileEntry*> vec{ePtr};
-                entriesMap[crc] = std::move(vec);
-            }
+            existingChild->setSize(e->getSize());
+            continue;
         }
+        // if entry was not found, we need to add it
 
-        std::vector<std::unique_ptr<FileEntry>> deletedChildren;
-        deletedChildren.reserve(deletedDirCount+deletedFileCount);
+        auto ePtr = e.get();
+        parentEntry->addChild(std::move(e));
+        auto crc = ePtr->getPathCrc(); //path crc will be correct after adding to parent
 
-        if(deletedFileCount+deletedDirCount>0)
-            parentEntry->removePendingDelete(deletedChildren);
-        fileCount-=deletedFileCount;
-        dirCount-=deletedDirCount;
+        if(ePtr->isDir())
+            ++dirCount;
+        else
+            ++fileCount;
 
-        //also delete all pointers to this children from crc map (since all children will be deleted)
-        for(auto& child : deletedChildren)
+        // if directory is added, it should be put into newPaths vector so it gets scanned
+        if(ePtr->isDir() && newPaths)
         {
-            auto crc = child->getPathCrc();
-            //decrease counters back. after exiting loop they should be zero, otherwise not all children
-            //were actually deleted and we will need to fix fileCount and dirCount
-            if(child->isDir())
-                --deletedDirCount;
-            else
-                --deletedFileCount;
-
-            auto it2 = entriesMap.find(crc);
-            if(it2 != entriesMap.end())
-            {
-                auto it3 = it2->second.begin();
-                while(it3 != it2->second.end())
-                {
-                    if((*it3) == child.get())
-                    {
-                        it2->second.erase(it3);
-                        break;
-                    }
-                    ++it3;
-                }
-            }
+            auto childPath = Utils::make_unique<FilePath>(path);
+            childPath->addDir(ePtr->getName(), ePtr->getNameCrc());
+            newPaths->push_back(std::move(childPath));
         }
-        fileCount+=deletedFileCount;
-        dirCount+=deletedDirCount;
 
-        usedSpace = rootFile->getSize();
-        bHasChanges = true;
+        //TODO move out of lock?
+        auto it2 = entriesMap.find(crc);
+        if(it2 != entriesMap.end())
+            it2->second.push_back(ePtr);
+        else
+        {
+            std::vector<FileEntry*> vec{ePtr};
+            entriesMap[crc] = std::move(vec);
+        }
     }
+
+    std::vector<std::unique_ptr<FileEntry>> deletedChildren;
+    deletedChildren.reserve(deletedDirCount+deletedFileCount);
+
+    if(deletedFileCount+deletedDirCount>0)
+        parentEntry->removePendingDelete(deletedChildren);
+
+    // also delete all pointers to removed children (and their children recursively)
+    // from crc map (since all children will be deleted)
+    // this function will also subtract actual deleted files and dirs from fileCount and dirCount
+    // actual deleted number might be different from deletedFileCount and deletedDirCount since
+    // deleted directories might have children too
+    for(auto& child : deletedChildren)
+        _cleanupEntryCrc(*child);
+
+    usedSpace = rootFile->getSize();
+    bHasChanges = true;
 
     return true;
 }
@@ -149,6 +134,7 @@ void FileDB::setNewRootPath(const std::string& path)
     dirCount = 1;
     fileCount = 0;
     rootValid = true;
+    bHasChanges = true;
 }
 
 const FilePath* FileDB::getRootPath() const
@@ -170,6 +156,7 @@ void FileDB::_clearDb()
     rootValid = false;
     usedSpace = 0;
     fileCount = 0;
+    dirCount = 0;
     rootPath.reset();
     entriesMap.clear();
     rootFile.reset();
@@ -189,7 +176,13 @@ void FileDB::_cleanupEntryCrc(const FileEntry& entry)
         {
             if((*it2) == &entry)
             {
+                if(entry.isDir())
+                    --dirCount;
+                else
+                    --fileCount;
                 it->second.erase(it2);
+                if(it->second.empty())
+                    entriesMap.erase(it);
                 return;
             }
         }
@@ -224,8 +217,6 @@ FileEntry* FileDB::_findEntry(const char* entryName, uint16_t nameCrc, FileEntry
 FileEntry* FileDB::_findEntry(const FilePath& path) const
 {
     auto& parts = path.getParts();
-    if(parts.empty())
-        return nullptr;
 
     //provided path should have the same root as name of root entry
     if(parts.front() != rootFile->getName())

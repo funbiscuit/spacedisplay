@@ -18,6 +18,8 @@ class FilePath;
 class FileDB
 {
 public:
+    FileDB();
+
     /**
      * Sets space of mount point where files in this db are stored
      * @param totalSpace
@@ -117,6 +119,7 @@ private:
 
     /**
      * Deletes all items from entriesMap for this entry and all children (recursively)
+     * Modifies global fileCount and dirCount by number of removed files and dirs
      * @param entry
      */
     void _cleanupEntryCrc(const FileEntry& entry);
