@@ -4,7 +4,7 @@
 
 #include <QStyleOption>
 #include <QPainter>
-
+#include <QMenu>
 
 
 void CustomStyle::drawPrimitive(QStyle::PrimitiveElement element, const QStyleOption *option,
@@ -63,7 +63,7 @@ void CustomStyle::drawPrimitive(QStyle::PrimitiveElement element, const QStyleOp
         painter->setBrush(option->palette.window());
         painter->drawRect(r);
     } else {
-        QProxyStyle::drawPrimitive(element, option, painter, widget);
+        QCommonStyle::drawPrimitive(element, option, painter, widget);
     }
     painter->restore();
 }
@@ -90,7 +90,7 @@ void CustomStyle::drawComplexControl(QStyle::ComplexControl control, const QStyl
         }
 
     } else
-        QProxyStyle::drawComplexControl(control, option, painter, widget);
+        QCommonStyle::drawComplexControl(control, option, painter, widget);
 }
 
 void CustomStyle::drawControl(QStyle::ControlElement control, const QStyleOption *option,
@@ -109,9 +109,12 @@ void CustomStyle::drawControl(QStyle::ControlElement control, const QStyleOption
         painter->drawLine(x1, y, x2, y);
     } else if(control == CE_MenuItem)
     {
+        auto menuPtr = (QMenu*) widget;
         auto menuOption = (QStyleOptionMenuItem*) option;
-        if(menuOption)
+        if(menuOption && menuPtr)
         {
+            if(!menuPtr->hasMouseTracking())
+                menuPtr->setMouseTracking(true);
             auto r = option->rect;
             painter->setPen(Qt::NoPen);
             QColor textCol;
@@ -133,7 +136,7 @@ void CustomStyle::drawControl(QStyle::ControlElement control, const QStyleOption
             painter->drawText(r, Qt::AlignVCenter | Qt::AlignLeft, menuOption->text);
         }
     } else
-        QProxyStyle::drawControl(control, option, painter, widget);
+        QCommonStyle::drawControl(control, option, painter, widget);
 
     painter->restore();
 }
@@ -148,7 +151,7 @@ int CustomStyle::pixelMetric(QStyle::PixelMetric metric, const QStyleOption *opt
         case QStyle::PM_ToolBarItemSpacing:
             return 4;
 
-        default: return QProxyStyle::pixelMetric(metric, option, widget);
+        default: return QCommonStyle::pixelMetric(metric, option, widget);
     }
 }
 

@@ -6,7 +6,7 @@ $vc_arch = @(" Win64", "") #empty for Win32
 $sufx = @("msvc15_x64", "msvc15_x86")
 
 $qt_dlls = @("Qt5Core.dll","Qt5Gui.dll","Qt5Svg.dll","Qt5Widgets.dll")
-$qt_plug = @("platforms\qwindows.dll","styles\qwindowsvistastyle.dll")
+$qt_plug = @("platforms\qwindows.dll")
 
 $cmd_sfx = @("", "-cmd") #empty for normal version
 $cmd_var = @("Off", "On")
@@ -34,7 +34,6 @@ for($i = 0; $i -lt $vc_arch.length; $i++){
         # create folders for binaries
         mkdir "bin$cs-$vc"
         mkdir "bin$cs-$vc\platforms"
-        mkdir "bin$cs-$vc\styles"
 
         # copy executable and dll's
         Move-Item "build$cs-$vc\app-gui\Release\spacedisplay_gui.exe" "bin$cs-$vc\spacedisplay.exe"

@@ -1,13 +1,15 @@
 #ifndef SPACEDISPLAY_CUSTOMSTYLE_H
 #define SPACEDISPLAY_CUSTOMSTYLE_H
 
-#include <QProxyStyle>
+#include <QCommonStyle>
 
-class CustomStyle : public QProxyStyle
+class CustomStyle : public QCommonStyle
 {
 Q_OBJECT
 
 public:
+    CustomStyle() = default;
+    ~CustomStyle() override = default;
 
     void drawPrimitive(PrimitiveElement element, const QStyleOption *option,
                        QPainter *painter, const QWidget *widget) const override;

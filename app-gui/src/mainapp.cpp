@@ -10,7 +10,6 @@
 
 int MainApp::run(int argc, char *argv[])
 {
-    QApplication::setStyle(new CustomStyle);
     QApplication app(argc, argv);
     QCoreApplication::setOrganizationName("com.github.funbiscuit");
     QCoreApplication::setApplicationName("Space Display");
@@ -32,6 +31,7 @@ int MainApp::run(int argc, char *argv[])
         appIcon.addPixmap(r.get_vector_pixmap(ResId::__ICONS_SVG_APPICON_SVG, sz));
 
     QApplication::setWindowIcon(appIcon);
+    QApplication::setStyle(new CustomStyle);
 
     MainWindow mainWin;
     mainWin.show();
