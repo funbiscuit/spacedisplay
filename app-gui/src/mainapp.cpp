@@ -6,9 +6,11 @@
 #include "mainwindow.h"
 #include "resources.h"
 
+#include "customstyle.h"
 
 int MainApp::run(int argc, char *argv[])
 {
+    QApplication::setStyle(new CustomStyle);
     QApplication app(argc, argv);
     QCoreApplication::setOrganizationName("com.github.funbiscuit");
     QCoreApplication::setApplicationName("Space Display");

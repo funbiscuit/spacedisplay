@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include <QColor>
+
 namespace UtilsGui {
 
     /**
@@ -18,6 +20,15 @@ namespace UtilsGui {
      * @param text in message box
      */
     void message_box(const std::string& title, const std::string& text);
+
+    /**
+     * Blend fg color with bg color by bg_amount
+     * @param fg
+     * @param bg
+     * @param bg_amount
+     * @return fg*(1-bg_amount)+bg*bg_amount
+     */
+    QColor blend(const QColor& fg, const QColor& bg, qreal bg_amount);
 }
 
 #endif //SPACEDISPLAY_UTILS_GUI_H

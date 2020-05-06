@@ -6,6 +6,8 @@
 #include <QVBoxLayout>
 #include <memory>
 
+#include "customtheme.h"
+
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -15,7 +17,6 @@ QT_END_NAMESPACE
 class SpaceView;
 class StatusView;
 class SpaceScanner;
-class ColorTheme;
 
 
 
@@ -76,14 +77,14 @@ private:
 
     void onScanUpdate();
 
-    void onWatchLimit();
-
     void startScan(const std::string& path);
 
 
     void setEnabledActions(ActionMask actions);
     void enableActions(ActionMask actions);
     void disableActions(ActionMask actions);
+
+    void updateIcons();
 
     //settings keys
     const char* SETTINGS_GEOMETRY = "geometry";
@@ -111,7 +112,7 @@ private:
     bool watchLimitExceeded = false;
 
     std::unique_ptr<QVBoxLayout> layout;
-    std::shared_ptr<ColorTheme> colorTheme;
+    CustomPalette customPalette;
 
     std::unique_ptr<SpaceView> spaceWidget;
     StatusView *statusView;

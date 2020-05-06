@@ -7,7 +7,7 @@
 #include "statusview.h"
 #include "spacescanner.h"
 #include "resources.h"
-#include "colortheme.h"
+#include "customtheme.h"
 #include "utils.h"
 #include "utils-gui.h"
 #include "platformutils.h"
@@ -43,12 +43,6 @@ bool operator!(MainWindow::ActionMask mask)
 MainWindow::MainWindow()
         : spaceWidget(new SpaceView), statusView(new StatusView)
 {
-    auto p = palette();
-    //at start create theme with default colors and then switch to appropriate custom theme
-    colorTheme = std::make_shared<ColorTheme>(p.window().color(),
-            p.windowText().color(), ColorTheme::NativeStyle::NATIVE);
-    setTheme(colorTheme->isDark(), false);
-
     setMinimumSize(600, 400);
     layout = Utils::make_unique<QVBoxLayout>();
 //    layout->setContentsMargins(0,0,0,0);
@@ -170,6 +164,7 @@ void MainWindow::newScan()
 
 
     QMenu menu(this);
+    menu.setPalette(palette());
     auto titleAction = menu.addAction("Choose scan target:");
     titleAction->setEnabled(false);
     for(const auto& target : scanTargets)
@@ -290,50 +285,50 @@ void MainWindow::toggleUnknown()
 }
 void MainWindow::switchTheme()
 {
-    setTheme(!colorTheme->isDark(), true);
+    setTheme(!customPalette.isDark(), true);
     QSettings settings;
-    settings.setValue(SETTINGS_THEME, colorTheme->isDark());
+    settings.setValue(SETTINGS_THEME, customPalette.isDark());
 }
 
-void MainWindow::setTheme(bool isDark, bool updateIcons)
+void MainWindow::setTheme(bool isDark, bool updateIcons_)
 {
-    if(isDark)
-        colorTheme = std::make_shared<ColorTheme>(ColorTheme::CustomStyle::DARK);
-    else
-        colorTheme = std::make_shared<ColorTheme>(ColorTheme::CustomStyle::LIGHT);
-    auto p = palette();
-    p.setColor(QPalette::Window, colorTheme->background);
-    p.setColor(QPalette::WindowText, colorTheme->foreground);
-    p.setColor(QPalette::Light, p.window().color());    //hide white line on top of toolbar in windows
-    setPalette(p);
-    spaceWidget->setTheme(colorTheme);
-    statusView->setTheme(colorTheme);
+    customPalette.setTheme(isDark ? CustomPalette::Theme::DARK : CustomPalette::Theme::LIGHT);
 
-    if(updateIcons)
+    setPalette(customPalette.getPalette());
+    QToolTip::setPalette(customPalette.getPalette());
+    spaceWidget->setCustomPalette(customPalette);
+    statusView->setCustomPalette(customPalette);
+
+    if(updateIcons_)
+        updateIcons();
+}
+
+void MainWindow::updateIcons()
+{
+    using namespace ResourceBuilder;
+    std::vector<std::pair<ResId, QAction*>> iconPairs={
+            std::make_pair(ResId::__ICONS_SVG_NEW_SCAN_SVG,newAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_PAUSE_SVG,pauseAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_REFRESH_SVG,rescanAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_ARROW_BACK_SVG,backAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_ARROW_FORWARD_SVG,forwardAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_FOLDER_NAVIGATE_UP_SVG,upAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_HOME_SVG,homeAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_ZOOM_OUT_SVG,lessDetailAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_ZOOM_IN_SVG,moreDetailAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_SPACE_FREE_SVG,toggleFreeAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_SPACE_UNKNOWN_SVG,toggleUnknownAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_SMOOTH_MODE_SVG,themeAct.get()),
+    };
+    for(auto& pair : iconPairs)
     {
-        using namespace ResourceBuilder;
-        std::vector<std::pair<ResId, QAction*>> iconPairs={
-                std::make_pair(ResId::__ICONS_SVG_NEW_SCAN_SVG,newAct.get()),
-                std::make_pair(ResId::__ICONS_SVG_PAUSE_SVG,pauseAct.get()),
-                std::make_pair(ResId::__ICONS_SVG_REFRESH_SVG,rescanAct.get()),
-                std::make_pair(ResId::__ICONS_SVG_ARROW_BACK_SVG,backAct.get()),
-                std::make_pair(ResId::__ICONS_SVG_ARROW_FORWARD_SVG,forwardAct.get()),
-                std::make_pair(ResId::__ICONS_SVG_FOLDER_NAVIGATE_UP_SVG,upAct.get()),
-                std::make_pair(ResId::__ICONS_SVG_HOME_SVG,homeAct.get()),
-                std::make_pair(ResId::__ICONS_SVG_ZOOM_OUT_SVG,lessDetailAct.get()),
-                std::make_pair(ResId::__ICONS_SVG_ZOOM_IN_SVG,moreDetailAct.get()),
-                std::make_pair(ResId::__ICONS_SVG_SPACE_FREE_SVG,toggleFreeAct.get()),
-                std::make_pair(ResId::__ICONS_SVG_SPACE_UNKNOWN_SVG,toggleUnknownAct.get()),
-                std::make_pair(ResId::__ICONS_SVG_SMOOTH_MODE_SVG,themeAct.get()),
-        };
-        for(auto& pair : iconPairs)
+        if(pair.second)
         {
-            auto icon = colorTheme->createIcon(pair.first);
+            auto icon = customPalette.createIcon(pair.first);
             //FIXME calling QAction::setIcon() seems to not releasing previous icon which leads to memory leak
             pair.second->setIcon(icon);
         }
     }
-
 }
 
 void MainWindow::about()
@@ -435,73 +430,60 @@ void MainWindow::createActions()
     aboutAct->setStatusTip("Show the application's About box");
     connect(aboutAct, &QAction::triggered, this, &MainWindow::about);
 
-    const QIcon newIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_NEW_SCAN_SVG);
-    const QIcon pauseIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_PAUSE_SVG);
-    const QIcon rescanIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_REFRESH_SVG);
-    const QIcon backIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_ARROW_BACK_SVG);
-    const QIcon forwardIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_ARROW_FORWARD_SVG);
-    const QIcon upIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_FOLDER_NAVIGATE_UP_SVG);
-    const QIcon homeIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_HOME_SVG);
-    const QIcon lessIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_ZOOM_OUT_SVG);
-    const QIcon moreIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_ZOOM_IN_SVG);
-    const QIcon freeIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_SPACE_FREE_SVG);
-    const QIcon unknownIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_SPACE_UNKNOWN_SVG);
-    const QIcon themeIcon = colorTheme->createIcon(ResourceBuilder::ResId::__ICONS_SVG_SMOOTH_MODE_SVG);
-
-    newAct = Utils::make_unique<QAction>(newIcon, "&New Scan", this);
+    newAct = Utils::make_unique<QAction>("&New Scan", this);
     newAct->setShortcuts(QKeySequence::New);
     newAct->setStatusTip("Start a new scan");
     connect(newAct.get(), &QAction::triggered, this, &MainWindow::newScan);
 
-    backAct = Utils::make_unique<QAction>(backIcon,"Go &Back", this);
+    backAct = Utils::make_unique<QAction>("Go &Back", this);
     backAct->setShortcuts(QKeySequence::Back);
     backAct->setStatusTip("Go to previous view");
     connect(backAct.get(), &QAction::triggered, this, &MainWindow::goBack);
 
-    forwardAct = Utils::make_unique<QAction>(forwardIcon,"Go &Forward", this);
+    forwardAct = Utils::make_unique<QAction>("Go &Forward", this);
     forwardAct->setShortcuts(QKeySequence::Forward);
     forwardAct->setStatusTip("Go to next view");
     connect(forwardAct.get(), &QAction::triggered, this, &MainWindow::goForward);
 
-    upAct = Utils::make_unique<QAction>(upIcon,"Go &Up", this);
+    upAct = Utils::make_unique<QAction>("Go &Up", this);
     upAct->setStatusTip("Go to parent view");
     connect(upAct.get(), &QAction::triggered, this, &MainWindow::goUp);
 
-    homeAct = Utils::make_unique<QAction>(homeIcon,"Go &Home", this);
+    homeAct = Utils::make_unique<QAction>("Go &Home", this);
     homeAct->setStatusTip("Go to home (root) view");
     connect(homeAct.get(), &QAction::triggered, this, &MainWindow::goHome);
 
-    pauseAct = Utils::make_unique<QAction>(pauseIcon, "&Pause", this);
+    pauseAct = Utils::make_unique<QAction>("&Pause", this);
     pauseAct->setStatusTip("Pause current scan");
     pauseAct->setCheckable(true);
     connect(pauseAct.get(), &QAction::triggered, this, &MainWindow::togglePause);
 
-    rescanAct = Utils::make_unique<QAction>(rescanIcon, "&Rescan", this);
+    rescanAct = Utils::make_unique<QAction>("&Rescan", this);
     rescanAct->setShortcuts(QKeySequence::Refresh);
     rescanAct->setStatusTip("Rescan current view");
     connect(rescanAct.get(), &QAction::triggered, this, &MainWindow::refreshView);
 
-    lessDetailAct = Utils::make_unique<QAction>(lessIcon, "Less details", this);
+    lessDetailAct = Utils::make_unique<QAction>("Less details", this);
     lessDetailAct->setShortcuts(QKeySequence::ZoomOut);
     lessDetailAct->setStatusTip("Show less details");
     connect(lessDetailAct.get(), &QAction::triggered, this, &MainWindow::lessDetail);
 
-    moreDetailAct = Utils::make_unique<QAction>(moreIcon, "More details", this);
+    moreDetailAct = Utils::make_unique<QAction>("More details", this);
     moreDetailAct->setShortcuts(QKeySequence::ZoomIn);
     moreDetailAct->setStatusTip("Show more details");
     connect(moreDetailAct.get(), &QAction::triggered, this, &MainWindow::moreDetail);
 
-    toggleFreeAct = Utils::make_unique<QAction>(freeIcon, "Free space", this);
+    toggleFreeAct = Utils::make_unique<QAction>("Free space", this);
     toggleFreeAct->setStatusTip("Show/Hide free space");
     toggleFreeAct->setCheckable(true);
     connect(toggleFreeAct.get(), &QAction::triggered, this, &MainWindow::toggleFree);
 
-    toggleUnknownAct = Utils::make_unique<QAction>(unknownIcon, "Unknown space", this);
+    toggleUnknownAct = Utils::make_unique<QAction>("Unknown space", this);
     toggleUnknownAct->setStatusTip("Show/Hide unknown/unscanned space");
     toggleUnknownAct->setCheckable(true);
     connect(toggleUnknownAct.get(), &QAction::triggered, this, &MainWindow::toggleUnknown);
 
-    themeAct = Utils::make_unique<QAction>(themeIcon, "Switch theme", this);
+    themeAct = Utils::make_unique<QAction>("Switch theme", this);
     connect(themeAct.get(), &QAction::triggered, this, &MainWindow::switchTheme);
 
     //create menubar
@@ -556,7 +538,7 @@ void MainWindow::createActions()
 
     mainToolbar->addAction(themeAct.get());
 
-
+    updateIcons();
 //    cutAct->setEnabled(false);
 //    connect(textEdit, &QPlainTextEdit::copyAvailable, cutAct, &QAction::setEnabled);
 }
@@ -630,19 +612,14 @@ void MainWindow::readSettings()
     } else
         restoreGeometry(geometry);
 
-    if(settings.contains(SETTINGS_THEME))
-    {
-        bool isDark = settings.value(SETTINGS_THEME).toBool();
-        if(colorTheme->isDark() != isDark)
-            switchTheme();
-    }
+    setTheme(settings.value(SETTINGS_THEME, false).toBool(), true);
 }
 
 void MainWindow::writeSettings()
 {
     QSettings settings;
     settings.setValue(SETTINGS_GEOMETRY, saveGeometry());
-    settings.setValue(SETTINGS_THEME, colorTheme->isDark());
+    settings.setValue(SETTINGS_THEME, customPalette.isDark());
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent *event)

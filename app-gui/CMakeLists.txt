@@ -15,7 +15,8 @@ add_executable(spacedisplay_gui
 # sources for gui
 target_sources(spacedisplay_gui PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/mainapp.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/colortheme.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/customtheme.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/customstyle.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/fileentrypopup.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/fileentryview.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/filetooltip.cpp
@@ -33,6 +34,7 @@ target_sources(spacedisplay_gui PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include/mainwindow.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/spaceview.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/statusview.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/customstyle.h
         )
 
 target_compile_features(spacedisplay_gui PUBLIC cxx_std_11)

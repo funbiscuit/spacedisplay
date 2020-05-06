@@ -2,7 +2,6 @@
 #include <QtWidgets>
 #include <iostream>
 #include "spaceview.h"
-#include "colortheme.h"
 #include "spacescanner.h"
 #include "fileentrypopup.h"
 #include "filepath.h"
@@ -66,16 +65,14 @@ void SpaceView::paintEvent(QPaintEvent *event)
     if(viewDB && viewDB->isReady())
     {
         textHeight = painter.fontMetrics().height();
-//        Utils::tic();
         viewDB->processEntry([this, &painter] (const FileEntryView& root){
             drawView(painter, root, currentDepth, true);
         });
-//        Utils::toc();
     } else {
         int x0=(width-bgIcon.width())/2;
         int y0=(height-bgIcon.height())/2;
         painter.drawPixmap(x0,y0, bgIcon);
-        auto col = colorTheme->background;
+        auto col = palette().window().color();
         col.setAlpha(150);
         painter.fillRect(x0, y0, bgIcon.width(), bgIcon.height(), col);
     }
@@ -119,31 +116,31 @@ bool SpaceView::drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryVie
     switch(file.get_type())
     {
         case FileEntryView::EntryType::AVAILABLE_SPACE:
-            fillColor=colorTheme->viewFreeFill;
-            strokeColor=colorTheme->viewFreeLine;
+            fillColor=customPalette.getViewAvailableFill();
+            strokeColor=customPalette.getViewAvailableLine();
             break;
         case FileEntryView::EntryType::DIRECTORY:
-            fillColor=colorTheme->viewDirFill;
-            strokeColor=colorTheme->viewDirLine;
+            fillColor=customPalette.getViewDirFill();
+            strokeColor=customPalette.getViewDirLine();
             break;
         case FileEntryView::EntryType::FILE:
-            fillColor=colorTheme->viewFileFill;
-            strokeColor=colorTheme->viewFileLine;
+            fillColor=customPalette.getViewFileFill();
+            strokeColor=customPalette.getViewFileLine();
             break;
         default:
-            fillColor=colorTheme->viewUnknownFill;
-            strokeColor=colorTheme->viewUnknownLine;
+            fillColor=customPalette.getViewUnknownFill();
+            strokeColor=customPalette.getViewUnknownLine();
             break;
     }
 
     if(isHovered)
     {
-        fillColor = colorTheme->tint(fillColor, 0.7f);
-        strokeColor = colorTheme->tint(strokeColor, 0.5f);
+        fillColor = customPalette.bgBlend(fillColor, 0.7);
+        strokeColor = customPalette.bgBlend(strokeColor, 0.5);
     } else if(isScanning && !isPaused())
     {
-        fillColor = colorTheme->tint(fillColor, 0.5f);
-        strokeColor = colorTheme->tint(strokeColor, 0.3f);
+        fillColor = customPalette.bgBlend(fillColor, 0.5);
+        strokeColor = customPalette.bgBlend(strokeColor, 0.3);
     }
 
     bg_out = fillColor;
@@ -169,7 +166,7 @@ void SpaceView::mouseReleaseEvent(QMouseEvent *event)
             {
                 auto path = Utils::make_unique<FilePath>(*hoveredPath);
                 entryPopup->updateActions(*scanner);
-                entryPopup->popup(std::move(path));
+                entryPopup->popup(std::move(path), palette());
                 fileTooltip->hideTooltip();
             }
         } else if(onNewScanRequestCallback)
@@ -277,9 +274,10 @@ void SpaceView::setScanner(std::unique_ptr<SpaceScanner> _scanner)
     onScanUpdate();
 }
 
-void SpaceView::setTheme(std::shared_ptr<ColorTheme> theme)
+void SpaceView::setCustomPalette(const CustomPalette& palette)
 {
-    colorTheme = std::move(theme);
+    customPalette = palette;
+    setPalette(customPalette.getPalette());
     viewDB->onThemeChanged();
     allocateEntries();
 }
@@ -454,7 +452,7 @@ void SpaceView::drawViewTitle(QPainter& painter, const QColor& bg, const FileEnt
     if(rect.w < textHeight || rect.h < textHeight)
         return;
 
-    auto col = colorTheme->textFor(bg);
+    auto col = CustomPalette::getTextColorFor(bg);
     auto titlePix = file.getTitlePixmap(painter, col,
             file.get_parent() ? nullptr : currentPath->getPath().c_str());
 
@@ -478,7 +476,7 @@ void SpaceView::drawViewText(QPainter &painter, const QColor& bg, const FileEntr
     //if even name doesn't fit - display nothing
     //if width not enough - don't center text, just start it from the left border
 
-    auto col = colorTheme->textFor(bg);
+    auto col = CustomPalette::getTextColorFor(bg);
 
     auto namePix = file.getNamePixmap(painter, col);
     auto sizePix = file.getSizePixmap(painter, col);

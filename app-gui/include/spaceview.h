@@ -6,9 +6,10 @@
 #include <string>
 #include <memory>
 
+#include "customtheme.h"
+
 class SpaceScanner;
 class FileEntryPopup;
-class ColorTheme;
 class FilePath;
 class FileViewDB;
 class FileEntryView;
@@ -23,7 +24,8 @@ public:
     ~SpaceView() override;
 
     void setScanner(std::unique_ptr<SpaceScanner> _scanner);
-    void setTheme(std::shared_ptr<ColorTheme> theme);
+
+    void setCustomPalette(const CustomPalette& palette);
 
     bool getWatcherLimits(int64_t& watchedNow, int64_t& watchLimit);
 
@@ -139,7 +141,8 @@ public:
 protected:
     const int MIN_DEPTH =1;
     const int MAX_DEPTH =9;
-    std::shared_ptr<ColorTheme> colorTheme;
+
+    CustomPalette customPalette;
 
     QPixmap bgIcon;
 

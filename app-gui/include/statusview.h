@@ -8,6 +8,8 @@
 #include <string>
 #include <memory>
 
+#include "customtheme.h"
+
 struct StatusPart
 {
     QColor color;
@@ -16,8 +18,6 @@ struct StatusPart
     std::string label;
     int textMargin = 10;
 };
-
-class ColorTheme;
 
 class StatusView : public QWidget
 {
@@ -40,7 +40,7 @@ public:
      */
     void setProgress(int progress);
 
-    void setTheme(std::shared_ptr<ColorTheme> theme);
+    void setCustomPalette(const CustomPalette& palette);
 
     void setMode(Mode mode);
 
@@ -84,7 +84,7 @@ protected:
 
     const int textPadding = 3;
 
-    std::shared_ptr<ColorTheme> colorTheme;
+    CustomPalette customPalette;
 
     std::vector<StatusPart> parts;
 
