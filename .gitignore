@@ -3,4 +3,5 @@
 res/build/
 bin/
 bind/
+tools/
 cmake_win_path.txt
