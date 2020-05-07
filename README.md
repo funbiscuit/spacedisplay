@@ -17,7 +17,7 @@ Screenshots
 Light theme in Windows 10:  
 ![Windows-Light-Theme](images/win-light.png)
 
-Dark theme in Manjaro KDE:  
+Dark theme in Ubuntu 18.04:  
 ![Linux-Dark-Theme](images/linux-dark.png)
 
 Basic usage
@@ -150,7 +150,6 @@ But if you launch it from explorer, you'll need to put required dll's to bin fol
 
 You also need to copy required qt5 plugins from `C:\msysXX\mingw64\share\qt5\plugins` (assuming MSYS2 was installed to `C:\msysXX`):
 > platforms/qwindows.dll  
-> styles/qwindowsvistastyle.dll
 
 After that you can launch `spacedisplay.exe` from explorer.
 
@@ -173,7 +172,6 @@ version of installed Visual Studio. If it's not 14 or 15, use existing `build-wi
 > Qt5Svg.dll  
 > Qt5Widgets.dll  
 > platforms/qwindows.dll  
-> styles/qwindowsvistastyle.dll  
 
 Acknowledgements
 ----------------
