@@ -98,6 +98,7 @@ void MainWindow::onScanUpdate()
         int64_t dirCount = spaceWidget->getScannedDirs();
         auto newLimit = watchLimit + dirCount - watchedNow + 2048; // add some extra
         watchLimitReported = true;
+        watchLimitExceeded = false;
         auto msg = Utils::strFormat("Current watch limit (%d) is exceeded, not all changes "
                                     "will be detected.\nIncrease limit to at least %d using following "
                                     "command:\nsudo echo %d > /proc/sys/fs/inotify/max_user_watches",

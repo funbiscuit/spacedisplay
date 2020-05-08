@@ -302,9 +302,10 @@ bool SpaceScanner::getWatcherLimits(int64_t& watchedNow, int64_t& watchLimit)
         return false;
     watchLimit = watcher->getDirCountLimit();
     watchedNow = watcher->getWatchedDirCount();
-    if(watchLimit<0)
+    if(watchLimit<0 || !watcherLimitExceeded)
         return false;
-    return watcherLimitExceeded;
+    watcherLimitExceeded = false;
+    return true;
 }
 
 bool SpaceScanner::can_refresh() const
@@ -421,6 +422,7 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
         return ScannerError::CANT_OPEN_DIR;
     }
 
+    watcherLimitExceeded = false;
     if(watcher)
         watcher->beginWatch(path);
 
