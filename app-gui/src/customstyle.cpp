@@ -1,8 +1,10 @@
 #include "customstyle.h"
 
 #include "utils-gui.h"
+#include "utils.h"
 
 #include <QStyleOption>
+#include <QApplication>
 #include <QPainter>
 #include <QMenu>
 
@@ -109,13 +111,10 @@ void CustomStyle::drawControl(QStyle::ControlElement control, const QStyleOption
         painter->drawLine(x1, y, x2, y);
     } else if(control == CE_MenuItem)
     {
-        auto menuPtr = (QMenu*) widget;
         auto menuOption = (QStyleOptionMenuItem*) option;
-        if(menuOption && menuPtr)
+        auto r = option->rect;
+        if (menuOption->menuItemType == QStyleOptionMenuItem::Normal)
         {
-            if(!menuPtr->hasMouseTracking())
-                menuPtr->setMouseTracking(true);
-            auto r = option->rect;
             painter->setPen(Qt::NoPen);
             QColor textCol;
             if(menuOption->state & State_Selected && menuOption->state & State_Enabled)
@@ -132,8 +131,16 @@ void CustomStyle::drawControl(QStyle::ControlElement control, const QStyleOption
 
             painter->drawRect(r);
             painter->setPen(textCol);
-            r.adjust(r.height()/2,0,0,0);
+            r.adjust(option->fontMetrics.height(),0,0,0);
             painter->drawText(r, Qt::AlignVCenter | Qt::AlignLeft, menuOption->text);
+        } else if (menuOption->menuItemType == QStyleOptionMenuItem::Separator)
+        {
+            auto x1 = r.x();
+            auto x2 = x1 + r.width();
+            auto y = r.y() + r.height()/2;
+
+            painter->setPen(option->palette.mid().color());
+            painter->drawLine(x1, y, x2, y);
         }
     } else
         QCommonStyle::drawControl(control, option, painter, widget);
@@ -143,15 +150,50 @@ void CustomStyle::drawControl(QStyle::ControlElement control, const QStyleOption
 
 int CustomStyle::pixelMetric(QStyle::PixelMetric metric, const QStyleOption *option, const QWidget *widget) const
 {
-    //TODO calculate
+    auto lh = QApplication::fontMetrics().height();
+
     switch (metric)
     {
         case QStyle::PM_ToolTipLabelFrameWidth:
-            return 9;
+            return Utils::roundFrac(lh * 3, 5);
         case QStyle::PM_ToolBarItemSpacing:
-            return 4;
+            return Utils::roundFrac(lh, 3);
+        case QStyle::PM_MenuPanelWidth:
+            return 1;
 
         default: return QCommonStyle::pixelMetric(metric, option, widget);
+    }
+}
+
+QSize CustomStyle::sizeFromContents(QStyle::ContentsType ct, const QStyleOption *opt,
+                                    const QSize &contentsSize, const QWidget *widget) const
+{
+    auto lh = opt->fontMetrics.height();
+
+    if(ct == QStyle::CT_MenuItem)
+    {
+        auto menuOption = (QStyleOptionMenuItem*) opt;
+        QSize rr = contentsSize;
+        rr.setWidth(rr.width() + 2*lh);
+        if(menuOption->menuItemType != QStyleOptionMenuItem::Separator)
+            rr.setHeight(rr.height() + Utils::roundFrac(2 * lh, 3));
+
+        return rr;
+    } else
+        return QCommonStyle::sizeFromContents(ct, opt, contentsSize, widget);
+}
+
+int CustomStyle::styleHint(QStyle::StyleHint sh, const QStyleOption *opt,
+                           const QWidget *w, QStyleHintReturn *shret) const
+{
+    switch (sh)
+    {
+        case QStyle::SH_MenuBar_MouseTracking:
+        case QStyle::SH_Menu_MouseTracking:
+            return 1;
+
+        default:
+            return QCommonStyle::styleHint(sh, opt, w, shret);
     }
 }
 

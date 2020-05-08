@@ -167,6 +167,7 @@ void MainWindow::newScan()
     menu.setPalette(palette());
     auto titleAction = menu.addAction("Choose scan target:");
     titleAction->setEnabled(false);
+    menu.addSeparator();
     for(const auto& target : scanTargets)
     {
         auto action = new QAction(target.c_str(), this);

@@ -26,4 +26,16 @@ TEST_CASE( "Utility tests", "[utils]" )
     REQUIRE( Utils::formatSize(size*1024*1024) == "25.0 MiB" );
     size = 90;
     REQUIRE( Utils::formatSize(size*1024*1024*1024) == "90.0 GiB" );
+
+    REQUIRE(Utils::roundFrac(10, 2) == 5 );
+    REQUIRE(Utils::roundFrac(11, 2) == 6 );
+    REQUIRE(Utils::roundFrac(10, 3) == 3 );
+    REQUIRE(Utils::roundFrac(11, 3) == 4 );
+    REQUIRE(Utils::roundFrac(50, 7) == 7 );
+    REQUIRE(Utils::roundFrac(51, 7) == 7 );
+    REQUIRE(Utils::roundFrac(52, 7) == 7 );
+    REQUIRE(Utils::roundFrac(53, 7) == 8 );
+    REQUIRE(Utils::roundFrac(54, 7) == 8 );
+    REQUIRE(Utils::roundFrac(55, 7) == 8 );
+
 }

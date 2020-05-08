@@ -52,6 +52,20 @@ namespace Utils
         return std::max(lower, std::min(n, upper));
     }
 
+    /**
+     * Round fraction `num/denom` to the nearest int.
+     * Equivalent to int(round(double(num)/double(denom)))
+     * @tparam T
+     * @param num
+     * @param denom
+     * @return round(num/denom)
+     */
+    template <typename T>
+    T roundFrac(T num, T denom) {
+        static_assert(std::is_integral<T>::value, "Integral type is required");
+        return (num + denom / 2) / denom;
+    }
+
     template<typename ... Args>
     std::string strFormat(const char* format, Args ... args)
     {

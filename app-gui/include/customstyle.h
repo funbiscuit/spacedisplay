@@ -22,6 +22,13 @@ public:
 
     int pixelMetric(PixelMetric metric, const QStyleOption *option,
                     const QWidget *widget) const override;
+
+    QSize sizeFromContents(ContentsType ct, const QStyleOption *opt,
+                           const QSize &contentsSize, const QWidget *widget) const override;
+
+    int styleHint(StyleHint sh, const QStyleOption *opt,
+                  const QWidget *w, QStyleHintReturn *shret) const override;
+
 };
 
 
