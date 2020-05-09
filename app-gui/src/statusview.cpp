@@ -20,7 +20,6 @@ void StatusView::setProgress(int progress)
 void StatusView::setCustomPalette(const CustomPalette& palette)
 {
     customPalette = palette;
-    setPalette(customPalette.getPalette());
 }
 
 void StatusView::setMode(Mode mode)

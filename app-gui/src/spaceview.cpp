@@ -166,7 +166,7 @@ void SpaceView::mouseReleaseEvent(QMouseEvent *event)
             {
                 auto path = Utils::make_unique<FilePath>(*hoveredPath);
                 entryPopup->updateActions(*scanner);
-                entryPopup->popup(std::move(path), palette());
+                entryPopup->popup(std::move(path));
                 fileTooltip->hideTooltip();
             }
         } else if(onNewScanRequestCallback)
@@ -277,7 +277,6 @@ void SpaceView::setScanner(std::unique_ptr<SpaceScanner> _scanner)
 void SpaceView::setCustomPalette(const CustomPalette& palette)
 {
     customPalette = palette;
-    setPalette(customPalette.getPalette());
     viewDB->onThemeChanged();
     allocateEntries();
 }

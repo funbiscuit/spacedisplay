@@ -72,13 +72,12 @@ void FileEntryPopup::onOpen()
     PlatformUtils::open_folder_in_file_manager(currentEntryPath->getPath().c_str());
 }
 
-void FileEntryPopup::popup(std::unique_ptr<FilePath> path, const QPalette& palette)
+void FileEntryPopup::popup(std::unique_ptr<FilePath> path)
 {
     currentEntryPath = std::move(path);
     currentEntryName = currentEntryPath->getName();
 
     QMenu menu(parent);
-    menu.setPalette(palette);
     auto title = menu.addAction(currentEntryName.c_str());
     title->setEnabled(false);
     menu.addSeparator();

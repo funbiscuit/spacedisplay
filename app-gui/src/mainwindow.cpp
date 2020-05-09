@@ -165,7 +165,6 @@ void MainWindow::newScan()
 
 
     QMenu menu(this);
-    menu.setPalette(palette());
     auto titleAction = menu.addAction("Choose scan target:");
     titleAction->setEnabled(false);
     menu.addSeparator();
@@ -296,8 +295,7 @@ void MainWindow::setTheme(bool isDark, bool updateIcons_)
 {
     customPalette.setTheme(isDark ? CustomPalette::Theme::DARK : CustomPalette::Theme::LIGHT);
 
-    setPalette(customPalette.getPalette());
-    QToolTip::setPalette(customPalette.getPalette());
+    QApplication::setPalette(customPalette.getPalette());
     spaceWidget->setCustomPalette(customPalette);
     statusView->setCustomPalette(customPalette);
 
