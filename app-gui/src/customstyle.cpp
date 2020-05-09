@@ -3,22 +3,20 @@
 #include "utils-gui.h"
 #include "utils.h"
 
-#include <QStyleOption>
-#include <QApplication>
-#include <QPainter>
-#include <QMenu>
+#include <QtWidgets>
 
 
 void CustomStyle::drawPrimitive(QStyle::PrimitiveElement element, const QStyleOption *option,
                                 QPainter *painter, const QWidget *widget) const
 {
+    auto lh = option->fontMetrics.height();
     painter->save();
     if (element == PE_PanelButtonTool)
     {
         QRect tbRect = option->rect;
         tbRect.adjust(1,1,-2,-2);
 
-        auto pushColFil = option->palette.button().color();
+        auto pushColFil = option->palette.mid().color();
         auto hovColFil = pushColFil;
         hovColFil.setAlpha(127);
 
@@ -37,7 +35,7 @@ void CustomStyle::drawPrimitive(QStyle::PrimitiveElement element, const QStyleOp
             }
         }
     } else if(element == PE_IndicatorToolBarSeparator) {
-        painter->setPen(option->palette.mid().color());
+        painter->setPen(option->palette.midlight().color());
         auto x1 = option->rect.x();
         auto h = option->rect.height();
         auto margin = h/6;
@@ -55,15 +53,87 @@ void CustomStyle::drawPrimitive(QStyle::PrimitiveElement element, const QStyleOp
         painter->setPen(basePen);
         painter->setBrush(option->palette.toolTipBase());
         painter->drawRect(r);
-    } else if(element == PE_FrameMenu) {
-
     } else if(element == PE_PanelMenu) {
         auto r = option->rect;
         r.adjust(0,0,-1,-1);
 
-        painter->setPen(option->palette.mid().color());
+        painter->setPen(option->palette.midlight().color());
         painter->setBrush(option->palette.window());
         painter->drawRect(r);
+    } else if(element == PE_PanelButtonCommand) {
+        auto wid = Utils::roundFrac(lh,10); //width of highlight around button
+        double rectRad = Utils::roundFrac(lh, 9);
+        QRectF r(option->rect);
+        r.adjust(0.5,0.5,-0.5,-0.5); //make it pixel-perfect
+        auto btnR = r.adjusted(wid, wid, -wid, -wid);
+
+        auto opt = (QStyleOptionButton*) option;
+
+        painter->setRenderHint(QPainter::RenderHint::Antialiasing);
+
+        if(option->state & State_HasFocus)
+        {
+            auto col = option->palette.highlight().color();
+            painter->setPen(Qt::NoPen);
+            col.setAlpha(127);
+            painter->setBrush(col);
+            painter->drawRoundedRect(r, rectRad, rectRad);
+            col.setAlpha(255);
+            painter->setPen(col);
+        } else
+            painter->setPen(option->palette.mid().color());
+
+
+        auto fillCol = option->palette.button().color();
+        if((opt->features & QStyleOptionButton::DefaultButton))
+        {
+            fillCol = option->palette.highlight().color();
+            qreal h,s,v;
+            fillCol.getHsvF(&h,&s,&v);
+            if(UtilsGui::isDark(option->palette.window().color()))
+                v*=0.75;
+            else
+                s*=0.75;
+            fillCol.setHsvF(h,s,v);
+
+            auto col = option->palette.highlight().color();
+            painter->setPen(col);
+        }
+
+        if(!(option->state & State_Enabled))
+            fillCol.setAlpha(127);
+
+        painter->setBrush(fillCol);
+        painter->drawRoundedRect(btnR, rectRad, rectRad);
+    } else if(element == PE_PanelLineEdit) {
+        auto wid = Utils::roundFrac(lh,10); //width of highlight around edit
+        QRectF r(option->rect);
+        r.adjust(0.5,0.5,-0.5,-0.5); //make it pixel-perfect
+
+        painter->setRenderHint(QPainter::RenderHint::Antialiasing);
+
+        if(option->state & State_HasFocus)
+        {
+            auto col = option->palette.highlight().color();
+            painter->setPen(Qt::NoPen);
+            col.setAlpha(127);
+            painter->setBrush(col);
+            painter->drawRoundedRect(r, 1, 1);
+            col.setAlpha(255);
+            painter->setPen(col);
+        } else
+            painter->setPen(option->palette.mid().color());
+
+        auto fillCol = option->palette.button().color();
+
+        if(!(option->state & State_Enabled))
+            fillCol.setAlpha(127);
+
+        painter->setBrush(fillCol);
+        painter->drawRect(r.adjusted(wid, wid, -wid, -wid));
+    } else if(element == PE_FrameFocusRect ||
+              element == PE_FrameMenu) {
+        // skip elements
     } else {
         QCommonStyle::drawPrimitive(element, option, painter, widget);
     }
@@ -107,8 +177,25 @@ void CustomStyle::drawControl(QStyle::ControlElement control, const QStyleOption
         auto x2 = x1 + option->rect.width();
         auto y = option->rect.y()+option->rect.height()-1;
 
-        painter->setPen(option->palette.mid().color());
+        painter->setPen(option->palette.midlight().color());
         painter->drawLine(x1, y, x2, y);
+    } else if(control == CE_PushButtonLabel)
+    {
+        auto opt = (QStyleOptionButton*) option;
+        QRect r = option->rect;
+
+        auto textCol = option->palette.windowText().color();
+        if(opt->features & QStyleOptionButton::DefaultButton)
+        {
+            auto f = painter->font();
+            f.setBold(true);
+            painter->setFont(f);
+            textCol = option->palette.highlightedText().color();
+        }
+        if(!(opt->state & State_Enabled))
+            textCol.setAlpha(127);
+        painter->setPen(textCol);
+        painter->drawText(r, Qt::AlignCenter, opt->text);
     } else if(control == CE_MenuItem)
     {
         auto menuOption = (QStyleOptionMenuItem*) option;
@@ -139,7 +226,7 @@ void CustomStyle::drawControl(QStyle::ControlElement control, const QStyleOption
             auto x2 = x1 + r.width();
             auto y = r.y() + r.height()/2;
 
-            painter->setPen(option->palette.mid().color());
+            painter->setPen(option->palette.midlight().color());
             painter->drawLine(x1, y, x2, y);
         }
     } else
@@ -179,6 +266,24 @@ QSize CustomStyle::sizeFromContents(QStyle::ContentsType ct, const QStyleOption 
             rr.setHeight(rr.height() + Utils::roundFrac(2 * lh, 3));
 
         return rr;
+    } else if(ct == QStyle::CT_PushButton)
+    {
+        auto wid = Utils::roundFrac(lh,10);
+        auto baseWidth = lh*4 + 2*wid;
+        QSize rr = contentsSize;
+        rr.setHeight(Utils::roundFrac(lh*4, 3)+2*wid);
+        if(rr.width()<baseWidth)
+            rr.setWidth(baseWidth);
+        else
+            rr.setWidth(rr.width() + lh);
+
+        return rr;
+    } else if(ct == QStyle::CT_LineEdit)
+    {
+        auto wid = Utils::roundFrac(lh,10);
+        QSize rr = contentsSize;
+        rr.setHeight(Utils::roundFrac(lh*4, 3)+2*wid);
+        return rr;
     } else
         return QCommonStyle::sizeFromContents(ct, opt, contentsSize, widget);
 }
@@ -195,5 +300,15 @@ int CustomStyle::styleHint(QStyle::StyleHint sh, const QStyleOption *opt,
         default:
             return QCommonStyle::styleHint(sh, opt, w, shret);
     }
+}
+
+QRect CustomStyle::subElementRect(QStyle::SubElement r, const QStyleOption *opt, const QWidget *widget) const {
+    auto lh = opt->fontMetrics.height();
+    if(r == QStyle::SE_LineEditContents) {
+        auto wid = Utils::roundFrac(lh,10);
+        auto rr = QCommonStyle::subElementRect(r, opt, widget);
+        return rr.adjusted(2*wid,wid,-4*wid,-2*wid);
+    } else
+        return QCommonStyle::subElementRect(r, opt, widget);
 }
 

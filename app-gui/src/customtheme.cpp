@@ -17,7 +17,7 @@ const QPalette& CustomPalette::getPalette() const
 
 bool CustomPalette::isDark()
 {
-    return palette.window().color().lightnessF() < 0.5;
+    return UtilsGui::isDark(palette.window().color());
 }
 
 void CustomPalette::setTheme(Theme theme)
@@ -26,10 +26,12 @@ void CustomPalette::setTheme(Theme theme)
     {
         palette.setColor(QPalette::Window, QColor(60,63,65));
         palette.setColor(QPalette::WindowText, QColor(187, 187, 187));
+        palette.setColor(QPalette::Text, QColor(187,187,187));
 
-        palette.setColor(QPalette::Mid, QColor(81,81,81));
+        palette.setColor(QPalette::Midlight, QColor(81,81,81));
+        palette.setColor(QPalette::Mid, QColor(92,97,100));
         palette.setColor(QPalette::Dark, QColor(175,177,179));
-        palette.setColor(QPalette::Button, QColor(92,97,100));
+        palette.setColor(QPalette::Button, QColor(76,80,82));
 
         palette.setColor(QPalette::Highlight, QColor(75,110,175));
         palette.setColor(QPalette::HighlightedText, QColor(187,187,187));
@@ -45,13 +47,15 @@ void CustomPalette::setTheme(Theme theme)
     {
         palette.setColor(QPalette::Window, QColor(242,242,242));
         palette.setColor(QPalette::WindowText, QColor(35,35,35));
+        palette.setColor(QPalette::Text, QColor(0,0,0));
 
-        palette.setColor(QPalette::Mid, QColor(214,214,214));
+        palette.setColor(QPalette::Midlight, QColor(214,214,214));
+        palette.setColor(QPalette::Mid, QColor(207,207,207));
         palette.setColor(QPalette::Dark, QColor(110,110,110));
-        palette.setColor(QPalette::Button, QColor(207,207,207));
+        palette.setColor(QPalette::Button, QColor(255,255,255));
 
-        palette.setColor(QPalette::Highlight, QColor(144,191,228));
-        palette.setColor(QPalette::HighlightedText, QColor(35,35,35));
+        palette.setColor(QPalette::Highlight, QColor(40,120,200));
+        palette.setColor(QPalette::HighlightedText, QColor(255,255,255));
 
         palette.setColor(QPalette::ToolTipBase, QColor(247,247,247));
         palette.setColor(QPalette::ToolTipText, QColor(35,35,35));

@@ -22,3 +22,8 @@ QColor UtilsGui::blend(const QColor& foreground, const QColor& background, qreal
             foreground.greenF()*(1.0-bg_amount) + background.greenF()*bg_amount,
             foreground.blueF()*(1.0-bg_amount) + background.blueF()*bg_amount);
 }
+
+bool UtilsGui::isDark(const QColor& bg)
+{
+    return bg.lightnessF() < 0.5;
+}

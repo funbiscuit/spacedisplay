@@ -29,6 +29,8 @@ namespace UtilsGui {
      * @return fg*(1-bg_amount)+bg*bg_amount
      */
     QColor blend(const QColor& fg, const QColor& bg, qreal bg_amount);
+
+    bool isDark(const QColor& bg);
 }
 
 #endif //SPACEDISPLAY_UTILS_GUI_H
