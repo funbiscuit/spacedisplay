@@ -3,6 +3,7 @@
 #include <QtWidgets>
 
 #include "mainwindow.h"
+#include "inotifydialog.h"
 #include "spaceview.h"
 #include "statusview.h"
 #include "spacescanner.h"
@@ -99,13 +100,9 @@ void MainWindow::onScanUpdate()
         auto newLimit = watchLimit + dirCount - watchedNow + 2048; // add some extra
         watchLimitReported = true;
         watchLimitExceeded = false;
-        auto msg = Utils::strFormat("Current watch limit (%d) is exceeded, not all changes "
-                                    "will be detected.\nIncrease limit to at least %d using following "
-                                    "command:\nsudo echo %d > /proc/sys/fs/inotify/max_user_watches",
-                                    watchLimit, newLimit, newLimit);
-        std::cout << msg << "\n";
         //TODO add option to hide these messages
-        UtilsGui::message_box("Watch limit is exceeded", msg);
+        InotifyDialog dlg(watchLimit, newLimit);
+        dlg.exec();
     }
 }
 
