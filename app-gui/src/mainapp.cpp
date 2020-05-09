@@ -32,6 +32,9 @@ int MainApp::run(int argc, char *argv[])
 
     QApplication::setWindowIcon(appIcon);
     QApplication::setStyle(new CustomStyle);
+    auto f = QApplication::font();
+    f.setPointSize(11);
+    QApplication::setFont(f);
 
     MainWindow mainWin;
     mainWin.show();

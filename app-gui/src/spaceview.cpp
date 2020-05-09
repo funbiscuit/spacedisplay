@@ -351,7 +351,9 @@ bool SpaceView::getSpace(uint64_t& scannedVisible, uint64_t& scannedHidden, uint
     scanner->getSpace(scanned, available, total);
 
     scannedHidden=0;
-    scannedVisible = scanned;
+    scannedVisible = viewDB->getFilesSize();
+    if(scannedVisible>scanned)
+        scannedVisible=scanned;
     if(scannedVisible<scanned && !isAtRoot())
         scannedHidden = scanned-scannedVisible;
 

@@ -293,6 +293,7 @@ void MainWindow::setTheme(bool isDark, bool updateIcons_)
     customPalette.setTheme(isDark ? CustomPalette::Theme::DARK : CustomPalette::Theme::LIGHT);
 
     QApplication::setPalette(customPalette.getPalette());
+    QToolTip::setPalette(palette());
     spaceWidget->setCustomPalette(customPalette);
     statusView->setCustomPalette(customPalette);
 

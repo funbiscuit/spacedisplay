@@ -58,6 +58,11 @@ std::string StatusView::getScanStatusText()
     return Utils::strFormat("%d%%", scanProgress);
 }
 
+int StatusView::getStatusWidth(const QFontMetrics& fm)
+{
+    return fm.size(0, "Ready").width();
+}
+
 std::string StatusView::getScannedFilesText()
 {
     if(currentMode==Mode::NO_SCAN)
@@ -79,8 +84,9 @@ void StatusView::paintEvent(QPaintEvent *event)
     auto scannedFilesStr = getScannedFilesText();
 
     auto filesStrWidth = fm.size(0, scannedFilesStr.c_str()).width() + textMargin;
+    auto statusStrWidth = getStatusWidth(fm);
 
-    int availableWidth = width - fm.size(0, scanStatusStr.c_str()).width() - textMargin - filesStrWidth;
+    int availableWidth = width - statusStrWidth - textMargin - filesStrWidth;
 
     QRect textRect{0,0,size().width(),size().height()};
 
@@ -126,14 +132,14 @@ void StatusView::paintEvent(QPaintEvent *event)
 
     int start = filesStrWidth;
     int end = start + availableWidth;
-    int start1=start;
+    auto start1 = float(start);
     int end1=end;
     int endAllVisible=end1;
 
     for(auto& part : parts)
     {
-        int barWidth= static_cast<int>(float(availableWidth) * part.weight);
-        end1 = start1 + barWidth;
+        float barWidth =float(availableWidth) * part.weight;
+        end1 = int(start1 + barWidth);
         if(barWidth > 0)
         {
             if(part.isHidden)
@@ -142,13 +148,13 @@ void StatusView::paintEvent(QPaintEvent *event)
                 //correctly determine appropriate color for text
                 part.color = customPalette.bgBlend(part.color, 0.5);
             }
+            QRectF rect(start1,0,barWidth,height);
+            QRectF rectTxt(start1,0,barWidth,size().height());
 
-            painter.fillRect(start1,0,barWidth,height, part.color);
+            painter.fillRect(rect, part.color);
 
-            textRect.setX(start1);
-            textRect.setWidth(barWidth);
             painter.setPen(CustomPalette::getTextColorFor(part.color));
-            painter.drawText(textRect, Qt::AlignCenter, part.label.c_str());
+            painter.drawText(rectTxt, Qt::AlignCenter, part.label.c_str());
 
             if(!part.isHidden)
                 endAllVisible=end1;
@@ -159,7 +165,7 @@ void StatusView::paintEvent(QPaintEvent *event)
     painter.setPen(palette().windowText().color());
     painter.setBrush(Qt::transparent);
     if(endAllVisible!=end1)
-        painter.drawRect(filesStrWidth,0,endAllVisible-filesStrWidth, height);
+        painter.drawRect(filesStrWidth,0,endAllVisible-filesStrWidth, height-1);
 }
 
 void StatusView::allocateParts(const QFontMetrics& fm, float width)

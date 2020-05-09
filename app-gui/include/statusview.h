@@ -89,6 +89,7 @@ protected:
     std::vector<StatusPart> parts;
 
     std::string getScanStatusText();
+    int getStatusWidth(const QFontMetrics& fm);
     std::string getScannedFilesText();
     void allocateParts(const QFontMetrics& fm, float width);
 
