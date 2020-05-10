@@ -26,6 +26,8 @@ public:
     QSize sizeFromContents(ContentsType ct, const QStyleOption *opt,
                            const QSize &contentsSize, const QWidget *widget) const override;
 
+    QRect subControlRect(ComplexControl cc, const QStyleOptionComplex *opt, SubControl sc, const QWidget *w) const override;
+
     QRect subElementRect(SubElement r, const QStyleOption *opt, const QWidget *widget) const override;
 
     int styleHint(StyleHint sh, const QStyleOption *opt,

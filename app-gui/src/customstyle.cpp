@@ -131,6 +131,27 @@ void CustomStyle::drawPrimitive(QStyle::PrimitiveElement element, const QStyleOp
 
         painter->setBrush(fillCol);
         painter->drawRect(r.adjusted(wid, wid, -wid, -wid));
+    } else if(element == PE_Frame) {
+        QRectF r(option->rect);
+        r.adjust(0.5,0.5,-0.5,-0.5); //make it pixel-perfect
+
+        painter->setRenderHint(QPainter::RenderHint::Antialiasing);
+
+        if(option->state & State_HasFocus)
+        {
+            auto col = option->palette.highlight().color();
+            painter->setPen(Qt::NoPen);
+            col.setAlpha(127);
+            painter->setBrush(col);
+            painter->drawRoundedRect(r, 1, 1);
+            col.setAlpha(255);
+            painter->setPen(col);
+        } else
+            painter->setPen(option->palette.mid().color());
+        r.adjust(1,1,-1,-1);
+
+        painter->setBrush(Qt::NoBrush);
+        painter->drawRect(r);
     } else if(element == PE_FrameFocusRect ||
               element == PE_FrameMenu) {
         // skip elements
@@ -196,6 +217,25 @@ void CustomStyle::drawControl(QStyle::ControlElement control, const QStyleOption
             textCol.setAlpha(127);
         painter->setPen(textCol);
         painter->drawText(r, Qt::AlignCenter, opt->text);
+    } else if(control == CE_ScrollBarAddLine || control == CE_ScrollBarSubLine) {
+        // skip, add page, sub page and slider are drawn over this areas
+    } else if(control == CE_ScrollBarAddPage || control == CE_ScrollBarSubPage)
+    {
+        QRect r = option->rect;
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(option->palette.base());
+        painter->drawRect(r);
+    } else if(control == CE_ScrollBarSlider)
+    {
+        QRect r = option->rect;
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(option->palette.base());
+        painter->drawRect(r); //fill background
+        r.adjust(0,2,-2,-2);
+
+        painter->setBrush(UtilsGui::blend(option->palette.mid().color(),
+                                          option->palette.base().color(),0.5));
+        painter->drawRect(r);
     } else if(control == CE_MenuItem)
     {
         auto menuOption = (QStyleOptionMenuItem*) option;
@@ -245,6 +285,8 @@ int CustomStyle::pixelMetric(QStyle::PixelMetric metric, const QStyleOption *opt
             return Utils::roundFrac(lh * 3, 5);
         case QStyle::PM_ToolBarItemSpacing:
             return Utils::roundFrac(lh, 3);
+        case QStyle::PM_ScrollBarExtent:
+            return Utils::roundFrac(lh, 2);
         case QStyle::PM_MenuPanelWidth:
             return 1;
 
@@ -310,5 +352,22 @@ QRect CustomStyle::subElementRect(QStyle::SubElement r, const QStyleOption *opt,
         return rr.adjusted(2*wid,wid,-4*wid,-2*wid);
     } else
         return QCommonStyle::subElementRect(r, opt, widget);
+}
+
+QRect CustomStyle::subControlRect(QStyle::ComplexControl cc, const QStyleOptionComplex *opt,
+                                  QStyle::SubControl sc, const QWidget *w) const
+{
+    if(cc==CC_ScrollBar) {
+        auto width = pixelMetric(PM_ScrollBarExtent, nullptr, nullptr);
+        auto r = QCommonStyle::subControlRect(cc, opt, sc, w);
+
+        // we don't draw AddLine and SubLine so we need to expand area of other control
+        // elements of ScrollBar so we don't leave black areas behind
+        if(sc != SC_ScrollBarAddLine && sc != SC_ScrollBarSubLine)
+            r.adjust(0,-width,0,width);
+
+        return r;
+    } else
+        return QCommonStyle::subControlRect(cc, opt, sc, w);
 }
 

@@ -26,6 +26,7 @@ void CustomPalette::setTheme(Theme theme)
     {
         palette.setColor(QPalette::Window, QColor(60,63,65));
         palette.setColor(QPalette::WindowText, QColor(187, 187, 187));
+        palette.setColor(QPalette::Base, QColor(60,63,65));
         palette.setColor(QPalette::Text, QColor(187,187,187));
 
         palette.setColor(QPalette::Midlight, QColor(81,81,81));
@@ -47,6 +48,7 @@ void CustomPalette::setTheme(Theme theme)
     {
         palette.setColor(QPalette::Window, QColor(242,242,242));
         palette.setColor(QPalette::WindowText, QColor(35,35,35));
+        palette.setColor(QPalette::Base, QColor(242,242,242));
         palette.setColor(QPalette::Text, QColor(0,0,0));
 
         palette.setColor(QPalette::Midlight, QColor(214,214,214));
