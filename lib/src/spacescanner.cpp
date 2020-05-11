@@ -82,6 +82,7 @@ void SpaceScanner::worker_run()
         std::vector<std::unique_ptr<FilePath>> newPaths;
 
         update_disk_space();
+        bool scannedRecursively = false;
         while(!scanQueue.empty() && scannerStatus!=ScannerStatus::IDLE)
         {
             auto scanRequest = std::move(scanQueue.front());
@@ -92,6 +93,8 @@ void SpaceScanner::worker_run()
             else
                 currentScannedPath = Utils::make_unique<FilePath>(*scanRequest.path);
             scanLock.unlock();
+            if(scanRequest.recursive)
+                scannedRecursively = true;
 
             if(watcher)
             {
@@ -144,7 +147,7 @@ void SpaceScanner::worker_run()
         //TODO this outputs very frequently when watching for changes
         auto msg = Utils::strFormat("Time taken: %dms. Stat: %d files, %d dirs",
                                     mseconds, db->getFileCount(), db->getDirCount());
-        if(logger)
+        if(logger && scannedRecursively)
             logger->log(msg, "SCAN");
         scannerStatus = ScannerStatus::IDLE;
     }

@@ -28,6 +28,8 @@ LogDialog::LogDialog(std::shared_ptr<Logger> logger) : logger(std::move(logger))
 
     connect(clearLog, &QPushButton::clicked, this, [this]() {
         textEdit->clear();
+        if(this->logger)
+            this->logger->clear();
     });
 
     timerId = startTimer(100);
