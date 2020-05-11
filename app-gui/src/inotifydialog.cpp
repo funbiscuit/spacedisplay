@@ -3,9 +3,10 @@
 #include <QtWidgets>
 
 #include "utils.h"
+#include "logger.h"
 #include <iostream>
 
-InotifyDialog::InotifyDialog(int oldWatchLimit, int newWatchLimit)
+InotifyDialog::InotifyDialog(int oldWatchLimit, int newWatchLimit, Logger* logger)
 {
     setWindowTitle("Inotify watches limit is reached");
 
@@ -16,9 +17,13 @@ InotifyDialog::InotifyDialog(int oldWatchLimit, int newWatchLimit)
     permCmdUbuntu = Utils::strFormat("echo %s | sudo tee -a /etc/sysctl.conf &&"
                                    " sudo sysctl -p", inotifyCmd.c_str());
 
-    std::cout << Utils::strFormat("Current watch limit (%d) is reached, not all changes "
-                                  "will be detected.\nIncrease limit to at least %d\n",
-                                  oldWatchLimit, newWatchLimit);
+    if(logger)
+    {
+        logger->log(Utils::strFormat("Current watch limit (%d) is reached, "
+                                     "not all changes will be detected.", oldWatchLimit), "WATCH");
+        logger->log(Utils::strFormat("Increase limit to at least %d", newWatchLimit), "WATCH");
+    }
+
 
     auto labelMsg = new QLabel();
     auto labelPermArch = new QLabel();

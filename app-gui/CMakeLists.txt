@@ -26,6 +26,7 @@ target_sources(spacedisplay_gui PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/spaceview.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/statusview.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/inotifydialog.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/logdialog.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/utils-gui.cpp
         )
 
@@ -37,6 +38,7 @@ target_sources(spacedisplay_gui PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include/statusview.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/customstyle.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/inotifydialog.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/logdialog.h
         )
 
 target_compile_features(spacedisplay_gui PUBLIC cxx_std_11)

@@ -17,6 +17,7 @@ add_library(spacedisplay_lib STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/spacescanner.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/spacewatcher.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/utils.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/logger.cpp
         )
 
 

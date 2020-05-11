@@ -7,12 +7,14 @@
 #include <memory>
 #include <string>
 
+class Logger;
+
 class InotifyDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    InotifyDialog(int oldWatchLimit, int newWatchLimit);
+    InotifyDialog(int oldWatchLimit, int newWatchLimit, Logger* logger);
 
 
 private:

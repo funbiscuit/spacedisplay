@@ -5,6 +5,7 @@
 #include "filedb.h"
 #include "spacewatcher.h"
 #include "platformutils.h"
+#include "logger.h"
 #include "utils.h"
 
 #include <iostream>
@@ -141,8 +142,10 @@ void SpaceScanner::worker_run()
         auto stop   = high_resolution_clock::now();
         auto mseconds = duration_cast<milliseconds>(stop - start).count();
         //TODO this outputs very frequently when watching for changes
-        std::cout << "Time taken: " << mseconds <<"ms. Stat: "<<db->getFileCount()<<" file(s), " <<
-                  db->getDirCount()<<" dir(s)\n";
+        auto msg = Utils::strFormat("Time taken: %dms. Stat: %d files, %d dirs",
+                                    mseconds, db->getFileCount(), db->getDirCount());
+        if(logger)
+            logger->log(msg, "SCAN");
         scannerStatus = ScannerStatus::IDLE;
     }
 
@@ -172,7 +175,11 @@ void SpaceScanner::scanChildrenAt(const FilePath& path,
             if(Utils::in_array(newPath, availableRoots) || Utils::in_array(newPath, excludedMounts))
             {
                 doScan = false;
-                std::cout<<"Skip scan of: "<<newPath<<"\n";
+                if(logger)
+                {
+                    auto msg = Utils::strFormat("Skip scan of: %s", newPath.c_str());
+                    logger->log(msg, "SCAN");
+                }
             }
         }
         auto fe = Utils::make_unique<FileEntry>(it.name, it.isDir, it.size);
@@ -406,7 +413,11 @@ ScannerError SpaceScanner::scan_dir(const std::string &path)
     if(!PlatformUtils::can_scan_dir(path))
     {
         scannerStatus=ScannerStatus::IDLE;
-        std::cout<<"Can't open "<<path<<"\n";
+        if(logger)
+        {
+            auto msg = Utils::strFormat("Can't open %s", path.c_str());
+            logger->log(msg, "SCAN");
+        }
         return ScannerError::CANT_OPEN_DIR;
     }
 
@@ -482,4 +493,9 @@ int64_t SpaceScanner::getDirCount() const
 const FilePath* SpaceScanner::getRootPath() const
 {
     return db->getRootPath();
+}
+
+void SpaceScanner::setLogger(std::shared_ptr<Logger> logger_)
+{
+    logger = std::move(logger_);
 }

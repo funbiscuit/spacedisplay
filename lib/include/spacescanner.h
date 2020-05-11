@@ -24,6 +24,7 @@ class FileEntry;
 class FilePath;
 class FileDB;
 class SpaceWatcher;
+class Logger;
 
 enum class ScannerError
 {
@@ -99,6 +100,8 @@ public:
     int64_t getFileCount() const;
     int64_t getDirCount() const;
 
+    void setLogger(std::shared_ptr<Logger> logger);
+
 private:
     std::thread workerThread;
     std::atomic<bool> runWorker;
@@ -128,6 +131,8 @@ private:
 
     std::unique_ptr<SpaceWatcher> watcher;
     std::atomic<bool> watcherLimitExceeded;
+
+    std::shared_ptr<Logger> logger;
 
     void worker_run();
 

@@ -4,6 +4,7 @@
 
 #include "mainwindow.h"
 #include "inotifydialog.h"
+#include "logdialog.h"
 #include "spaceview.h"
 #include "statusview.h"
 #include "spacescanner.h"
@@ -12,6 +13,7 @@
 #include "utils.h"
 #include "utils-gui.h"
 #include "platformutils.h"
+#include "logger.h"
 
 
 MainWindow::ActionMask operator|(MainWindow::ActionMask lhs, MainWindow::ActionMask rhs)
@@ -46,8 +48,8 @@ MainWindow::MainWindow()
 {
     setMinimumSize(600, 400);
     layout = Utils::make_unique<QVBoxLayout>();
-//    layout->setContentsMargins(0,0,0,0);
-//    layout->setSpacing(0);
+    logger = std::make_shared<Logger>();
+    logWindow = Utils::make_unique<LogDialog>(logger);
 
     statusView->setMode(StatusView::Mode::NO_SCAN);
 
@@ -68,6 +70,11 @@ MainWindow::MainWindow()
     });
     spaceWidget->setOnWatchLimitCallback([this](){
         watchLimitExceeded = true;
+    });
+
+    logWindow->setOnDataChanged([this](bool hasNew){
+        if(logWindow->isHidden())
+            updateLogIcon(hasNew);
     });
 
     createActions();
@@ -101,7 +108,7 @@ void MainWindow::onScanUpdate()
         watchLimitReported = true;
         watchLimitExceeded = false;
         //TODO add option to hide these messages
-        InotifyDialog dlg(watchLimit, newLimit);
+        InotifyDialog dlg(watchLimit, newLimit, logger.get());
         dlg.exec();
     }
 }
@@ -150,6 +157,7 @@ void MainWindow::updateStatusView()
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     writeSettings();
+    logWindow->close();
     event->accept();
 }
 
@@ -219,6 +227,7 @@ void MainWindow::startScan(const std::string& path)
     spaceWidget->setShowFreeSpace(false);
     if(scanner->scan_dir(path) == ScannerError::NONE)
     {
+        scanner->setLogger(logger);
         spaceWidget->setScanner(std::move(scanner));
         watchLimitReported = false;
         onScanUpdate();
@@ -288,6 +297,12 @@ void MainWindow::switchTheme()
     settings.setValue(SETTINGS_THEME, customPalette.isDark());
 }
 
+void MainWindow::showLog()
+{
+    logWindow->show();
+    updateLogIcon(false);
+}
+
 void MainWindow::setTheme(bool isDark, bool updateIcons_)
 {
     customPalette.setTheme(isDark ? CustomPalette::Theme::DARK : CustomPalette::Theme::LIGHT);
@@ -327,6 +342,26 @@ void MainWindow::updateIcons()
             pair.second->setIcon(icon);
         }
     }
+    if(logAct->property(LOG_ICON_STATE).toBool())
+        logAct->setIcon(customPalette.createIcon(ResId::__ICONS_SVG_NOTIFY_NEW_SVG));
+    else
+        logAct->setIcon(customPalette.createIcon(ResId::__ICONS_SVG_NOTIFY_SVG));
+}
+
+void MainWindow::updateLogIcon(bool hasNew)
+{
+    if(!logAct)
+        return;
+    using namespace ResourceBuilder;
+    auto v = logAct->property(LOG_ICON_STATE);
+    if(v.toBool() == hasNew)
+        return;
+
+    if(hasNew)
+        logAct->setIcon(customPalette.createIcon(ResId::__ICONS_SVG_NOTIFY_NEW_SVG));
+    else
+        logAct->setIcon(customPalette.createIcon(ResId::__ICONS_SVG_NOTIFY_SVG));
+    logAct->setProperty(LOG_ICON_STATE, hasNew);
 }
 
 void MainWindow::about()
@@ -484,6 +519,9 @@ void MainWindow::createActions()
     themeAct = Utils::make_unique<QAction>("Switch theme", this);
     connect(themeAct.get(), &QAction::triggered, this, &MainWindow::switchTheme);
 
+    logAct = Utils::make_unique<QAction>("Show log", this);
+    connect(logAct.get(), &QAction::triggered, this, &MainWindow::showLog);
+
     //create menubar
 /*
     auto fileMenu = menuBar()->addMenu("&Scan");
@@ -535,6 +573,7 @@ void MainWindow::createActions()
     mainToolbar->addSeparator();
 
     mainToolbar->addAction(themeAct.get());
+    mainToolbar->addAction(logAct.get());
 
     updateIcons();
 //    cutAct->setEnabled(false);

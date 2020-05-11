@@ -17,6 +17,8 @@ QT_END_NAMESPACE
 class SpaceView;
 class StatusView;
 class SpaceScanner;
+class Logger;
+class LogDialog;
 
 
 
@@ -66,6 +68,7 @@ public slots:
     void toggleUnknown();
     void switchTheme();
     void about();
+    void showLog();
 
 private:
     void createActions();
@@ -85,10 +88,13 @@ private:
     void disableActions(ActionMask actions);
 
     void updateIcons();
+    void updateLogIcon(bool hasNew);
 
     //settings keys
     const char* SETTINGS_GEOMETRY = "geometry";
     const char* SETTINGS_THEME = "dark_theme";
+
+    const char* LOG_ICON_STATE = "log_icon";
 
     //actions
     std::unique_ptr<QAction> newAct;
@@ -103,6 +109,7 @@ private:
     std::unique_ptr<QAction> toggleFreeAct;
     std::unique_ptr<QAction> toggleUnknownAct;
     std::unique_ptr<QAction> themeAct;
+    std::unique_ptr<QAction> logAct;
 
 
     ActionMask enabledActions;
@@ -115,6 +122,8 @@ private:
     CustomPalette customPalette;
 
     std::unique_ptr<SpaceView> spaceWidget;
+    std::unique_ptr<LogDialog> logWindow;
+    std::shared_ptr<Logger> logger;
     StatusView *statusView;
 };
 
