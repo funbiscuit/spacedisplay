@@ -1,4 +1,4 @@
-version: 0.5.0.{build}
+version: 0.5.1.{build}
 
 image:
   - Visual Studio 2017
@@ -25,6 +25,7 @@ for:
     cache:
       - build-msvc15_x64 -> appveyor-build.ps1
       - build-msvc15_x86 -> appveyor-build.ps1
+      - build-msvc15_x86_xp -> appveyor-build.ps1
 
     before_build:
       - git submodule update --init
