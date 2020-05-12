@@ -23,9 +23,9 @@ for:
       - cmake --version
 
     cache:
-      - build-msvc15_x64 -> appveyor-build.ps1
-      - build-msvc15_x86 -> appveyor-build.ps1
-      - build-msvc15_x86_xp -> appveyor-build.ps1
+      - build-msvc15_x64 -> ci/appveyor-build.ps1
+      - build-msvc15_x86 -> ci/appveyor-build.ps1
+      - build-msvc15_x86_xp -> ci/appveyor-build.ps1
 
     before_build:
       - git submodule update --init
