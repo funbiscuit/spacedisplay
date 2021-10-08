@@ -21,6 +21,7 @@ jobs:
           target: 'desktop'
           arch: 'win64_msvc2019_64'
           dir: '${{ github.workspace }}/qt/'
+        modules: 'qtsvg'
 
       - name: Create Build Environment
         run: cmake -E make_directory build
@@ -33,9 +34,19 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: cmake --build . --config Release
 
+      - name: Copy necessary dlls
+        working-directory: ${{github.workspace}}/build
+        run: |
+          cp ${{env.Qt5_Dir}}/bin/Qt5Core.dll Qt5Core.dll
+          cp ${{env.Qt5_Dir}}/bin/Qt5Gui.dll Qt5Gui.dll
+          cp ${{env.Qt5_Dir}}/bin/Qt5Widgets.dll Qt5Widgets.dll
+          cp ${{env.Qt5_Dir}}/bin/Qt5Svg.dll Qt5Svg.dll
+          mkdir platforms
+          cp ${{env.Qt5_Dir}}/plugins/platforms/qwindows.dll platforms/qwindows.dll
+
       # upload binaries
-      - name: Upload Example binary
+      - name: Upload windows binary
         uses: actions/upload-artifact@v2
         with:
-          name: upload binary
-          path: ${{github.workspace}}/build/app-gui
+          name: spacedisplay-msvc19-x64
+          path: ${{github.workspace}}/build/app-gui/Release
