@@ -21,7 +21,7 @@ jobs:
           target: 'desktop'
           arch: 'win64_msvc2019_64'
           dir: '${{ github.workspace }}/qt/'
-        modules: 'qtsvg'
+          modules: 'qtsvg'
 
       - name: Create Build Environment
         run: cmake -E make_directory build
