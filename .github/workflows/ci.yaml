@@ -24,18 +24,16 @@ jobs:
         run: cmake -E make_directory '${{github.workspace}}'/build
 
       - name: Configure CMake
-        run: cmake -DQT_WIN_PATH='${{env.Qt5_Dir}}' -DWIN32_CONSOLE="Off" -G "Visual Studio 16 2019" -A x64 -B '${{github.workspace}}'/build
+        working-directory: ${{github.workspace}}/build
+        run: cmake ${{github.workspace}} -DQT_WIN_PATH='${{env.Qt5_Dir}}' -DWIN32_CONSOLE="Off" -G "Visual Studio 16 2019" -A x64
 
       - name: Build
-        run: cmake --build '${{github.workspace}}'/build --config Release
-
-
-      - name: Create Build Environment
-        run: cmake -E make_directory ${{github.workspace}}/build
+        working-directory: ${{github.workspace}}/build
+        run: cmake --build . --config Release
 
       # upload binaries
       - name: Upload Example binary
         uses: actions/upload-artifact@v2
         with:
           name: upload binary
-          path: build/app-gui
+          path: ${{github.workspace}}/build/app-gui
