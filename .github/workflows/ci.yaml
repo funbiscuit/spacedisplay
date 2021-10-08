@@ -94,3 +94,9 @@ jobs:
         with:
           name: SpaceDisplay-x86_64.AppImage
           path: ${{github.workspace}}/bin/SpaceDisplay-x86_64.AppImage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage.xml
+          path: ${{github.workspace}}/build/coverage_xml.xml
