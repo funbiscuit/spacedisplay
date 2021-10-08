@@ -6,7 +6,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build-linux:
+  build-win:
     runs-on: windows-2016
     steps:
       - uses: actions/checkout@v2
@@ -14,15 +14,15 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
-          version: '5.6.3'
+          version: '5.15.2'
           host: 'windows'
           target: 'desktop'
-          arch: 'win64_msvc2015_64'
+          arch: 'win64_msvc2019_64'
           dir: '${{ github.workspace }}/qt/'
 
 
       - name: Configure CMake
-        run: cmake -DQT_WIN_PATH='${{env.Qt5_Dir}}' -DWIN32_CONSOLE="Off" -G "Visual Studio 15 2017 Win64" -B '${{github.workspace}}'/build
+        run: cmake -DQT_WIN_PATH='${{env.Qt5_Dir}}' -DWIN32_CONSOLE="Off" -G "Visual Studio 16 2019" -A x64 -B '${{github.workspace}}'/build
       - name: Build
         run: cmake --build '${{github.workspace}}'/build --config Release
 
