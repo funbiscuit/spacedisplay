@@ -1,0 +1,38 @@
+name: build and run tests
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-linux:
+    runs-on: windows-2016
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: '5.6.3'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2015_64'
+          dir: '${{ github.workspace }}/qt/'
+
+
+      - name: Configure CMake
+        run: cmake -DQT_WIN_PATH='${{env.Qt5_Dir}}' -DWIN32_CONSOLE="Off" -G "Visual Studio 15 2017 Win64" -B '${{github.workspace}}'/build
+      - name: Build
+        run: cmake --build '${{github.workspace}}'/build --config Release
+
+
+      - name: Create Build Environment
+        run: cmake -E make_directory ${{github.workspace}}/build
+
+      # upload binaries
+      - name: Upload Example binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: upload binary
+          path: build/app-gui
