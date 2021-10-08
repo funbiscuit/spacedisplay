@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "DirHelper.h"
 
+#include <iostream>
 
 TEST_CASE("Scanner tests", "[scanner]")
 {
@@ -117,11 +118,19 @@ TEST_CASE("Scanner tests", "[scanner]")
             REQUIRE(watchedNow == scanner->getDirCount());
         else
             REQUIRE(watchedNow == 1);
-    }SECTION("Scan root")
+    }
+
+    SECTION("Scan root")
     {
         auto roots = scanner->get_available_roots();
         REQUIRE_FALSE(roots.empty());
-        REQUIRE(scanner->scan_dir(roots.front()) == ScannerError::NONE);
+        ScannerError err = scanner->scan_dir(roots.front());
+        if (err == ScannerError::CANT_OPEN_DIR) {
+            std::cout << "Root dir is not available, can't test root scanning!\n";
+            return;
+        }
+
+        REQUIRE(err == ScannerError::NONE);
         REQUIRE(scanner->is_loaded());
         REQUIRE(scanner->getRootPath() != nullptr);
         REQUIRE(scanner->canPause());
