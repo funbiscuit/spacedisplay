@@ -7,6 +7,15 @@ on:
 
 jobs:
   build-win:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - qt_arch: win64_msvc2019_64
+            arch: x64
+          - qt_arch: win32_msvc2019
+            arch: Win32
+
     runs-on: windows-2019
     steps:
       - uses: actions/checkout@v2
@@ -18,7 +27,7 @@ jobs:
         uses: actions/cache@v1  # not v2!
         with:
           path: ${{github.workspace}}/qt
-          key: ${{runner.os}}-Qt5-x64
+          key: ${{runner.os}}-Qt5-${{ matrix.arch }}
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
@@ -26,7 +35,7 @@ jobs:
           version: '5.15.2'
           host: 'windows'
           target: 'desktop'
-          arch: 'win64_msvc2019_64'
+          arch: ${{ matrix.qt_arch }}
           dir: '${{github.workspace}}/qt/'
           modules: 'qtsvg'
           cached: ${{steps.cache-qt.outputs.cache-hit}}
@@ -36,7 +45,7 @@ jobs:
 
       - name: Configure CMake
         working-directory: ${{github.workspace}}/build
-        run: cmake -DQT_WIN_PATH='${{env.Qt5_Dir}}' -DBUILD_TESTS=true -DWIN32_CONSOLE="Off" -G "Visual Studio 16 2019" -A x64 ..
+        run: cmake -DQT_WIN_PATH='${{env.Qt5_Dir}}' -DBUILD_TESTS=true -DWIN32_CONSOLE="Off" -G "Visual Studio 16 2019" -A ${{ matrix.arch }} ..
 
       - name: Build
         working-directory: ${{github.workspace}}/build
@@ -60,5 +69,5 @@ jobs:
       - name: Upload windows binary
         uses: actions/upload-artifact@v2
         with:
-          name: spacedisplay-msvc19-x64
+          name: spacedisplay-msvc19-${{ matrix.arch }}
           path: ${{github.workspace}}/build/app-gui/Release
