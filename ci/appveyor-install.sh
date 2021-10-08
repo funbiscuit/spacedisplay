@@ -3,7 +3,7 @@
 
 echo Installing required dependencies
 sudo apt-get update -qq
-sudo apt-get -y install qtbase5-dev libqt5svg5-dev qt5-default
+sudo apt-get -y install qtbase5-dev libqt5svg5-dev qt5-default gcovr
 mkdir -p tools && cd tools || exit
 # fetch linuxdeploy and qt plugin
 wget -N https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage

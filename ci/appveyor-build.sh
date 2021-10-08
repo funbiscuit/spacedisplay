@@ -17,8 +17,8 @@ mv Space_Display*.AppImage ../bin/SpaceDisplay-x86_64.AppImage
 echo Run coverage
 cmake --build . --target coverage_xml
 ls
-bash <(curl -s https://codecov.io/bash) -X gcov -f "coverage_xml.xml" || echo "Codecov did not collect coverage reports"
-bash <(wget -q -O - https://coverage.codacy.com/get.sh) report -r coverage_xml.xml -l CPP -f --partial
-bash <(wget -q -O - https://coverage.codacy.com/get.sh) final
+#bash <(curl -s https://codecov.io/bash) -X gcov -f "coverage_xml.xml" || echo "Codecov did not collect coverage reports"
+#bash <(wget -q -O - https://coverage.codacy.com/get.sh) report -r coverage_xml.xml -l CPP -f --partial
+#bash <(wget -q -O - https://coverage.codacy.com/get.sh) final
 
 cd ..
