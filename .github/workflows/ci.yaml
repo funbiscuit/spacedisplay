@@ -20,9 +20,12 @@ jobs:
           arch: 'win64_msvc2019_64'
           dir: '${{ github.workspace }}/qt/'
 
+      - name: Create Build Environment
+        run: cmake -E make_directory '${{github.workspace}}'/build
 
       - name: Configure CMake
         run: cmake -DQT_WIN_PATH='${{env.Qt5_Dir}}' -DWIN32_CONSOLE="Off" -G "Visual Studio 16 2019" -A x64 -B '${{github.workspace}}'/build
+
       - name: Build
         run: cmake --build '${{github.workspace}}'/build --config Release
 
