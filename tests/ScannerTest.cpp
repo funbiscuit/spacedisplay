@@ -124,7 +124,12 @@ TEST_CASE("Scanner tests", "[scanner]")
     {
         auto roots = scanner->get_available_roots();
         REQUIRE_FALSE(roots.empty());
-        ScannerError err = scanner->scan_dir(roots.front());
+        ScannerError err;
+        for (auto &root : roots) {
+            err = scanner->scan_dir(root);
+            if (err != ScannerError::CANT_OPEN_DIR)
+                break;
+        }
         if (err == ScannerError::CANT_OPEN_DIR) {
             std::cout << "Root dir is not available, can't test root scanning!\n";
             return;
