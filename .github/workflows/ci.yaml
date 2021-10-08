@@ -71,3 +71,26 @@ jobs:
         with:
           name: spacedisplay-msvc19-${{ matrix.arch }}
           path: ${{github.workspace}}/build/app-gui/Release
+
+  build-linux:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+
+      - name: Install tools
+        run: ./ci/appveyor-install.sh
+
+      - name: Build
+        run: ./ci/appveyor-build.sh
+
+      - name: Run tests
+        working-directory: ${{github.workspace}}/build/tests
+        run: ./spacedisplay_test
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v2
+        with:
+          name: SpaceDisplay-x86_64.AppImage
+          path: ${{github.workspace}}/bin/SpaceDisplay-x86_64.AppImage

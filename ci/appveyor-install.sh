@@ -2,10 +2,9 @@
 # Run from project root
 
 echo Installing required dependencies
-sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa
 sudo apt-get update -qq
 sudo apt-get -y install qtbase5-dev libqt5svg5-dev qt5-default
-mkdir -p tools && cd tools
+mkdir -p tools && cd tools || exit
 # fetch linuxdeploy and qt plugin
 wget -N https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
 wget -N https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
