@@ -13,6 +13,13 @@ jobs:
         with:
           submodules: 'true'
 
+      - name: Cache Qt
+        id: cache-qt
+        uses: actions/cache@v1  # not v2!
+        with:
+          path: ${{github.workspace}}/qt
+          key: ${{runner.os}}-Qt5-x64
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
@@ -20,8 +27,9 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2019_64'
-          dir: '${{ github.workspace }}/qt/'
+          dir: '${{github.workspace}}/qt/'
           modules: 'qtsvg'
+          cached: ${{steps.cache-qt.outputs.cache-hit}}
 
       - name: Create Build Environment
         run: cmake -E make_directory build
