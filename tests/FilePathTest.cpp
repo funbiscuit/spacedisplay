@@ -14,12 +14,7 @@ TEST_CASE( "Filepath construction", "[filepath]" )
     {
         SECTION( "Arguments check" )
         {
-            bool thrown;
-            try{
-                FilePath emptyPath("");
-                thrown = false;
-            } catch (std::exception& e) { thrown = true; }
-            REQUIRE( thrown );
+            REQUIRE_THROWS_AS(FilePath(""), std::invalid_argument);
         }
         SECTION( "Root with slash" )
         {
@@ -44,53 +39,19 @@ TEST_CASE( "Filepath construction", "[filepath]" )
     {
         SECTION( "Arguments check" )
         {
-            bool thrown;
-            try{
-                FilePath newPath("", "");
-                thrown = false;
-            } catch (std::exception& e) { thrown = true; }
-            REQUIRE( thrown );
+            REQUIRE_THROWS_AS(FilePath("", ""), std::invalid_argument);
+            REQUIRE_THROWS_AS(FilePath("", "D:\\Windows"), std::invalid_argument);
+            REQUIRE_THROWS_AS(FilePath("D:\\Windows", ""), std::invalid_argument);
+            REQUIRE_THROWS_AS(FilePath("D:\\Windows", "C:\\"), std::invalid_argument);
+            REQUIRE_THROWS_AS(FilePath("D:\\Windows", "D:\\Windows\\System32"), std::invalid_argument);
 
-            try{
-                FilePath newPath("", "D:\\Windows");
-                thrown = false;
-            } catch (std::exception& e) { thrown = true; }
-            REQUIRE( thrown );
+            //if path doesn't have slash at the end, it is considered to be a file
+            //while root is always considered to be a directory
+            REQUIRE_THROWS_AS(FilePath("D:\\Windows", "D:\\Windows\\"), std::invalid_argument);
 
-            try{
-                FilePath newPath("D:\\Windows", "");
-                thrown = false;
-            } catch (std::exception& e) { thrown = true; }
-            REQUIRE( thrown );
-
-            try{
-                FilePath newPath("D:\\Windows", "C:\\");
-                thrown = false;
-            } catch (std::exception& e) { thrown = true; }
-            REQUIRE( thrown );
-
-            try{
-                FilePath newPath("D:\\Windows", "D:\\Windows\\System32");
-                thrown = false;
-            } catch (std::exception& e) { thrown = true; }
-            REQUIRE( thrown );
-
-            try{
-                //if path doesn't have slash at the end, it is considered to be a file
-                //while root is always considered to be a directory
-                FilePath newPath("D:\\Windows", "D:\\Windows\\");
-                thrown = false;
-            } catch (std::exception& e) { thrown = true; }
-            REQUIRE( thrown );
-
-            try{
-                FilePath newPath("D:\\Windows\\", "D:\\Windows");
-                FilePath newPath2("D:\\Windows\\", "D:\\Windows\\");
-                FilePath newPath3("D:\\Windows", "D:\\");
-                thrown = false;
-            } catch (std::exception& e) { thrown = true; }
-            REQUIRE( !thrown );
-
+            REQUIRE_NOTHROW(FilePath("D:\\Windows\\", "D:\\Windows"));
+            REQUIRE_NOTHROW(FilePath("D:\\Windows\\", "D:\\Windows\\"));
+            REQUIRE_NOTHROW(FilePath("D:\\Windows\\", "D:\\"));
         }
         FilePath path(root);
         SECTION( "Creating path to file" ) {
@@ -136,17 +97,12 @@ TEST_CASE( "Filepath operations", "[filepath]" )
 
             SECTION( "Empty dir" )
             {
-                bool canAddEmptyDir;
-                try{
-                    path.addDir("");
-                    canAddEmptyDir = true;
-                } catch (std::exception& e) { canAddEmptyDir = false; }
-                REQUIRE( !canAddEmptyDir );
+                REQUIRE_THROWS_AS(path.addDir(""), std::invalid_argument);
             }
             SECTION( "Non-empty dir" )
             {
                 newPath.append("some dir");
-                REQUIRE( path.addDir("some dir"));
+                REQUIRE_NOTHROW( path.addDir("some dir") );
                 REQUIRE( path.canGoUp() );
                 REQUIRE( path.isDir() );
                 REQUIRE( path.getName() == "some dir" );
@@ -158,17 +114,12 @@ TEST_CASE( "Filepath operations", "[filepath]" )
             }
             SECTION( "Empty file" )
             {
-                bool canAddEmptyFile;
-                try{
-                    path.addFile("");
-                    canAddEmptyFile = true;
-                } catch (std::exception& e) { canAddEmptyFile = false; }
-                REQUIRE( !canAddEmptyFile );
+                REQUIRE_THROWS_AS(path.addFile(""), std::invalid_argument);
             }
             SECTION( "Non-empty file" )
             {
                 newPath.append("some file");
-                REQUIRE( path.addFile("some file"));
+                REQUIRE_NOTHROW( path.addFile("some file") );
                 REQUIRE( path.canGoUp() );
                 REQUIRE( !path.isDir() );
                 REQUIRE( path.getName() == "some file" );
@@ -187,21 +138,11 @@ TEST_CASE( "Filepath operations", "[filepath]" )
 
             SECTION( "Dir" )
             {
-                bool canAddDirToFile;
-                try{
-                    path.addDir("test");
-                    canAddDirToFile = true;
-                } catch (std::exception& e) { canAddDirToFile = false; }
-                REQUIRE( !canAddDirToFile );
+                REQUIRE_THROWS_AS(path.addDir("test"), std::invalid_argument);
             }
             SECTION( "File" )
             {
-                bool canAddFileToFile;
-                try{
-                    path.addFile("test");
-                    canAddFileToFile = true;
-                } catch (std::exception& e) { canAddFileToFile = false; }
-                REQUIRE( !canAddFileToFile );
+                REQUIRE_THROWS_AS(path.addFile("test"), std::invalid_argument);
             }
             //path didn't change
             REQUIRE( path.getName() == "some_file" );

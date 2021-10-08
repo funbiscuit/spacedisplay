@@ -98,7 +98,7 @@ uint16_t FilePath::getPathCrc() const
     return pathCrcs.back();
 }
 
-bool FilePath::addDir(const std::string& name, uint16_t crc)
+void FilePath::addDir(const std::string& name, uint16_t crc)
 {
     if(name.empty())
         throw std::invalid_argument("Can't add dir with empty name");
@@ -112,10 +112,9 @@ bool FilePath::addDir(const std::string& name, uint16_t crc)
     if(crc == 0)
         crc = Utils::strCrc16(name);
     pathCrcs.push_back(pathCrcs.back() ^ crc);
-    return true;
 }
 
-bool FilePath::addFile(const std::string& name, uint16_t crc)
+void FilePath::addFile(const std::string& name, uint16_t crc)
 {
     if(name.empty())
         throw std::invalid_argument("Can't add file with empty name");
@@ -125,7 +124,6 @@ bool FilePath::addFile(const std::string& name, uint16_t crc)
     if(crc == 0)
         crc = Utils::strCrc16(name);
     pathCrcs.push_back(pathCrcs.back() ^ crc);
-    return true;
 }
 
 bool FilePath::isDir() const

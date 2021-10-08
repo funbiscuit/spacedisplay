@@ -66,22 +66,24 @@ public:
     std::string getName() const;
     
     /**
-     * Adds directory to the end of the path. If path already ends with file, returns false
+     * Adds directory to the end of the path. If path already ends with file,
+     * throws an exception
      * @param name of the directory
      * @param crc - crc of given string
-     * @return true on success, false otherwise
-     * @throws std::invalid_argument if name is empty
+     * @throws std::invalid_argument if name is empty or path already ends
+     *         with file
      */
-    bool addDir(const std::string& name, uint16_t crc = 0);
+    void addDir(const std::string& name, uint16_t crc = 0);
     
     /**
      * Adds file to the end of the path. If path already ends with file, exception is thrown.
      * After file is added, nothing else can be added.
      * @param name of the directory
      * @param crc - crc of given string
-     * @throws std::invalid_argument if name is empty
+     * @throws std::invalid_argument if name is empty or path already ends
+     *         with file
      */
-    bool addFile(const std::string& name, uint16_t crc = 0);
+    void addFile(const std::string& name, uint16_t crc = 0);
     
     /**
      * Checks if current path is pointing to directory or not
