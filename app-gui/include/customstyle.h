@@ -3,12 +3,12 @@
 
 #include <QCommonStyle>
 
-class CustomStyle : public QCommonStyle
-{
+class CustomStyle : public QCommonStyle {
 Q_OBJECT
 
 public:
     CustomStyle() = default;
+
     ~CustomStyle() override = default;
 
     void drawPrimitive(PrimitiveElement element, const QStyleOption *option,
@@ -26,7 +26,8 @@ public:
     QSize sizeFromContents(ContentsType ct, const QStyleOption *opt,
                            const QSize &contentsSize, const QWidget *widget) const override;
 
-    QRect subControlRect(ComplexControl cc, const QStyleOptionComplex *opt, SubControl sc, const QWidget *w) const override;
+    QRect
+    subControlRect(ComplexControl cc, const QStyleOptionComplex *opt, SubControl sc, const QWidget *w) const override;
 
     QRect subElementRect(SubElement r, const QStyleOption *opt, const QWidget *widget) const override;
 
@@ -34,7 +35,6 @@ public:
                   const QWidget *w, QStyleHintReturn *shret) const override;
 
 };
-
 
 
 #endif //SPACEDISPLAY_CUSTOMSTYLE_H

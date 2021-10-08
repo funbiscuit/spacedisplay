@@ -7,11 +7,9 @@
 
 #include "resource_builder/resources.h"
 
-class CustomPalette
-{
+class CustomPalette {
 public:
-    enum class Theme
-    {
+    enum class Theme {
         DARK,
         LIGHT
     };
@@ -22,23 +20,27 @@ public:
 
     bool isDark();
 
-    const QPalette& getPalette() const;
+    const QPalette &getPalette() const;
 
     QColor getViewDirFill();
+
     QColor getViewDirLine();
 
     QColor getViewFileFill();
+
     QColor getViewFileLine();
 
     QColor getViewAvailableFill();
+
     QColor getViewAvailableLine();
 
     QColor getViewUnknownFill();
+
     QColor getViewUnknownLine();
 
-    QColor bgBlend(const QColor& src, double factor);
+    QColor bgBlend(const QColor &src, double factor);
 
-    static QColor getTextColorFor(const QColor& bg);
+    static QColor getTextColorFor(const QColor &bg);
 
     QIcon createIcon(ResourceBuilder::ResId id);
 

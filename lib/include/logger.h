@@ -18,7 +18,7 @@ public:
      * @param msg
      * @param tag
      */
-    void log(const std::string& msg, const std::string& tag = "LOG");
+    void log(const std::string &msg, const std::string &tag = "LOG");
 
     /**
      * Returns all log entries in history and sets hasNew property to false

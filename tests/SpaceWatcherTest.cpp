@@ -8,12 +8,11 @@
 #include "DirHelper.h"
 
 
-TEST_CASE( "SpaceWatcher basic events", "[watcher]" )
+TEST_CASE("SpaceWatcher basic events", "[watcher]")
 {
     auto watcher = SpaceWatcher::getWatcher();
 
-    if(!watcher)
-    {
+    if (!watcher) {
         std::cout << "SpaceWatcher tests are skipped\n";
         std::cout << "Platform doesn't support watching for file system changes.\n";
         return;
@@ -25,10 +24,10 @@ TEST_CASE( "SpaceWatcher basic events", "[watcher]" )
     FilePath root("TestDir");
     DirHelper dh(root.getPath());
 
-    SECTION( "Create directory or file" )
+    SECTION("Create directory or file")
     {
-        REQUIRE( watcher->beginWatch(root.getPath()) );
-        REQUIRE( watcher->isWatching() );
+        REQUIRE(watcher->beginWatch(root.getPath()));
+        REQUIRE(watcher->isWatching());
         std::this_thread::sleep_for(std::chrono::milliseconds(40));
 
         root.addDir("test");
@@ -38,99 +37,99 @@ TEST_CASE( "SpaceWatcher basic events", "[watcher]" )
         //wait for watcher thread to detect events
         std::this_thread::sleep_for(std::chrono::milliseconds(40));
         auto ev = watcher->popEvent();
-        REQUIRE( ev != nullptr );
+        REQUIRE(ev != nullptr);
 
-        if(ev->filepath.back() != PlatformUtils::filePathSeparator)
+        if (ev->filepath.back() != PlatformUtils::filePathSeparator)
             ev->filepath.push_back(PlatformUtils::filePathSeparator);
-        REQUIRE( root.getPath() == ev->filepath );
+        REQUIRE(root.getPath() == ev->filepath);
         root.goUp();
-        REQUIRE( root.getPath() == ev->parentpath );
-        REQUIRE( ev->action == SpaceWatcher::FileAction::ADDED );
-        REQUIRE( watcher->popEvent() == nullptr );
+        REQUIRE(root.getPath() == ev->parentpath);
+        REQUIRE(ev->action == SpaceWatcher::FileAction::ADDED);
+        REQUIRE(watcher->popEvent() == nullptr);
 
         dh.createFile("test/test.txt");
         //wait for watcher thread to detect events
         std::this_thread::sleep_for(std::chrono::milliseconds(40));
 
         ev = watcher->popEvent();
-        REQUIRE( ev != nullptr );
+        REQUIRE(ev != nullptr);
         root.addDir("test");
         root.addFile("test.txt");
-        REQUIRE( root.getPath() == ev->filepath );
+        REQUIRE(root.getPath() == ev->filepath);
         root.goUp();
-        REQUIRE( root.getPath() == ev->parentpath );
-        REQUIRE( ev->action == SpaceWatcher::FileAction::ADDED );
-        REQUIRE( watcher->popEvent() == nullptr );
+        REQUIRE(root.getPath() == ev->parentpath);
+        REQUIRE(ev->action == SpaceWatcher::FileAction::ADDED);
+        REQUIRE(watcher->popEvent() == nullptr);
     }
 
-    SECTION( "Modify directory or file" )
+    SECTION("Modify directory or file")
     {
         //create exising dir structure
         dh.createDir("test");
         dh.createFile("test/test.txt");
 
-        REQUIRE( watcher->beginWatch(root.getPath()) );
-        REQUIRE( watcher->isWatching() );
+        REQUIRE(watcher->beginWatch(root.getPath()));
+        REQUIRE(watcher->isWatching());
         root.addDir("test");
         watcher->addDir(root.getPath());
         std::this_thread::sleep_for(std::chrono::milliseconds(40));
 
-        SECTION( "Delete" )
+        SECTION("Delete")
         {
             dh.deleteDir("test");
 
             //wait for watcher thread to detect events
             std::this_thread::sleep_for(std::chrono::milliseconds(40));
             auto ev = watcher->popEvent();
-            REQUIRE( ev != nullptr );
+            REQUIRE(ev != nullptr);
 
             root.addFile("test.txt");
 
-            REQUIRE( root.getPath() == ev->filepath );
+            REQUIRE(root.getPath() == ev->filepath);
             root.goUp();
-            REQUIRE( root.getPath() == ev->parentpath );
-            REQUIRE( ev->action == SpaceWatcher::FileAction::REMOVED );
+            REQUIRE(root.getPath() == ev->parentpath);
+            REQUIRE(ev->action == SpaceWatcher::FileAction::REMOVED);
 
             ev = watcher->popEvent();
 
-            REQUIRE( ev != nullptr );
-            if(ev->filepath.back() != PlatformUtils::filePathSeparator)
+            REQUIRE(ev != nullptr);
+            if (ev->filepath.back() != PlatformUtils::filePathSeparator)
                 ev->filepath.push_back(PlatformUtils::filePathSeparator);
 
-            REQUIRE( root.getPath() == ev->filepath );
+            REQUIRE(root.getPath() == ev->filepath);
             root.goUp();
-            REQUIRE( root.getPath() == ev->parentpath );
-            REQUIRE( ev->action == SpaceWatcher::FileAction::REMOVED );
+            REQUIRE(root.getPath() == ev->parentpath);
+            REQUIRE(ev->action == SpaceWatcher::FileAction::REMOVED);
         }
 
-        SECTION( "Rename" )
+        SECTION("Rename")
         {
             dh.rename("test/test.txt", "test/renamed_test.txt");
 
             //wait for watcher thread to detect events
             std::this_thread::sleep_for(std::chrono::milliseconds(40));
             auto ev = watcher->popEvent();
-            REQUIRE( ev != nullptr );
+            REQUIRE(ev != nullptr);
 
             root.addFile("test.txt");
 
-            REQUIRE( root.getPath() == ev->filepath );
+            REQUIRE(root.getPath() == ev->filepath);
             root.goUp();
-            REQUIRE( root.getPath() == ev->parentpath );
-            REQUIRE( ev->action == SpaceWatcher::FileAction::OLD_NAME );
+            REQUIRE(root.getPath() == ev->parentpath);
+            REQUIRE(ev->action == SpaceWatcher::FileAction::OLD_NAME);
 
             ev = watcher->popEvent();
 
-            REQUIRE( ev != nullptr );
+            REQUIRE(ev != nullptr);
 
             root.addFile("renamed_test.txt");
-            REQUIRE( root.getPath() == ev->filepath );
+            REQUIRE(root.getPath() == ev->filepath);
             root.goUp();
-            REQUIRE( root.getPath() == ev->parentpath );
-            REQUIRE( ev->action == SpaceWatcher::FileAction::NEW_NAME );
+            REQUIRE(root.getPath() == ev->parentpath);
+            REQUIRE(ev->action == SpaceWatcher::FileAction::NEW_NAME);
         }
 
-        SECTION( "Modify" )
+        SECTION("Modify")
         {
             root.addFile("test.txt");
             std::ofstream fs(root.getPath());
@@ -140,14 +139,14 @@ TEST_CASE( "SpaceWatcher basic events", "[watcher]" )
             //wait for watcher thread to detect events
             std::this_thread::sleep_for(std::chrono::milliseconds(40));
             auto ev = watcher->popEvent();
-            REQUIRE( ev != nullptr );
+            REQUIRE(ev != nullptr);
 
-            REQUIRE( root.getPath() == ev->filepath );
+            REQUIRE(root.getPath() == ev->filepath);
             root.goUp();
-            REQUIRE( root.getPath() == ev->parentpath );
-            REQUIRE( ev->action == SpaceWatcher::FileAction::MODIFIED );
+            REQUIRE(root.getPath() == ev->parentpath);
+            REQUIRE(ev->action == SpaceWatcher::FileAction::MODIFIED);
         }
-        REQUIRE( watcher->popEvent() == nullptr );
+        REQUIRE(watcher->popEvent() == nullptr);
     }
 }
 

@@ -9,23 +9,22 @@ extern "C" {
 #include <crc.h>
 }
 
-FileEntry::FileEntry(const std::string& name_, bool isDir_, int64_t size_) :
+FileEntry::FileEntry(const std::string &name_, bool isDir_, int64_t size_) :
         bIsDir(isDir_), pendingDelete(false), parent(nullptr),
-        nameCrc(0), pathCrc(0), size(size_)
-{
-    auto nameLen=name_.length();
-    if(nameLen == 0)
+        nameCrc(0), pathCrc(0), size(size_) {
+    auto nameLen = name_.length();
+    if (nameLen == 0)
         throw std::invalid_argument("Can't create FileEntry with empty name");
 
-    auto chars=Utils::make_unique_arr<char>(nameLen+1);
-    memcpy(chars.get(), name_.c_str(), (nameLen+1)*sizeof(char));
+    auto chars = Utils::make_unique_arr<char>(nameLen + 1);
+    memcpy(chars.get(), name_.c_str(), (nameLen + 1) * sizeof(char));
     nameCrc = crc16(chars.get(), (uint16_t) nameLen);
     pathCrc = nameCrc;
     name = std::move(chars);
 }
 
 void FileEntry::addChild(std::unique_ptr<FileEntry> child) {
-    if(!child)
+    if (!child)
         return;
 
     auto childSize = child->size;
@@ -33,24 +32,20 @@ void FileEntry::addChild(std::unique_ptr<FileEntry> child) {
     _addChild(std::move(child));
     size += childSize;
 
-    if(parent)
+    if (parent)
         parent->onChildSizeChanged(this, childSize);
 }
 
-void FileEntry::removePendingDelete(std::vector<std::unique_ptr<FileEntry>>& deletedChildren)
-{
+void FileEntry::removePendingDelete(std::vector<std::unique_ptr<FileEntry>> &deletedChildren) {
     int64_t changedSize = 0;
     auto it = children.begin();
-    while(it!=children.end())
-    {
-        if(!it->firstEntry) //this shouldn't happen, but better check
+    while (it != children.end()) {
+        if (!it->firstEntry) //this shouldn't happen, but better check
             it = children.erase(it);
 
         auto child = it->firstEntry.get();
-        while(child->nextEntry)
-        {
-            if(child->nextEntry->pendingDelete)
-            {
+        while (child->nextEntry) {
+            if (child->nextEntry->pendingDelete) {
                 auto temp = std::move(child->nextEntry);
                 child->nextEntry = std::move(temp->nextEntry);
                 changedSize += temp->size;
@@ -61,31 +56,29 @@ void FileEntry::removePendingDelete(std::vector<std::unique_ptr<FileEntry>>& del
         }
         //now all children in this bin (except first) are processed
         //now check if first child should also be removed and if it is, check if we have anything left
-        if(it->firstEntry->pendingDelete)
-        {
-            auto& ptrFirst = const_cast<std::unique_ptr<FileEntry>&>(it->firstEntry);
+        if (it->firstEntry->pendingDelete) {
+            auto &ptrFirst = const_cast<std::unique_ptr<FileEntry> &>(it->firstEntry);
             auto temp = std::move(ptrFirst);
-            if(temp->nextEntry)
+            if (temp->nextEntry)
                 ptrFirst = std::move(temp->nextEntry);
             changedSize += temp->size;
             deletedChildren.push_back(std::move(temp));
         }
         //if no entries left, delete bin
-        if(!it->firstEntry)
+        if (!it->firstEntry)
             it = children.erase(it);
         else
             ++it;
     }
-    if(changedSize>0)
-    {
-        size-=changedSize;
-        if(parent)
+    if (changedSize > 0) {
+        size -= changedSize;
+        if (parent)
             parent->onChildSizeChanged(this, -changedSize);
     }
 }
 
 void FileEntry::_addChild(std::unique_ptr<FileEntry> child) {
-    if(!child)
+    if (!child)
         return;
 
     const auto childSize = child->size;
@@ -93,92 +86,78 @@ void FileEntry::_addChild(std::unique_ptr<FileEntry> child) {
     child->updatePathCrc(pathCrc);
     // first try to find existing bin for appropriate size
     auto it = children.find(EntryBin(childSize));
-    if(it!=children.end())
-    {
+    if (it != children.end()) {
         // if it exists, just add child to the front
         // cost cast is required because iterator returns const qualified bin
         // pointers don't affect sorting of children so this is safe
-        auto& ptrFirst = const_cast<std::unique_ptr<FileEntry>&>(it->firstEntry);
+        auto &ptrFirst = const_cast<std::unique_ptr<FileEntry> &>(it->firstEntry);
         child->nextEntry = std::move(ptrFirst);
         ptrFirst = std::move(child);
-    } else
-    {
+    } else {
         // there is no bin with such size, so create new one
         children.insert(EntryBin(childSize, std::move(child)));
     }
 }
 
-void FileEntry::setSize(int64_t newSize)
-{
-    auto sizeChange = newSize-size;
+void FileEntry::setSize(int64_t newSize) {
+    auto sizeChange = newSize - size;
     size = newSize;
     // if size changed, tell about it to parent
-    if(parent && sizeChange != 0)
+    if (parent && sizeChange != 0)
         parent->onChildSizeChanged(this, sizeChange);
 }
 
-int64_t FileEntry::getSize() const
-{
+int64_t FileEntry::getSize() const {
     return size;
 }
 
-uint16_t FileEntry::getNameCrc() const
-{
+uint16_t FileEntry::getNameCrc() const {
     return nameCrc;
 }
-uint16_t FileEntry::getPathCrc() const
-{
+
+uint16_t FileEntry::getPathCrc() const {
     return pathCrc;
 }
 
-void FileEntry::updatePathCrc(uint16_t parentPathCrc)
-{
+void FileEntry::updatePathCrc(uint16_t parentPathCrc) {
     pathCrc = parentPathCrc ^ nameCrc;
 }
 
-const char* FileEntry::getName() const
-{
+const char *FileEntry::getName() const {
     return name.get();
 }
 
-const FileEntry* FileEntry::getParent() const
-{
+const FileEntry *FileEntry::getParent() const {
     return parent;
 }
 
-bool FileEntry::forEach(const std::function<bool(const FileEntry&)>& func) const
-{
-    if(children.empty())
+bool FileEntry::forEach(const std::function<bool(const FileEntry &)> &func) const {
+    if (children.empty())
         return false;
 
-    for(auto& bin : children)
-    {
+    for (auto &bin : children) {
         bool stop = false;
         auto child = bin.firstEntry.get();
-        while(child != nullptr && !stop)
-        {
+        while (child != nullptr && !stop) {
             stop = !func(*child);
             child = child->nextEntry.get();
         }
 
-        if(stop)
+        if (stop)
             break;
     }
 
     return true;
 }
 
-void FileEntry::markChildrenPendingDelete(int& files, int& dirs)
-{
+void FileEntry::markChildrenPendingDelete(int &files, int &dirs) {
     files = 0;
     dirs = 0;
 
-    for(auto& bin : children)
-    {
+    for (auto &bin : children) {
         auto child = bin.firstEntry.get();
-        while(child)
-        {
-            if(child->bIsDir)
+        while (child) {
+            if (child->bIsDir)
                 ++dirs;
             else
                 ++files;
@@ -188,8 +167,7 @@ void FileEntry::markChildrenPendingDelete(int& files, int& dirs)
     }
 }
 
-void FileEntry::unmarkPendingDelete()
-{
+void FileEntry::unmarkPendingDelete() {
     pendingDelete = false;
 }
 
@@ -201,16 +179,15 @@ bool FileEntry::isRoot() const {
     return parent == nullptr;
 }
 
-void FileEntry::onChildSizeChanged(FileEntry* child, int64_t sizeChange) {
+void FileEntry::onChildSizeChanged(FileEntry *child, int64_t sizeChange) {
 
-    if(!child || sizeChange == 0)
+    if (!child || sizeChange == 0)
         return;
 
     //size of child changed so we should use its previous size
-    auto it = children.find(EntryBin(child->size-sizeChange));
+    auto it = children.find(EntryBin(child->size - sizeChange));
 
-    if(it == children.end())
-    {
+    if (it == children.end()) {
         //should not happen
         std::cerr << "Can't find child in parents children!\n";
         return;
@@ -220,32 +197,27 @@ void FileEntry::onChildSizeChanged(FileEntry* child, int64_t sizeChange) {
 
     std::unique_ptr<FileEntry> childPtr;
 
-    if(first == child)
-    {
-        auto& ptrFirst = const_cast<std::unique_ptr<FileEntry>&>(it->firstEntry);
+    if (first == child) {
+        auto &ptrFirst = const_cast<std::unique_ptr<FileEntry> &>(it->firstEntry);
         childPtr = std::move(ptrFirst);
-        if(childPtr->nextEntry)
+        if (childPtr->nextEntry)
             ptrFirst = std::move(childPtr->nextEntry);
-        else
-        {
+        else {
             //this was the only child in bin so we should delete bin
             children.erase(it);
         }
-    } else
-    {
+    } else {
         //find child in entry chain
-        while(first != nullptr && first->nextEntry.get() != child)
+        while (first != nullptr && first->nextEntry.get() != child)
             first = first->nextEntry.get();
 
-        if(first != nullptr)
-        {
+        if (first != nullptr) {
             childPtr = std::move(first->nextEntry);
             first->nextEntry = std::move(childPtr->nextEntry);
         }
     }
 
-    if(!childPtr)
-    {
+    if (!childPtr) {
         //should not happen
         std::cerr << "Can't find child in parents children!\n";
         return;
@@ -255,6 +227,6 @@ void FileEntry::onChildSizeChanged(FileEntry* child, int64_t sizeChange) {
     _addChild(std::move(childPtr));
     size += sizeChange;
 
-    if(parent)
+    if (parent)
         parent->onChildSizeChanged(this, sizeChange);
 }

@@ -11,12 +11,12 @@
 
 class Logger;
 
-class LogDialog : public QDialog
-{
-    Q_OBJECT
+class LogDialog : public QDialog {
+Q_OBJECT
 
 public:
     explicit LogDialog(std::shared_ptr<Logger> logger);
+
     ~LogDialog() override;
 
     /**

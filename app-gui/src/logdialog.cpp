@@ -7,8 +7,7 @@
 
 #include <sstream>
 
-LogDialog::LogDialog(std::shared_ptr<Logger> logger) : logger(std::move(logger))
-{
+LogDialog::LogDialog(std::shared_ptr<Logger> logger) : logger(std::move(logger)) {
     setWindowTitle("SpaceDisplay Log");
     setMinimumSize(500, 350);
     setFocusPolicy(Qt::ClickFocus);
@@ -21,39 +20,36 @@ LogDialog::LogDialog(std::shared_ptr<Logger> logger) : logger(std::move(logger))
 
     mainLayout = Utils::make_unique<QVBoxLayout>();
 
-    mainLayout->addWidget(textEdit.get(),1);
+    mainLayout->addWidget(textEdit.get(), 1);
     mainLayout->addWidget(clearLog, 0, Qt::AlignRight);
 
     setLayout(mainLayout.get());
 
     connect(clearLog, &QPushButton::clicked, this, [this]() {
         textEdit->clear();
-        if(this->logger)
+        if (this->logger)
             this->logger->clear();
     });
 
     timerId = startTimer(100);
 }
 
-LogDialog::~LogDialog()
-{
+LogDialog::~LogDialog() {
     killTimer(timerId);
 }
 
-void LogDialog::timerEvent(QTimerEvent *event)
-{
-    if(!logger)
+void LogDialog::timerEvent(QTimerEvent *event) {
+    if (!logger)
         return;
 
-    if(logger->hasNew())
-    {
+    if (logger->hasNew()) {
         std::stringstream str;
         auto logs = logger->getHistory();
-        for(auto& log : logs)
+        for (auto &log : logs)
             str << log << '\n';
         textEdit->setPlainText(str.str().c_str());
         textEdit->moveCursor(QTextCursor::End);
-        if(onDataChanged)
+        if (onDataChanged)
             onDataChanged(true);
     }
 }

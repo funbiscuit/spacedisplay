@@ -10,7 +10,9 @@
 #include "utils.h"
 
 class FileEntryView;
+
 class FilePath;
+
 class FileEntry;
 
 /**
@@ -21,7 +23,7 @@ class FileEntryView {
 
 public:
     enum CreateCopyFlags : uint16_t {
-        DEFAULT =0x00,
+        DEFAULT = 0x00,
         INCLUDE_AVAILABLE_SPACE = 0x01,
         INCLUDE_UNKNOWN_SPACE = 0x02
     };
@@ -31,20 +33,22 @@ public:
         int64_t unknownSpace = 0; //make positive to include
         int64_t freeSpace = 0;    //make positive to include
     };
-    enum class EntryType{
+    enum class EntryType {
         DIRECTORY,
         FILE,
         AVAILABLE_SPACE,
         UNKNOWN_SPACE
     };
 
-    FileEntryView(const FileEntryView&) = delete;
+    FileEntryView(const FileEntryView &) = delete;
+
     ~FileEntryView();
 
-    static FileEntryViewPtr createView(const FileEntry* entry, const ViewOptions& options);
-    static void updateView(FileEntryViewPtr& copy, const FileEntry* entry, const ViewOptions& options);
+    static FileEntryViewPtr createView(const FileEntry *entry, const ViewOptions &options);
 
-    const char* getName() const;
+    static void updateView(FileEntryViewPtr &copy, const FileEntry *entry, const ViewOptions &options);
+
+    const char *getName() const;
 
     /**
      * Writes path to this entry to provided local root.
@@ -52,27 +56,25 @@ public:
      * Then provided root should have path to {dir3}. And returned path will be {root}/dir2/dir1/{entry name}
      * @param root - FilePath to local root. 
      */
-    void getPath(FilePath& root) const;
+    void getPath(FilePath &root) const;
 
-    int64_t get_size() const{
+    int64_t get_size() const {
         return size;
     }
 
-    FileEntryView* get_parent() const{
+    FileEntryView *get_parent() const {
         return parent;
     }
 
-    EntryType get_type() const
-    {
+    EntryType get_type() const {
         return entryType;
     }
 
-    Utils::RectI get_draw_area() const
-    {
+    Utils::RectI get_draw_area() const {
         return drawArea;
     }
 
-    FileEntryView* getHoveredView(int mouseX, int mouseY);
+    FileEntryView *getHoveredView(int mouseX, int mouseY);
 
     /**
      * Returns closest view to specified path. For example,
@@ -82,25 +84,29 @@ public:
      * @param maxDepth
      * @return
      */
-    FileEntryView* getClosestView(const FilePath& filepath, int maxDepth);
+    FileEntryView *getClosestView(const FilePath &filepath, int maxDepth);
 
     std::string format_size() const;
+
     std::string get_tooltip() const;
 
 
-    const std::vector<FileEntryViewPtr>&  get_children() const;
+    const std::vector<FileEntryViewPtr> &get_children() const;
 
     uint64_t getId() const;
 
-    bool is_dir() const{
-        return entryType==EntryType::DIRECTORY;
-    }
-    bool is_file() const{
-        return entryType==EntryType::FILE;
+    bool is_dir() const {
+        return entryType == EntryType::DIRECTORY;
     }
 
-    QPixmap getNamePixmap(QPainter &painter, const QColor& color) const;
-    QPixmap getSizePixmap(QPainter &painter, const QColor& color) const;
+    bool is_file() const {
+        return entryType == EntryType::FILE;
+    }
+
+    QPixmap getNamePixmap(QPainter &painter, const QColor &color) const;
+
+    QPixmap getSizePixmap(QPainter &painter, const QColor &color) const;
+
     /**
      * If path is not nullptr then it will be used instead of entry name
      * @param painter
@@ -108,7 +114,7 @@ public:
      * @param path
      * @return
      */
-    QPixmap getTitlePixmap(QPainter &painter, const QColor& color, const char* path = nullptr) const;
+    QPixmap getTitlePixmap(QPainter &painter, const QColor &color, const char *path = nullptr) const;
 
     /**
      * Allocates this view and all its children inside specified rectangle.
@@ -126,11 +132,13 @@ private:
      * @param nestLevel amount of nesting to copy (0 - only entry copied, 1 - entry+children, etc)
      * @param minSize minimum size of entry that should be copied. All other entries will not be copied
      */
-    FileEntryView(const FileEntry* entry, const ViewOptions& options);
+    FileEntryView(const FileEntry *entry, const ViewOptions &options);
+
     explicit FileEntryView();
 
-    void reconstruct_from(const FileEntry* entry, const ViewOptions& options);
-    void init_from(const FileEntry* entry);
+    void reconstruct_from(const FileEntry *entry, const ViewOptions &options);
+
+    void init_from(const FileEntry *entry);
 
     /**
      * Allocates children of this view inside specified rectangle
@@ -141,11 +149,13 @@ private:
      */
     void allocate_children(size_t start, size_t end, Utils::RectI &rect);
 
-    void set_child_rect(const FileEntryViewPtr& child, Utils::RectI &rect);
+    void set_child_rect(const FileEntryViewPtr &child, Utils::RectI &rect);
 
-    void createNamePixmap(QPainter &painter, const QColor& color) const;
-    void createSizePixmap(QPainter &painter, const QColor& color) const;
-    void createTitlePixmap(QPainter &painter, const QColor& color, const char* path = nullptr) const;
+    void createNamePixmap(QPainter &painter, const QColor &color) const;
+
+    void createSizePixmap(QPainter &painter, const QColor &color) const;
+
+    void createTitlePixmap(QPainter &painter, const QColor &color, const char *path = nullptr) const;
 
     mutable QPixmap cachedNamePix;
     mutable std::string cachedName;
@@ -158,12 +168,12 @@ private:
 
     Utils::RectI drawArea;
 
-    FileEntryView* parent{};
+    FileEntryView *parent{};
     std::vector<FileEntryViewPtr> children;
     int64_t size = 0;
     uint64_t id = 0;
     std::string name;
-    EntryType  entryType = EntryType::FILE;
+    EntryType entryType = EntryType::FILE;
 
     static uint64_t idCounter;
 };

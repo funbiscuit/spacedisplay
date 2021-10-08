@@ -9,8 +9,7 @@
 #include "utils.h"
 #include "platformutils.h"
 
-FileEntryPopup::FileEntryPopup(QWidget* _parent) : parent(_parent)
-{
+FileEntryPopup::FileEntryPopup(QWidget *_parent) : parent(_parent) {
     rescanAct = Utils::make_unique<QAction>("Rescan folder", parent);
     rescanAct->setEnabled(false);
     connect(rescanAct.get(), &QAction::triggered, this, &FileEntryPopup::onRescan);
@@ -37,43 +36,38 @@ FileEntryPopup::FileEntryPopup(QWidget* _parent) : parent(_parent)
 
 FileEntryPopup::~FileEntryPopup() {}
 
-void FileEntryPopup::updateActions(const SpaceScanner& scanner)
-{
+void FileEntryPopup::updateActions(const SpaceScanner &scanner) {
     rescanAct->setEnabled(scanner.can_refresh());
     //todo maybe allow to delete while scanning
 //    deleteDirAct->setEnabled(scanner->can_refresh());
 }
 
-void FileEntryPopup::onRescan()
-{
-    if(onRescanListener)
+void FileEntryPopup::onRescan() {
+    if (onRescanListener)
         onRescanListener(*currentEntryPath);
 }
-void FileEntryPopup::onDeleteDir()
-{
-    std::cout<<"delete dir\n";
-}
-void FileEntryPopup::onDeleteFile()
-{
-    std::cout<<"delete file\n";
-}
-void FileEntryPopup::onProperties()
-{
-    std::cout<<"properties\n";
+
+void FileEntryPopup::onDeleteDir() {
+    std::cout << "delete dir\n";
 }
 
-void FileEntryPopup::onShow()
-{
+void FileEntryPopup::onDeleteFile() {
+    std::cout << "delete file\n";
+}
+
+void FileEntryPopup::onProperties() {
+    std::cout << "properties\n";
+}
+
+void FileEntryPopup::onShow() {
     PlatformUtils::show_file_in_file_manager(currentEntryPath->getPath().c_str());
 }
 
-void FileEntryPopup::onOpen()
-{
+void FileEntryPopup::onOpen() {
     PlatformUtils::open_folder_in_file_manager(currentEntryPath->getPath().c_str());
 }
 
-void FileEntryPopup::popup(std::unique_ptr<FilePath> path)
-{
+void FileEntryPopup::popup(std::unique_ptr<FilePath> path) {
     currentEntryPath = std::move(path);
     currentEntryName = currentEntryPath->getName();
 
@@ -81,17 +75,15 @@ void FileEntryPopup::popup(std::unique_ptr<FilePath> path)
     auto title = menu.addAction(currentEntryName.c_str());
     title->setEnabled(false);
     menu.addSeparator();
-    if(currentEntryPath->isDir())
-    {
+    if (currentEntryPath->isDir()) {
         menu.addAction(rescanAct.get());
         menu.addAction(openInFMAct.get());
         menu.addAction(deleteDirAct.get());
-    } else
-    {
+    } else {
         menu.addAction(showInFMAct.get());
         menu.addAction(deleteFileAct.get());
     }
     menu.addAction(propertiesAct.get());
 
-    menu.exec(QCursor::pos()+QPoint(10,10));
+    menu.exec(QCursor::pos() + QPoint(10, 10));
 }

@@ -1,10 +1,10 @@
 
 
-if( WIN32 )
+if (WIN32)
     set(QT_WIN_PATH "C:\\" CACHE STRING "Path to installed qt binaries")
     message(STATUS "Looking for installed Qt5 at the following path:\n" ${QT_WIN_PATH})
     set(CMAKE_PREFIX_PATH ${QT_WIN_PATH})
-endif()
+endif ()
 
 find_package(Qt5 COMPONENTS Core Widgets Svg REQUIRED)
 
@@ -55,20 +55,20 @@ target_link_libraries(spacedisplay_gui PRIVATE
         SpacedisplayRes::SpacedisplayRes spacedisplay_lib
         )
 
-if( WIN32 )
+if (WIN32)
     option(WIN32_CONSOLE "Enable default windows console" ON)
     # On Windows disable console if not needed
-    if(NOT ${WIN32_CONSOLE})
+    if (NOT ${WIN32_CONSOLE})
         message(STATUS "Console is disabled")
         if (MSVC) # msvc compiler
             set_target_properties(spacedisplay_gui PROPERTIES
                     LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup"
                     )
-        else() # gcc compiler
-            set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -mwindows")
-        endif()
-    endif()
-endif()
+        else () # gcc compiler
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mwindows")
+        endif ()
+    endif ()
+endif ()
 
 install(TARGETS spacedisplay_gui
         DESTINATION bin)

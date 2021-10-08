@@ -10,27 +10,32 @@
 #include <unordered_map>
 
 struct inotify_event;
+
 class SpaceWatcherLinux : public SpaceWatcher {
 public:
 
     SpaceWatcherLinux();
+
     ~SpaceWatcherLinux() override;
 
-    bool beginWatch(const std::string& path) override;
+    bool beginWatch(const std::string &path) override;
+
     void endWatch() override;
+
     bool isWatching() const override;
 
     int64_t getDirCountLimit() const override;
 
-    AddDirStatus addDir(const std::string& path) override;
-    void rmDir(const std::string& path) override;
+    AddDirStatus addDir(const std::string &path) override;
+
+    void rmDir(const std::string &path) override;
 
 protected:
     void readEvents() override;
 
 private:
 
-    const int watchBufferSize = 1024*48;
+    const int watchBufferSize = 1024 * 48;
 
     std::vector<uint8_t> watchBuffer;
 
@@ -39,6 +44,7 @@ private:
     std::mutex inotifyWdsMtx;
 
     void _endWatch();
+
     void _addEvent(struct inotify_event *inotifyEvent);
 };
 

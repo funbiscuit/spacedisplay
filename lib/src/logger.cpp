@@ -4,9 +4,7 @@
 #include <iostream>
 
 
-
-Logger::Logger() : hasNewLog(false)
-{
+Logger::Logger() : hasNewLog(false) {
 
 }
 

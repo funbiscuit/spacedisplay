@@ -14,10 +14,13 @@ class SpaceWatcherWin : public SpaceWatcher {
 public:
 
     SpaceWatcherWin();
+
     ~SpaceWatcherWin() override;
 
-    bool beginWatch(const std::string& path) override;
+    bool beginWatch(const std::string &path) override;
+
     void endWatch() override;
+
     bool isWatching() const override;
 
     int64_t getDirCountLimit() const override { return -1; }
@@ -27,7 +30,7 @@ protected:
 
 private:
 
-    const int watchBufferSize = 1024*48;
+    const int watchBufferSize = 1024 * 48;
 
     std::atomic<HANDLE> watchedDir;
 

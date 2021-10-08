@@ -6,8 +6,7 @@
 #include "logger.h"
 #include <iostream>
 
-InotifyDialog::InotifyDialog(int oldWatchLimit, int newWatchLimit, Logger* logger)
-{
+InotifyDialog::InotifyDialog(int oldWatchLimit, int newWatchLimit, Logger *logger) {
     setWindowTitle("Inotify watches limit is reached");
 
     auto inotifyCmd = Utils::strFormat("fs.inotify.max_user_watches=%d", newWatchLimit);
@@ -15,10 +14,9 @@ InotifyDialog::InotifyDialog(int oldWatchLimit, int newWatchLimit, Logger* logge
     permCmdArch = Utils::strFormat("echo %s | sudo tee /etc/sysctl.d/40-max-user-watches.conf"
                                    " && sudo sysctl --system", inotifyCmd.c_str());
     permCmdUbuntu = Utils::strFormat("echo %s | sudo tee -a /etc/sysctl.conf &&"
-                                   " sudo sysctl -p", inotifyCmd.c_str());
+                                     " sudo sysctl -p", inotifyCmd.c_str());
 
-    if(logger)
-    {
+    if (logger) {
         logger->log(Utils::strFormat("Current watch limit (%d) is reached, "
                                      "not all changes will be detected.", oldWatchLimit), "WATCH");
         logger->log(Utils::strFormat("Increase limit to at least %d", newWatchLimit), "WATCH");

@@ -10,46 +10,36 @@ extern "C" {
 #include <crc.h>
 }
 
-void Utils::getMountPoints(std::vector<std::string>& availableMounts)
-{
+void Utils::getMountPoints(std::vector<std::string> &availableMounts) {
     // not a very elegant solution, but it doesn't make sense to write
     // another function that retrieves only mount points without excluded ones
     std::vector<std::string> temp;
     PlatformUtils::get_mount_points(availableMounts, temp);
 }
 
-uint16_t Utils::strCrc16(const std::string& str)
-{
-    return crc16((char*)str.c_str(), (uint16_t)str.length());
+uint16_t Utils::strCrc16(const std::string &str) {
+    return crc16((char *) str.c_str(), (uint16_t) str.length());
 }
 
-std::string Utils::formatSize(int64_t size)
-{
+std::string Utils::formatSize(int64_t size) {
     const float KB = 1024.f;
-    const float MB = KB*1024.f;
-    const float GB = MB*1024.f;
+    const float MB = KB * 1024.f;
+    const float GB = MB * 1024.f;
 
-    auto sz=(float)size;
+    auto sz = (float) size;
 
     std::string sizeStr;
 
-    if(sz>GB)
-    {
-        sz/=GB;
+    if (sz > GB) {
+        sz /= GB;
         sizeStr = strFormat("%0.1f GiB", sz);
-    }
-    else if(sz>MB)
-    {
-        sz/=MB;
+    } else if (sz > MB) {
+        sz /= MB;
         sizeStr = strFormat("%0.1f MiB", sz);
-    }
-    else if(sz>KB)
-    {
-        sz/=KB;
+    } else if (sz > KB) {
+        sz /= KB;
         sizeStr = strFormat("%0.1f KiB", sz);
-    }
-    else
-    {
+    } else {
         sizeStr = strFormat("%0.1f B", sz);
     }
 

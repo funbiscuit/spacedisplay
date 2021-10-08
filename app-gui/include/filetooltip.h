@@ -4,10 +4,10 @@
 #include <string>
 #include <chrono>
 
-class FileTooltip
-{
+class FileTooltip {
 public:
     FileTooltip() = default;
+
     ~FileTooltip();
 
     /**
@@ -26,7 +26,7 @@ public:
      * @param globalY
      * @param text_
      */
-    void setTooltip(int globalX, int globalY, const std::string& text_);
+    void setTooltip(int globalX, int globalY, const std::string &text_);
 
     /**
      * Hide tooltip if any is shown

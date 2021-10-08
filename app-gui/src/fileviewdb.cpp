@@ -6,15 +6,13 @@
 #include "fileentryview.h"
 
 
-void FileViewDB::setFileDB(std::shared_ptr<FileDB> db_)
-{
-    db=std::move(db_);
+void FileViewDB::setFileDB(std::shared_ptr<FileDB> db_) {
+    db = std::move(db_);
     rootFile.reset();
 }
 
-bool FileViewDB::update(bool includeUnknown, bool includeAvailable)
-{
-    if(!viewPath || !db || !db->isReady())
+bool FileViewDB::update(bool includeUnknown, bool includeAvailable) {
+    if (!viewPath || !db || !db->isReady())
         return false;
     FileEntryView::ViewOptions options;
     options.nestLevel = viewDepth;
@@ -25,34 +23,31 @@ bool FileViewDB::update(bool includeUnknown, bool includeAvailable)
     unknownSpace = totalSpace - freeSpace - usedSpace; //db guarantees this to be >=0
     totalSpace = 0; //we will calculate it manually depending on what is included
 
-    if(includeAvailable)
-    {
+    if (includeAvailable) {
         options.freeSpace = freeSpace;
-        totalSpace+=freeSpace;
+        totalSpace += freeSpace;
     }
-    if(includeUnknown)
-    {
+    if (includeUnknown) {
         options.unknownSpace = unknownSpace;
-        totalSpace+=unknownSpace;
+        totalSpace += unknownSpace;
     }
 
     bool hasChanges = false;
 
-    db->processEntry(*viewPath, [this, &totalSpace, &options, &hasChanges](const FileEntry& entry){
-        if(!entry.isRoot())
-        {
-            totalSpace=0;
+    db->processEntry(*viewPath, [this, &totalSpace, &options, &hasChanges](const FileEntry &entry) {
+        if (!entry.isRoot()) {
+            totalSpace = 0;
             //we don't show unknown and free space if child is viewed
             options.freeSpace = 0;
             options.unknownSpace = 0;
         }
 
-        float minSizeRatio = (7.f*7.f)/float(viewRect.h*viewRect.w);
+        float minSizeRatio = (7.f * 7.f) / float(viewRect.h * viewRect.w);
 
         totalSpace += entry.getSize();
 
-        options.minSize = int64_t(float(totalSpace)*minSizeRatio);
-        if(rootFile)
+        options.minSize = int64_t(float(totalSpace) * minSizeRatio);
+        if (rootFile)
             FileEntryView::updateView(rootFile, &entry, options);
         else
             rootFile = FileEntryView::createView(&entry, options);
@@ -61,48 +56,41 @@ bool FileViewDB::update(bool includeUnknown, bool includeAvailable)
     });
 
     // rootFile should be valid if lambda was called but in case something went wrong
-    if(hasChanges && rootFile)
+    if (hasChanges && rootFile)
         rootFile->allocate_view(viewRect, (textHeight * 3) / 2);
 
     return hasChanges;
 }
 
-void FileViewDB::onThemeChanged()
-{
+void FileViewDB::onThemeChanged() {
     // just reset pointer to root so on next update it will create new pixmaps with proper color
     rootFile.reset();
 }
 
-void FileViewDB::setViewArea(Utils::RectI rect)
-{
+void FileViewDB::setViewArea(Utils::RectI rect) {
     viewRect = rect;
 }
 
-void FileViewDB::setViewPath(const FilePath& filepath)
-{
+void FileViewDB::setViewPath(const FilePath &filepath) {
     viewPath = Utils::make_unique<FilePath>(filepath);
 }
 
-void FileViewDB::setViewDepth(int depth)
-{
+void FileViewDB::setViewDepth(int depth) {
     viewDepth = depth;
 }
 
-void FileViewDB::setTextHeight(int height)
-{
+void FileViewDB::setTextHeight(int height) {
     textHeight = height;
 }
 
-uint64_t FileViewDB::getFilesSize() const
-{
-    if(isReady() && rootFile)
+uint64_t FileViewDB::getFilesSize() const {
+    if (isReady() && rootFile)
         return rootFile->get_size();
     return 0;
 }
 
-bool FileViewDB::processEntry(const std::function<void(FileEntryView &)> &func)
-{
-    if(!isReady() || !rootFile)
+bool FileViewDB::processEntry(const std::function<void(FileEntryView &)> &func) {
+    if (!isReady() || !rootFile)
         return false;
 
     func(*rootFile);
@@ -110,34 +98,31 @@ bool FileViewDB::processEntry(const std::function<void(FileEntryView &)> &func)
     return true;
 }
 
-FileEntryView* FileViewDB::getHoveredView(int mouseX, int mouseY)
-{
-    if(!isReady() || !rootFile)
+FileEntryView *FileViewDB::getHoveredView(int mouseX, int mouseY) {
+    if (!isReady() || !rootFile)
         return nullptr;
 
     return rootFile->getHoveredView(mouseX, mouseY);
 }
 
-FileEntryView* FileViewDB::getClosestView(const FilePath& filepath, int maxDepth)
-{
-    if(!isReady() || !rootFile)
+FileEntryView *FileViewDB::getClosestView(const FilePath &filepath, int maxDepth) {
+    if (!isReady() || !rootFile)
         return nullptr;
 
     auto state = viewPath->compareTo(filepath);
-    if(state == FilePath::CompareResult::DIFFERENT || state==FilePath::CompareResult::CHILD)
+    if (state == FilePath::CompareResult::DIFFERENT || state == FilePath::CompareResult::CHILD)
         return nullptr;
 
-    if(state == FilePath::CompareResult::EQUAL)
+    if (state == FilePath::CompareResult::EQUAL)
         return rootFile.get();
 
     auto relPath = filepath;
-    if(!relPath.makeRelativeTo(*viewPath))
+    if (!relPath.makeRelativeTo(*viewPath))
         return nullptr; //should not happen
 
     return rootFile->getClosestView(relPath, maxDepth);
 }
 
-bool FileViewDB::isReady() const
-{
+bool FileViewDB::isReady() const {
     return db != nullptr;
 }

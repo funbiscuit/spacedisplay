@@ -7,18 +7,20 @@
 
 
 class FileIteratorPlatform;
-class FileIterator
-{
+
+class FileIterator {
 public:
     // can't copy
-    FileIterator(const FileIterator&) = delete;
-    FileIterator& operator= (const FileIterator&) = delete;
+    FileIterator(const FileIterator &) = delete;
+
+    FileIterator &operator=(const FileIterator &) = delete;
 
     /**
      * Create iterator at specific path
      * @param path
      */
-    explicit FileIterator(const std::string& path);
+    explicit FileIterator(const std::string &path);
+
     ~FileIterator();
 
     /**
@@ -32,7 +34,8 @@ public:
     bool isDir;         // false if not valid
     int64_t size;       // 0 if not valid
 
-    FileIterator& operator++ ();
+    FileIterator &operator++();
+
 private:
     bool isValid;
     // pointer to platform specific implementation
@@ -45,14 +48,13 @@ private:
 /**
  * Collection of functions that a platform dependent
  */
-namespace PlatformUtils
-{
+namespace PlatformUtils {
     /**
      * Check if provided path exists and can be opened for scan
      * @param path to check
      * @return true on success, false otherwise
      */
-    bool can_scan_dir(const std::string& path);
+    bool can_scan_dir(const std::string &path);
 
     /**
      * Scan filesystem for available mount points (that can be scanned)
@@ -61,7 +63,7 @@ namespace PlatformUtils
      * @param availableMounts vector containing paths of safe mount points
      * @param excludedMounts  vector containing paths of mount points that should not be scanned
      */
-    void get_mount_points(std::vector<std::string>& availableMounts, std::vector<std::string>& excludedMounts);
+    void get_mount_points(std::vector<std::string> &availableMounts, std::vector<std::string> &excludedMounts);
 
     /**
      * Gets total and available space of filesystem mounted at specified path
@@ -70,7 +72,7 @@ namespace PlatformUtils
      * @param availableSpace - available (free) space in bytes that this filesystem has
      * @return true if spaces are read successfully, false otherwise
      */
-    bool get_mount_space(const std::string& path, uint64_t& totalSpace, uint64_t& availableSpace);
+    bool get_mount_space(const std::string &path, uint64_t &totalSpace, uint64_t &availableSpace);
 
     /**
      * Opens folder in default file manager.
@@ -79,7 +81,7 @@ namespace PlatformUtils
      * On Linux uses xdg-open to run default file manager
      * @param folder_path
      */
-    void open_folder_in_file_manager(const char* folder_path);
+    void open_folder_in_file_manager(const char *folder_path);
 
     /**
      * Selects file in default file manager.
@@ -91,7 +93,7 @@ namespace PlatformUtils
      * If file manager was not detected, uses xdg-open to open parent directory (file itself is not selected)
      * @param file_path
      */
-    void show_file_in_file_manager(const char* file_path);
+    void show_file_in_file_manager(const char *file_path);
 
     /**
      * Deletes directory and all files inside
@@ -100,7 +102,7 @@ namespace PlatformUtils
      * @param path
      * @return true if was deleted, false otherwise
      */
-    bool deleteDir(const std::string& path);
+    bool deleteDir(const std::string &path);
 
     /**
      * filePathSeparator - file path separator that is native for the platform
@@ -140,7 +142,7 @@ namespace PlatformUtils
      * @param shortPath
      * @return true on success
      */
-    bool toLongPath(std::string& shortPath);
+    bool toLongPath(std::string &shortPath);
 
 #endif
 

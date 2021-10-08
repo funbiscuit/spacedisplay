@@ -7,7 +7,9 @@
 
 //TODO rewrite
 #if _WIN32
+
 #include <direct.h>
+
 #define mkdir(dir, mode) _mkdir(dir)
 #define rmdir(dir) _rmdir(dir)
 #else
@@ -16,23 +18,20 @@
 #endif
 
 
-DirHelper::DirHelper(const std::string& path)
-{
+DirHelper::DirHelper(const std::string &path) {
     // delete dir if it already exist
     PlatformUtils::deleteDir(path);
-    if(mkdir(path.c_str(), 0755) == 0)
+    if (mkdir(path.c_str(), 0755) == 0)
         root = Utils::make_unique<FilePath>(path);
 }
 
-DirHelper::~DirHelper()
-{
-    if(root)
+DirHelper::~DirHelper() {
+    if (root)
         PlatformUtils::deleteDir(root->getRoot());
 }
 
-bool DirHelper::createDir(const std::string& path)
-{
-    if(!root)
+bool DirHelper::createDir(const std::string &path) {
+    if (!root)
         return false;
 
     auto newPath = *root;
@@ -41,26 +40,23 @@ bool DirHelper::createDir(const std::string& path)
     return mkdir(newPath.getPath().c_str(), 0755) == 0;
 }
 
-bool DirHelper::createFile(const std::string& path)
-{
-    if(!root)
+bool DirHelper::createFile(const std::string &path) {
+    if (!root)
         return false;
 
     auto newPath = *root;
     newPath.addFile(path);
 
     auto f = fopen(newPath.getPath().c_str(), "w+");
-    if(f)
-    {
+    if (f) {
         fclose(f);
         return true;
     }
     return false;
 }
 
-bool DirHelper::deleteDir(const std::string& path)
-{
-    if(!root)
+bool DirHelper::deleteDir(const std::string &path) {
+    if (!root)
         return false;
 
     auto newPath = *root;
@@ -69,9 +65,8 @@ bool DirHelper::deleteDir(const std::string& path)
     return PlatformUtils::deleteDir(newPath.getPath());
 }
 
-bool DirHelper::rename(const std::string& oldPath, const std::string& newPath)
-{
-    if(!root)
+bool DirHelper::rename(const std::string &oldPath, const std::string &newPath) {
+    if (!root)
         return false;
 
     auto path = *root;

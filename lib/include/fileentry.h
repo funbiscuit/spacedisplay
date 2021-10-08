@@ -20,7 +20,7 @@ public:
      * @param size
      * @throws std::invalid_argument if name is empty
      */
-    FileEntry(const std::string& name, bool isDir, int64_t size = 0);
+    FileEntry(const std::string &name, bool isDir, int64_t size = 0);
 
     /**
      * Sets new size for this entry.
@@ -32,9 +32,9 @@ public:
 
     int64_t getSize() const;
 
-    const char* getName() const;
+    const char *getName() const;
 
-    const FileEntry* getParent() const;
+    const FileEntry *getParent() const;
 
     uint16_t getNameCrc() const;
 
@@ -46,7 +46,7 @@ public:
      * @param func
      * @return false if entry doesn't have children, true otherwise
      */
-    bool forEach(const std::function<bool(const FileEntry&)>& func) const;
+    bool forEach(const std::function<bool(const FileEntry &)> &func) const;
 
     /**
      * Adds child to children of this entry.
@@ -59,7 +59,7 @@ public:
      * Remove all children, that are marked for deletion
      * All removed children are put into provided vector
      */
-    void removePendingDelete(std::vector<std::unique_ptr<FileEntry>>& deletedChildren);
+    void removePendingDelete(std::vector<std::unique_ptr<FileEntry>> &deletedChildren);
 
     /**
      * Mark all children for deletion.
@@ -67,7 +67,7 @@ public:
      * @param files - how much files are marked
      * @param dirs - how much directories are marked
      */
-    void markChildrenPendingDelete(int& files, int& dirs);
+    void markChildrenPendingDelete(int &files, int &dirs);
 
     /**
      * Unmark this entry so it is not deleted with removePendingDelete()
@@ -82,7 +82,7 @@ private:
 
     void _addChild(std::unique_ptr<FileEntry> child);
 
-    void onChildSizeChanged(FileEntry* child, int64_t sizeChange);
+    void onChildSizeChanged(FileEntry *child, int64_t sizeChange);
 
     /**
      * Recalculates crc of path to this entry given path crc of entry parent
@@ -95,16 +95,17 @@ private:
         // entries are in chain (all entries in chain have the same size)
         // to access next one use firstEntry->next
         std::unique_ptr<FileEntry> firstEntry;
+
         explicit EntryBin(uint64_t size, std::unique_ptr<FileEntry> p = nullptr) :
                 size(size), firstEntry(std::move(p)) {}
 
-        bool operator< (const EntryBin& right) const {
+        bool operator<(const EntryBin &right) const {
             // use ordering in decreasing order
             return size > right.size;
         }
     };
 
-    FileEntry* parent;
+    FileEntry *parent;
 
     //used only inside EntryBin to point to the next entry with the same size
     std::unique_ptr<FileEntry> nextEntry;

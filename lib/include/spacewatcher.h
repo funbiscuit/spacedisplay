@@ -12,11 +12,11 @@
 class SpaceWatcher {
 public:
     enum class FileAction {
-        ADDED=1,
-        REMOVED=-1,
-        MODIFIED=3,
-        OLD_NAME=-6,
-        NEW_NAME=6
+        ADDED = 1,
+        REMOVED = -1,
+        MODIFIED = 3,
+        OLD_NAME = -6,
+        NEW_NAME = 6
     };
 
     enum class AddDirStatus {
@@ -35,10 +35,13 @@ public:
     static std::unique_ptr<SpaceWatcher> getWatcher();
 
     SpaceWatcher();
+
     virtual ~SpaceWatcher();
 
-    virtual bool beginWatch(const std::string& path) = 0;
+    virtual bool beginWatch(const std::string &path) = 0;
+
     virtual void endWatch() = 0;
+
     virtual bool isWatching() const = 0;
 
     /**
@@ -68,14 +71,14 @@ public:
      * Used on platforms that can't watch recursively (e.g. linux)
      * @param path
      */
-    virtual AddDirStatus addDir(const std::string& path);
+    virtual AddDirStatus addDir(const std::string &path);
 
     /**
      * Adds directory to watch. Watch should be already started.
      * Used on platforms that can't watch recursively (e.g. linux)
      * @param path
      */
-    virtual void rmDir(const std::string& path);
+    virtual void rmDir(const std::string &path);
 
 protected:
 
@@ -83,9 +86,11 @@ protected:
 
     // start and stop thread are called from child classes
     void startThread();
+
     void stopThread();
 
     void addEvent(std::unique_ptr<FileEvent> event);
+
 private:
 
     int64_t watchedDirCount;
@@ -99,8 +104,6 @@ private:
 
     void watcherRun();
 };
-
-
 
 
 #endif //SPACEDISPLAY_SPACEWATCHER_H

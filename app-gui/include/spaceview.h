@@ -10,31 +10,38 @@
 #include "customtheme.h"
 
 class SpaceScanner;
+
 class FileEntryPopup;
+
 class FilePath;
+
 class FileViewDB;
+
 class FileEntryView;
+
 class FileTooltip;
 
 
-class SpaceView : public QWidget
-{
+class SpaceView : public QWidget {
 Q_OBJECT
 public:
     SpaceView();
+
     ~SpaceView() override;
 
     void setScanner(std::unique_ptr<SpaceScanner> _scanner);
 
-    void setCustomPalette(const CustomPalette& palette);
+    void setCustomPalette(const CustomPalette &palette);
 
-    bool getWatcherLimits(int64_t& watchedNow, int64_t& watchLimit);
+    bool getWatcherLimits(int64_t &watchedNow, int64_t &watchLimit);
 
     void onScanUpdate();
 
     bool canRefresh();
+
     bool isAtRoot();
-    void rescanDir(const FilePath& dir_path);
+
+    void rescanDir(const FilePath &dir_path);
 
     void rescanCurrentView();
 
@@ -49,7 +56,7 @@ public:
      */
     bool isProgressKnown();
 
-    bool getSpace(uint64_t& scannedVisible, uint64_t& scannedHidden, uint64_t& available, uint64_t& total);
+    bool getSpace(uint64_t &scannedVisible, uint64_t &scannedHidden, uint64_t &available, uint64_t &total);
 
     int64_t getScannedFiles();
 
@@ -104,6 +111,7 @@ public:
     void navigateForward();
 
     void increaseDetail();
+
     void decreaseDetail();
 
 
@@ -123,6 +131,7 @@ public:
      * @return whether we can increase detalization (show deeper)
      */
     bool canIncreaseDetail();
+
     /**
      * @return whether we can decrease detalization (show less deep)
      */
@@ -135,20 +144,21 @@ public:
     void setPause(bool paused);
 
     void setShowFreeSpace(bool showFree);
+
     void setShowUnknownSpace(bool showUnknown);
 
     void clearHistory();
 
 protected:
-    const int MIN_DEPTH =1;
-    const int MAX_DEPTH =9;
+    const int MIN_DEPTH = 1;
+    const int MAX_DEPTH = 9;
 
     CustomPalette customPalette;
 
     QPixmap bgIcon;
 
-    int mouseX=-1;
-    int mouseY=-1;
+    int mouseX = -1;
+    int mouseY = -1;
 
     std::unique_ptr<FileEntryPopup> entryPopup;
     std::unique_ptr<FileTooltip> fileTooltip;
@@ -160,7 +170,7 @@ protected:
      * to history and another path is moved to currentPath
      */
     std::vector<std::unique_ptr<FilePath>> pathHistory;
-    size_t pathHistoryPointer=0;
+    size_t pathHistoryPointer = 0;
 
     int currentDepth = 5;
     std::unique_ptr<FilePath> currentPath;
@@ -188,10 +198,15 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
 
     void mouseReleaseEvent(QMouseEvent *event) override;
+
     void mouseMoveEvent(QMouseEvent *event) override;
+
     void leaveEvent(QEvent *event) override;
+
     void paintEvent(QPaintEvent *event) override;
+
     void resizeEvent(QResizeEvent *event) override;
+
     void timerEvent(QTimerEvent *event) override;
 
     void historyPush();
@@ -202,10 +217,13 @@ protected:
 
     void updateScannedView();
 
-    void drawView(QPainter& painter, const FileEntryView& file, int nestLevel, bool forceFill);
-    void drawViewTitle(QPainter& painter, const QColor& bg, const FileEntryView& file);
-    void drawViewText(QPainter& painter, const QColor& bg, const FileEntryView& file);
-    bool drawViewBg(QPainter& painter, QColor& bg_out, const FileEntryView& file, bool fillDir);
+    void drawView(QPainter &painter, const FileEntryView &file, int nestLevel, bool forceFill);
+
+    void drawViewTitle(QPainter &painter, const QColor &bg, const FileEntryView &file);
+
+    void drawViewText(QPainter &painter, const QColor &bg, const FileEntryView &file);
+
+    bool drawViewBg(QPainter &painter, QColor &bg_out, const FileEntryView &file, bool fillDir);
 
 };
 

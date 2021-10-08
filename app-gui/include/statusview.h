@@ -10,17 +10,15 @@
 
 #include "customtheme.h"
 
-struct StatusPart
-{
+struct StatusPart {
     QColor color;
-    bool isHidden=false;
-    float weight=0.f;
+    bool isHidden = false;
+    float weight = 0.f;
     std::string label;
     int textMargin = 10;
 };
 
-class StatusView : public QWidget
-{
+class StatusView : public QWidget {
 Q_OBJECT
 public:
     // depending on what mode is selected, status will display differently
@@ -40,7 +38,7 @@ public:
      */
     void setProgress(int progress);
 
-    void setCustomPalette(const CustomPalette& palette);
+    void setCustomPalette(const CustomPalette &palette);
 
     void setMode(Mode mode);
 
@@ -67,20 +65,20 @@ public:
     QSize minimumSizeHint() const override;
 
 protected:
-    float scannedSpaceVisible=0.f;
-    float scannedSpaceHidden=0.f;
-    float availableSpace=0.f;
-    float unknownSpace=1.f;
+    float scannedSpaceVisible = 0.f;
+    float scannedSpaceHidden = 0.f;
+    float availableSpace = 0.f;
+    float unknownSpace = 1.f;
 
-    int scanProgress=0;
+    int scanProgress = 0;
 
     int64_t scannedFiles = 0;
 
     Mode currentMode;
 
-    bool highlightAvailable=false;
-    bool highlightUnknown=false;
-    bool maximizeSpace=false;
+    bool highlightAvailable = false;
+    bool highlightUnknown = false;
+    bool maximizeSpace = false;
 
     const int textPadding = 3;
 
@@ -89,9 +87,12 @@ protected:
     std::vector<StatusPart> parts;
 
     std::string getScanStatusText();
-    int getStatusWidth(const QFontMetrics& fm);
+
+    int getStatusWidth(const QFontMetrics &fm);
+
     std::string getScannedFilesText();
-    void allocateParts(const QFontMetrics& fm, float width);
+
+    void allocateParts(const QFontMetrics &fm, float width);
 
     void paintEvent(QPaintEvent *event) override;
 };

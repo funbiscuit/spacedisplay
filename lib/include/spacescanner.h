@@ -21,13 +21,16 @@ enum class ScannerStatus {
 };
 
 class FileEntry;
+
 class FilePath;
+
 class FileDB;
+
 class SpaceWatcher;
+
 class Logger;
 
-enum class ScannerError
-{
+enum class ScannerError {
     NONE = 0,
     SCAN_RUNNING,
     CANT_OPEN_DIR
@@ -42,7 +45,9 @@ class SpaceScanner {
 public:
 
     SpaceScanner();
+
     ~SpaceScanner();
+
     ScannerError scan_dir(const std::string &path);
 
     void stop_scan();
@@ -60,7 +65,7 @@ public:
 
     bool canResume();
 
-    void rescan_dir(const FilePath& folder_path);
+    void rescan_dir(const FilePath &folder_path);
 
     /**
      * For windows this is a list of available drives (C:\\, D:\\ etc)
@@ -71,7 +76,7 @@ public:
 
     std::shared_ptr<FileDB> getFileDB();
 
-    bool getCurrentScanPath(std::unique_ptr<FilePath>& path);
+    bool getCurrentScanPath(std::unique_ptr<FilePath> &path);
 
     /**
      * Get current watcher limits
@@ -79,7 +84,7 @@ public:
      * @param watchLimit - limit on how many directories user can watch (-1 if no limit)
      * @return true if limits are exceeded, false otherwise
      */
-    bool getWatcherLimits(int64_t& watchedNow, int64_t& watchLimit);
+    bool getWatcherLimits(int64_t &watchedNow, int64_t &watchLimit);
 
     /**
      * Returns true if it possible to determine scan progress.
@@ -89,15 +94,19 @@ public:
     bool isProgressKnown() const;
 
     int get_scan_progress() const;
+
     bool is_loaded() const;
+
     bool can_refresh() const;
+
     bool has_changes() const;
 
-    const FilePath* getRootPath() const;
+    const FilePath *getRootPath() const;
 
-    void getSpace(uint64_t& used, uint64_t& available, uint64_t& total) const;
+    void getSpace(uint64_t &used, uint64_t &available, uint64_t &total) const;
 
     int64_t getFileCount() const;
+
     int64_t getDirCount() const;
 
     void setLogger(std::shared_ptr<Logger> logger);
@@ -156,7 +165,7 @@ private:
      * @param recursiveScan
      * @param toBack
      */
-    void addChildrenToQueue(std::vector<std::unique_ptr<FilePath>>& paths, bool recursiveScan, bool toBack = true);
+    void addChildrenToQueue(std::vector<std::unique_ptr<FilePath>> &paths, bool recursiveScan, bool toBack = true);
 
     /**
      * Performs a scan at given path, creates entry for each child and populates scannedEntries vector
@@ -165,9 +174,9 @@ private:
      * @param scannedEntries - vector reference where to add scanned children
      * @param newPaths - pointer to vector where to add paths to scanned dirs
      */
-    void scanChildrenAt(const FilePath& path,
-                        std::vector<std::unique_ptr<FileEntry>>& scannedEntries,
-                        std::vector<std::unique_ptr<FilePath>>* newPaths = nullptr);
+    void scanChildrenAt(const FilePath &path,
+                        std::vector<std::unique_ptr<FileEntry>> &scannedEntries,
+                        std::vector<std::unique_ptr<FilePath>> *newPaths = nullptr);
 };
 
 

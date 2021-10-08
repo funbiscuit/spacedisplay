@@ -1,64 +1,57 @@
 #include "spacewatcher.h"
 
 #ifdef _WIN32
+
 #include "spacewatcher-win.h"
+
 #else
 #include "spacewatcher-linux.h"
 #endif
 
 #include <iostream>
 
-SpaceWatcher::SpaceWatcher() : runThread(false), watchedDirCount(0)
-{
+SpaceWatcher::SpaceWatcher() : runThread(false), watchedDirCount(0) {
 
 }
 
-SpaceWatcher::~SpaceWatcher()
-{
+SpaceWatcher::~SpaceWatcher() {
 }
 
-void SpaceWatcher::startThread()
-{
-    if(runThread)
+void SpaceWatcher::startThread() {
+    if (runThread)
         return;
     runThread = true;
     //Start thread after everything is initialized
-    watchThread=std::thread(&SpaceWatcher::watcherRun, this);
+    watchThread = std::thread(&SpaceWatcher::watcherRun, this);
 }
 
-void SpaceWatcher::stopThread()
-{
-    if(!runThread)
+void SpaceWatcher::stopThread() {
+    if (!runThread)
         return;
 
     runThread = false;
     watchThread.join();
 }
 
-int64_t SpaceWatcher::getWatchedDirCount() const
-{
-    if(getDirCountLimit()<0)
+int64_t SpaceWatcher::getWatchedDirCount() const {
+    if (getDirCountLimit() < 0)
         return isWatching() ? 1 : 0;
     return watchedDirCount;
 }
 
-SpaceWatcher::AddDirStatus SpaceWatcher::addDir(const std::string& path)
-{
+SpaceWatcher::AddDirStatus SpaceWatcher::addDir(const std::string &path) {
     ++watchedDirCount;
     return AddDirStatus::ADDED;
 }
 
-void SpaceWatcher::rmDir(const std::string& path)
-{
-    if(watchedDirCount>0)
+void SpaceWatcher::rmDir(const std::string &path) {
+    if (watchedDirCount > 0)
         --watchedDirCount;
 }
 
-std::unique_ptr<SpaceWatcher::FileEvent> SpaceWatcher::popEvent()
-{
+std::unique_ptr<SpaceWatcher::FileEvent> SpaceWatcher::popEvent() {
     std::lock_guard<std::mutex> lock(eventsMtx);
-    if(!eventQueue.empty())
-    {
+    if (!eventQueue.empty()) {
         auto event = std::move(eventQueue.front());
         eventQueue.pop_front();
         return event;
@@ -66,20 +59,17 @@ std::unique_ptr<SpaceWatcher::FileEvent> SpaceWatcher::popEvent()
     return nullptr;
 }
 
-void SpaceWatcher::watcherRun()
-{
+void SpaceWatcher::watcherRun() {
     std::cout << "Start watcher thread\n";
-    while(runThread)
-    {
-        if(isWatching())
+    while (runThread) {
+        if (isWatching())
             readEvents();
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
     std::cout << "Stop watcher thread\n";
 }
 
-std::unique_ptr<SpaceWatcher> SpaceWatcher::getWatcher()
-{
+std::unique_ptr<SpaceWatcher> SpaceWatcher::getWatcher() {
 #ifdef _WIN32
     return std::unique_ptr<SpaceWatcher>(new SpaceWatcherWin());
 #else
@@ -87,9 +77,8 @@ std::unique_ptr<SpaceWatcher> SpaceWatcher::getWatcher()
 #endif
 }
 
-void SpaceWatcher::addEvent(std::unique_ptr<FileEvent> event)
-{
-    if(!event)
+void SpaceWatcher::addEvent(std::unique_ptr<FileEvent> event) {
+    if (!event)
         return;
 
     std::lock_guard<std::mutex> lock(eventsMtx);

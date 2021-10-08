@@ -1,5 +1,5 @@
 
-find_package (Threads REQUIRED)
+find_package(Threads REQUIRED)
 
 add_library(spacedisplay_lib STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/fileentry.cpp
@@ -24,10 +24,10 @@ target_include_directories(spacedisplay_lib
 target_link_libraries(spacedisplay_lib PRIVATE
         Threads::Threads CRC::CRC)
 
-if(WIN32)
+if (WIN32)
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/platformutils-win.cpp)
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/spacewatcher-win.cpp)
-else()
+else ()
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/platformutils-nix.cpp)
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/spacewatcher-linux.cpp)
-endif()
+endif ()

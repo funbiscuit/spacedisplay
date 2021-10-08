@@ -4,8 +4,7 @@
 #include <string>
 #include <vector>
 
-class FilePath
-{
+class FilePath {
 public:
     enum class CompareResult {
         PARENT,
@@ -24,7 +23,7 @@ public:
      * @param crc - crc of given string
      * @throws std::invalid_argument if construction failed
      */
-    explicit FilePath(const std::string& root, uint16_t crc = 0);
+    explicit FilePath(const std::string &root, uint16_t crc = 0);
 
     /**
      * Constructs new path by given full path and root
@@ -36,8 +35,8 @@ public:
      * @param root - root for path (e.g. /home/)
      * @throws std::invalid_argument if construction failed
      */
-    explicit FilePath(const std::string& path, const std::string& root);
-    
+    explicit FilePath(const std::string &path, const std::string &root);
+
     /**
      * Returns correct path to this file or directory
      * Uses '/' on linux and '\' on windows
@@ -45,10 +44,10 @@ public:
      * @return
      */
     std::string getPath(bool addDirSlash = true) const;
-    
+
     std::string getRoot() const;
 
-    const std::vector<std::string>& getParts() const;
+    const std::vector<std::string> &getParts() const;
 
     /**
      * Return crc16 this path
@@ -64,7 +63,7 @@ public:
      * @return
      */
     std::string getName() const;
-    
+
     /**
      * Adds directory to the end of the path. If path already ends with file,
      * throws an exception
@@ -73,8 +72,8 @@ public:
      * @throws std::invalid_argument if name is empty or path already ends
      *         with file
      */
-    void addDir(const std::string& name, uint16_t crc = 0);
-    
+    void addDir(const std::string &name, uint16_t crc = 0);
+
     /**
      * Adds file to the end of the path. If path already ends with file, exception is thrown.
      * After file is added, nothing else can be added.
@@ -83,21 +82,21 @@ public:
      * @throws std::invalid_argument if name is empty or path already ends
      *         with file
      */
-    void addFile(const std::string& name, uint16_t crc = 0);
-    
+    void addFile(const std::string &name, uint16_t crc = 0);
+
     /**
      * Checks if current path is pointing to directory or not
      * If path is invalid, returns false
      * @return true if directory, false otherwise
      */
     bool isDir() const;
-    
+
     /**
      * Checks if it is possible to navigate up
      * @return false if path is already at root, true otherwise
      */
     bool canGoUp() const;
-    
+
     /**
      * If it is possible to navigate up, will change path to its parent directory.
      * @return false if path is already at root, true otherwise
@@ -109,7 +108,7 @@ public:
      * @param path
      * @return
      */
-    CompareResult compareTo(const FilePath& path);
+    CompareResult compareTo(const FilePath &path);
 
     /**
      * Converts this path to make it relative to provided path
@@ -118,10 +117,10 @@ public:
      * @param path
      * @return
      */
-    bool makeRelativeTo(const FilePath& parentPath);
+    bool makeRelativeTo(const FilePath &parentPath);
 
 private:
-    
+
     /**
      * Contains parts of current path. Each part contains at most one slash - at the end.
      * Root part can have multiple slashes (e.g. /home/user/Desktop/)
@@ -133,14 +132,14 @@ private:
     std::vector<std::string> parts;
 
     std::vector<uint16_t> pathCrcs;
-    
+
     /**
      * Converts all slashes to platform correct ones, removes unnecessary slashes.
      * @param path - path to normalize (will be edited in place)
      * @param addTrailingSlash - if true and there is no slash at the end - slash will be added
      *                           if false and there is a slash at the end - it will be removed
      */
-    static void normalize(std::string& path, bool addTrailingSlash);
+    static void normalize(std::string &path, bool addTrailingSlash);
 };
 
 

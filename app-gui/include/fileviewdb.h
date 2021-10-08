@@ -6,15 +6,16 @@
 #include "utils.h"
 
 class FileDB;
+
 class FilePath;
+
 class FileEntryView;
 
 /**
  * Class for storing FileViewEntries, not thread-safe
  * so should be accessed only from GUI thread
  */
-class FileViewDB
-{
+class FileViewDB {
 
 public:
     /**
@@ -38,7 +39,7 @@ public:
 
     void setViewArea(Utils::RectI rect);
 
-    void setViewPath(const FilePath& filepath);
+    void setViewPath(const FilePath &filepath);
 
     void setViewDepth(int depth);
 
@@ -56,11 +57,11 @@ public:
      * @param func
      * @return false if db not initialized
      */
-    bool processEntry(const std::function<void(FileEntryView&)>& func);
+    bool processEntry(const std::function<void(FileEntryView &)> &func);
 
-    FileEntryView* getHoveredView(int mouseX, int mouseY);
+    FileEntryView *getHoveredView(int mouseX, int mouseY);
 
-    FileEntryView* getClosestView(const FilePath& filepath, int maxDepth);
+    FileEntryView *getClosestView(const FilePath &filepath, int maxDepth);
 
     /**
      * Checks if database is valid (i.e. has a valid root) and can be accessed

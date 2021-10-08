@@ -5,28 +5,27 @@
 
 #include <Windows.h>
 
-class FileIteratorPlatform
-{
+class FileIteratorPlatform {
 public:
     // can't copy
-    FileIteratorPlatform(const FileIterator&) = delete;
-    FileIteratorPlatform& operator= (const FileIterator&) = delete;
-    ~FileIteratorPlatform()
-    {
-        if(dirHandle!=INVALID_HANDLE_VALUE)
+    FileIteratorPlatform(const FileIterator &) = delete;
+
+    FileIteratorPlatform &operator=(const FileIterator &) = delete;
+
+    ~FileIteratorPlatform() {
+        if (dirHandle != INVALID_HANDLE_VALUE)
             FindClose(dirHandle);
     }
 
-    explicit FileIteratorPlatform(const std::string& path) :
-            isValid(false), name(""), isDir(false), size(0), dirHandle(INVALID_HANDLE_VALUE)
-    {
-        auto wname=PlatformUtils::str2wstr(path);
+    explicit FileIteratorPlatform(const std::string &path) :
+            isValid(false), name(""), isDir(false), size(0), dirHandle(INVALID_HANDLE_VALUE) {
+        auto wname = PlatformUtils::str2wstr(path);
         //it's okay to have multiple slashes at the end
         wname.append(L"\\*");
 
         WIN32_FIND_DATAW fileData;
 
-        dirHandle=FindFirstFileW(wname.c_str(), &fileData);
+        dirHandle = FindFirstFileW(wname.c_str(), &fileData);
         get_file_data(true, &fileData);
     }
 
@@ -35,13 +34,13 @@ public:
     bool isDir;
     int64_t size;
 
-    FileIteratorPlatform& operator++ ()
-    {
+    FileIteratorPlatform &operator++() {
         WIN32_FIND_DATAW fileData;
 
         get_file_data(false, &fileData);
         return *this;
     }
+
 private:
 
     HANDLE dirHandle;
@@ -49,67 +48,61 @@ private:
     /**
      * Gets file data for the first or next file returned by handle
      */
-    void get_file_data(bool isFirst, WIN32_FIND_DATAW* fileData)
-    {
-        bool found=dirHandle!=INVALID_HANDLE_VALUE;
+    void get_file_data(bool isFirst, WIN32_FIND_DATAW *fileData) {
+        bool found = dirHandle != INVALID_HANDLE_VALUE;
 
-        if(found && (isFirst || FindNextFileW(dirHandle, fileData) != 0))
-        {
-            auto cname=PlatformUtils::wstr2str(fileData->cFileName);
+        if (found && (isFirst || FindNextFileW(dirHandle, fileData) != 0)) {
+            auto cname = PlatformUtils::wstr2str(fileData->cFileName);
 
-            while(found && (cname.empty() || cname == "." || cname == ".."))
-            {
+            while (found && (cname.empty() || cname == "." || cname == "..")) {
                 found = FindNextFileW(dirHandle, fileData) != 0;
-                cname=PlatformUtils::wstr2str(fileData->cFileName);
+                cname = PlatformUtils::wstr2str(fileData->cFileName);
             }
 
-            if(found)
-            {
+            if (found) {
                 isValid = true;
-                name=std::move(cname);
-                isDir=(fileData->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)!=0;
+                name = std::move(cname);
+                isDir = (fileData->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
                 //don't count mount points and symlinks as directories
-                if((fileData->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)!=0 &&
-                   (fileData->dwReserved0==IO_REPARSE_TAG_SYMLINK || fileData->dwReserved0==IO_REPARSE_TAG_MOUNT_POINT))
-                    isDir=false;
+                if ((fileData->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0 &&
+                    (fileData->dwReserved0 == IO_REPARSE_TAG_SYMLINK ||
+                     fileData->dwReserved0 == IO_REPARSE_TAG_MOUNT_POINT))
+                    isDir = false;
 
-                size=(uint64_t(fileData->nFileSizeHigh) * (uint64_t(MAXDWORD)+1)) + uint64_t(fileData->nFileSizeLow);
+                size = (uint64_t(fileData->nFileSizeHigh) * (uint64_t(MAXDWORD) + 1)) +
+                       uint64_t(fileData->nFileSizeLow);
             }
         } else
             isValid = false;
     }
 };
 
-FileIterator::FileIterator(const std::string& path)
-{
+FileIterator::FileIterator(const std::string &path) {
     pFileIterator = Utils::make_unique<FileIteratorPlatform>(path);
     update();
 }
 
 FileIterator::~FileIterator() = default;
 
-FileIterator &FileIterator::operator++()
-{
+FileIterator &FileIterator::operator++() {
     ++(*pFileIterator);
     update();
     return *this;
 }
 
-void FileIterator::update()
-{
-    isValid=pFileIterator->isValid;
-    name=pFileIterator->name;
-    isDir=pFileIterator->isDir;
-    size=pFileIterator->size;
+void FileIterator::update() {
+    isValid = pFileIterator->isValid;
+    name = pFileIterator->name;
+    isDir = pFileIterator->isDir;
+    size = pFileIterator->size;
 }
 
 
-bool PlatformUtils::can_scan_dir(const std::string& path)
-{
-    auto wpath=PlatformUtils::str2wstr(path);
+bool PlatformUtils::can_scan_dir(const std::string &path) {
+    auto wpath = PlatformUtils::str2wstr(path);
     bool result = false;
 
-    auto handle=CreateFileW(
+    auto handle = CreateFileW(
             wpath.c_str(),
             FILE_LIST_DIRECTORY,
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -119,45 +112,40 @@ bool PlatformUtils::can_scan_dir(const std::string& path)
             nullptr
     );
 
-    if(handle!=INVALID_HANDLE_VALUE)
-    {
+    if (handle != INVALID_HANDLE_VALUE) {
         BY_HANDLE_FILE_INFORMATION lpFileInformation;
-        if(GetFileInformationByHandle(handle, &lpFileInformation))
+        if (GetFileInformationByHandle(handle, &lpFileInformation))
             result = (lpFileInformation.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-    }
-    else
+    } else
         return false;
 
     CloseHandle(handle);
     return result;
 }
 
-void PlatformUtils::get_mount_points(std::vector<std::string>& availableMounts, std::vector<std::string>& excludedMounts)
-{
+void
+PlatformUtils::get_mount_points(std::vector<std::string> &availableMounts, std::vector<std::string> &excludedMounts) {
     availableMounts.clear();
     excludedMounts.clear();  //on windows it is safe to scan any fixed or removable drive
 
-    auto drivesMask=GetLogicalDrives();
+    auto drivesMask = GetLogicalDrives();
 
     char driveName[4] = {'A', ':', '\\', '\0'};
 
-    for(char drive='A';drive<='Z';++drive)
-    {
-        if(drivesMask & 0x1u)
-        {
-            driveName[0]=drive;
-            auto type=GetDriveTypeA(driveName);
+    for (char drive = 'A'; drive <= 'Z'; ++drive) {
+        if (drivesMask & 0x1u) {
+            driveName[0] = drive;
+            auto type = GetDriveTypeA(driveName);
 
-            if(type==DRIVE_FIXED || type==DRIVE_REMOVABLE)
+            if (type == DRIVE_FIXED || type == DRIVE_REMOVABLE)
                 availableMounts.emplace_back(driveName);
         }
-        drivesMask>>=1u;
+        drivesMask >>= 1u;
     }
 }
 
-bool PlatformUtils::get_mount_space(const std::string& path, uint64_t& totalSpace, uint64_t& availableSpace)
-{
-    auto wpath=PlatformUtils::str2wstr(path);
+bool PlatformUtils::get_mount_space(const std::string &path, uint64_t &totalSpace, uint64_t &availableSpace) {
+    auto wpath = PlatformUtils::str2wstr(path);
 
     ULARGE_INTEGER totalBytes;
     ULARGE_INTEGER freeBytesForCaller;
@@ -165,19 +153,16 @@ bool PlatformUtils::get_mount_space(const std::string& path, uint64_t& totalSpac
     totalSpace = 0;
     availableSpace = 0;
 
-    if(GetDiskFreeSpaceExW(wpath.c_str(), &freeBytesForCaller, &totalBytes, nullptr) != 0)
-    {
-        totalSpace=totalBytes.QuadPart;
-        availableSpace=freeBytesForCaller.QuadPart;
+    if (GetDiskFreeSpaceExW(wpath.c_str(), &freeBytesForCaller, &totalBytes, nullptr) != 0) {
+        totalSpace = totalBytes.QuadPart;
+        availableSpace = freeBytesForCaller.QuadPart;
 
         return true;
-    }
-    else
+    } else
         return false;
 }
 
-void PlatformUtils::open_folder_in_file_manager(const char* folder_path)
-{
+void PlatformUtils::open_folder_in_file_manager(const char *folder_path) {
     auto pars = Utils::strFormat("/n,\"%s\"", folder_path);
     auto parsw = str2wstr(pars);
 
@@ -186,8 +171,7 @@ void PlatformUtils::open_folder_in_file_manager(const char* folder_path)
     ShellExecuteW(nullptr, L"open", L"explorer", parsw.c_str(), nullptr, SW_SHOWNORMAL);
 }
 
-void PlatformUtils::show_file_in_file_manager(const char* file_path)
-{
+void PlatformUtils::show_file_in_file_manager(const char *file_path) {
     auto pars = Utils::strFormat("/select,\"%s\"", file_path);
     auto parsw = str2wstr(pars);
 
@@ -196,32 +180,28 @@ void PlatformUtils::show_file_in_file_manager(const char* file_path)
     ShellExecuteW(nullptr, L"open", L"explorer", parsw.c_str(), nullptr, SW_SHOWNORMAL);
 }
 
-std::wstring PlatformUtils::str2wstr(std::string const &str)
-{
-    int len = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), nullptr, 0);
+std::wstring PlatformUtils::str2wstr(std::string const &str) {
+    int len = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int) str.size(), nullptr, 0);
     std::wstring ret(len, '\0');
-    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), (LPWSTR)ret.data(), (int)ret.size());
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int) str.size(), (LPWSTR) ret.data(), (int) ret.size());
     return ret;
 }
 
-std::string PlatformUtils::wstr2str(std::wstring const &wstr)
-{
-    int len = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), nullptr, 0, nullptr, nullptr);
+std::string PlatformUtils::wstr2str(std::wstring const &wstr) {
+    int len = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int) wstr.size(), nullptr, 0, nullptr, nullptr);
     std::string ret(len, '\0');
-    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), (LPSTR)ret.data(), (int)ret.size(), nullptr, nullptr);
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int) wstr.size(), (LPSTR) ret.data(), (int) ret.size(), nullptr,
+                        nullptr);
     return ret;
 }
 
-bool PlatformUtils::toLongPath(std::string& shortPath)
-{
+bool PlatformUtils::toLongPath(std::string &shortPath) {
     auto wpath = PlatformUtils::str2wstr(shortPath);
     auto requiredBufLen = GetLongPathNameW(wpath.c_str(), nullptr, 0);
-    if(requiredBufLen > 0)
-    {
-        auto longName=Utils::make_unique_arr<wchar_t>(requiredBufLen);
+    if (requiredBufLen > 0) {
+        auto longName = Utils::make_unique_arr<wchar_t>(requiredBufLen);
         auto copiedChars = GetLongPathNameW(wpath.c_str(), longName.get(), requiredBufLen);
-        if(copiedChars < requiredBufLen && copiedChars > 0)
-        {
+        if (copiedChars < requiredBufLen && copiedChars > 0) {
             shortPath = PlatformUtils::wstr2str(longName.get());
             return true;
         }
@@ -229,8 +209,7 @@ bool PlatformUtils::toLongPath(std::string& shortPath)
     return false;
 }
 
-bool PlatformUtils::deleteDir(const std::string &path)
-{
+bool PlatformUtils::deleteDir(const std::string &path) {
     std::wstring wpath = str2wstr(path);
 
     // string in SHFILEOPSTRUCTW must be double null terminated so do it manually
@@ -247,6 +226,6 @@ bool PlatformUtils::deleteDir(const std::string &path)
             FOF_SILENT,
             false,
             nullptr,
-            nullptr };
-    return SHFileOperationW(&file_op)==0; // returns 0 on success, non zero on failure.
+            nullptr};
+    return SHFileOperationW(&file_op) == 0; // returns 0 on success, non zero on failure.
 }

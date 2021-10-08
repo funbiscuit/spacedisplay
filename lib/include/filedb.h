@@ -9,14 +9,14 @@
 #include <unordered_map>
 
 class FileEntry;
+
 class FilePath;
 
 /**
  * Implements tree structure for files/directories
  * Also can store information about total and available space
  */
-class FileDB
-{
+class FileDB {
 public:
     FileDB();
 
@@ -36,22 +36,22 @@ public:
      * @param entries
      * @return
      */
-    bool setChildrenForPath(const FilePath& path,
+    bool setChildrenForPath(const FilePath &path,
                             std::vector<std::unique_ptr<FileEntry>> entries,
-                            std::vector<std::unique_ptr<FilePath>>* newPaths = nullptr);
+                            std::vector<std::unique_ptr<FilePath>> *newPaths = nullptr);
 
     /**
      * Clears database and sets new root, making db initialized
      * @param path
      * @throws std::invalid_argument if construction from given path failed
      */
-    void setNewRootPath(const std::string& path);
+    void setNewRootPath(const std::string &path);
 
     /**
      * Returns path to current root or null if db is not initialized
      * @return
      */
-    const FilePath* getRootPath() const;
+    const FilePath *getRootPath() const;
 
     /**
      * Clears database leaving it in uninitialized state
@@ -64,7 +64,7 @@ public:
      * @param path - path to entry that should be found
      * @return pointer to entry if it was found, nullptr otherwise
      */
-    const FileEntry* findEntry(const FilePath& path) const;
+    const FileEntry *findEntry(const FilePath &path) const;
 
     /**
      * Let's you access entry at arbitrary path
@@ -75,7 +75,7 @@ public:
      * @param func
      * @return false if db not initialized
      */
-    bool processEntry(const FilePath& path, const std::function<void(const FileEntry&)>& func) const;
+    bool processEntry(const FilePath &path, const std::function<void(const FileEntry &)> &func) const;
 
     /**
      * Checks if database is valid (i.e. has a valid root) and can be accessed
@@ -85,7 +85,7 @@ public:
 
     bool hasChanges() const;
 
-    void getSpace(uint64_t& used, uint64_t& available, uint64_t& total) const;
+    void getSpace(uint64_t &used, uint64_t &available, uint64_t &total) const;
 
     uint64_t getFileCount() const;
 
@@ -110,19 +110,20 @@ private:
     std::unique_ptr<FilePath> rootPath;
 
     //map key is crc of entry path, map value is vector of all children with the same crc of their name
-    std::unordered_map<uint16_t, std::vector<FileEntry*>> entriesMap;
+    std::unordered_map<uint16_t, std::vector<FileEntry *>> entriesMap;
 
     void _clearDb();
-    FileEntry* _findEntry(const FilePath& path) const;
 
-    FileEntry* _findEntry(const char* entryName, uint16_t nameCrc, FileEntry* parent) const;
+    FileEntry *_findEntry(const FilePath &path) const;
+
+    FileEntry *_findEntry(const char *entryName, uint16_t nameCrc, FileEntry *parent) const;
 
     /**
      * Deletes all items from entriesMap for this entry and all children (recursively)
      * Modifies global fileCount and dirCount by number of removed files and dirs
      * @param entry
      */
-    void _cleanupEntryCrc(const FileEntry& entry);
+    void _cleanupEntryCrc(const FileEntry &entry);
 
 };
 

@@ -16,36 +16,32 @@
 #include "logger.h"
 
 
-MainWindow::ActionMask operator|(MainWindow::ActionMask lhs, MainWindow::ActionMask rhs)
-{
+MainWindow::ActionMask operator|(MainWindow::ActionMask lhs, MainWindow::ActionMask rhs) {
     return static_cast<MainWindow::ActionMask> (
             static_cast<std::underlying_type<MainWindow::ActionMask>::type>(lhs) |
             static_cast<std::underlying_type<MainWindow::ActionMask>::type>(rhs)
     );
 }
-MainWindow::ActionMask operator&(MainWindow::ActionMask lhs, MainWindow::ActionMask rhs)
-{
+
+MainWindow::ActionMask operator&(MainWindow::ActionMask lhs, MainWindow::ActionMask rhs) {
     return static_cast<MainWindow::ActionMask> (
             static_cast<std::underlying_type<MainWindow::ActionMask>::type>(lhs) &
             static_cast<std::underlying_type<MainWindow::ActionMask>::type>(rhs)
     );
 }
 
-MainWindow::ActionMask operator~(MainWindow::ActionMask mask)
-{
+MainWindow::ActionMask operator~(MainWindow::ActionMask mask) {
     return static_cast<MainWindow::ActionMask> (
             ~static_cast<std::underlying_type<MainWindow::ActionMask>::type>(mask)
     );
 }
 
-bool operator!(MainWindow::ActionMask mask)
-{
+bool operator!(MainWindow::ActionMask mask) {
     return !static_cast<bool>(mask);
 }
 
 MainWindow::MainWindow()
-        : spaceWidget(new SpaceView), statusView(new StatusView)
-{
+        : spaceWidget(new SpaceView), statusView(new StatusView) {
     setMinimumSize(600, 400);
     layout = Utils::make_unique<QVBoxLayout>();
     logger = std::make_shared<Logger>();
@@ -59,21 +55,21 @@ MainWindow::MainWindow()
 
     setCentralWidget(window);
 
-    layout->addWidget(spaceWidget.get(),1);
-    layout->addWidget(statusView,0);
+    layout->addWidget(spaceWidget.get(), 1);
+    layout->addWidget(statusView, 0);
 
-    spaceWidget->setOnActionCallback([this](){
+    spaceWidget->setOnActionCallback([this]() {
         onScanUpdate();
     });
-    spaceWidget->setOnNewScanRequestCallback([this](){
+    spaceWidget->setOnNewScanRequestCallback([this]() {
         newScan();
     });
-    spaceWidget->setOnWatchLimitCallback([this](){
+    spaceWidget->setOnWatchLimitCallback([this]() {
         watchLimitExceeded = true;
     });
 
-    logWindow->setOnDataChanged([this](bool hasNew){
-        if(logWindow->isHidden())
+    logWindow->setOnDataChanged([this](bool hasNew) {
+        if (logWindow->isHidden())
             updateLogIcon(hasNew);
     });
 
@@ -90,17 +86,14 @@ MainWindow::MainWindow()
     setEnabledActions(ActionMask::NEW_SCAN);
 }
 
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow() {
     layout->removeWidget(spaceWidget.get());
 }
 
-void MainWindow::onScanUpdate()
-{
+void MainWindow::onScanUpdate() {
     updateStatusView();
     updateAvailableActions();
-    if(spaceWidget->getScanProgress() == 100 && watchLimitExceeded && !watchLimitReported)
-    {
+    if (spaceWidget->getScanProgress() == 100 && watchLimitExceeded && !watchLimitReported) {
         int64_t watchedNow, watchLimit;
         spaceWidget->getWatcherLimits(watchedNow, watchLimit);
         int64_t dirCount = spaceWidget->getScannedDirs();
@@ -113,11 +106,9 @@ void MainWindow::onScanUpdate()
     }
 }
 
-void MainWindow::updateStatusView()
-{
+void MainWindow::updateStatusView() {
     statusView->setMode(StatusView::Mode::NO_SCAN);
-    if(!spaceWidget->isScanOpen())
-    {
+    if (!spaceWidget->isScanOpen()) {
         //if nothing opened, we don't have any data so just call repaint
         statusView->repaint();
         return;
@@ -125,20 +116,20 @@ void MainWindow::updateStatusView()
 
     uint64_t scannedVisible, scannedHidden, available, total;
 
-    if(!spaceWidget->getSpace(scannedVisible, scannedHidden, available, total))
+    if (!spaceWidget->getSpace(scannedVisible, scannedHidden, available, total))
         return; //should not happen
 
-    auto unknown= total - available - scannedVisible - scannedHidden;
+    auto unknown = total - available - scannedVisible - scannedHidden;
 
     auto progress = spaceWidget->getScanProgress();
-    if(progress == 100)
+    if (progress == 100)
         statusView->setMode(StatusView::Mode::SCAN_FINISHED);
-    else if(spaceWidget->isProgressKnown())
+    else if (spaceWidget->isProgressKnown())
         statusView->setMode(StatusView::Mode::SCANNING_DEFINITE);
     else
         statusView->setMode(StatusView::Mode::SCANNING_INDEFINITE);
 
-    if(spaceWidget->isAtRoot())
+    if (spaceWidget->isAtRoot())
         statusView->setSpaceHighlight(toggleFreeAct->isChecked(), toggleUnknownAct->isChecked());
     else
         statusView->setSpaceHighlight(false, false);
@@ -154,18 +145,16 @@ void MainWindow::updateStatusView()
     statusView->repaint();
 }
 
-void MainWindow::closeEvent(QCloseEvent *event)
-{
+void MainWindow::closeEvent(QCloseEvent *event) {
     writeSettings();
     logWindow->close();
     event->accept();
 }
 
-void MainWindow::newScan()
-{
+void MainWindow::newScan() {
     std::vector<std::string> scanTargets;
     Utils::getMountPoints(scanTargets);
-    if(scanTargets.empty())
+    if (scanTargets.empty())
         return;
 
 
@@ -173,50 +162,43 @@ void MainWindow::newScan()
     auto titleAction = menu.addAction("Choose scan target:");
     titleAction->setEnabled(false);
     menu.addSeparator();
-    for(const auto& target : scanTargets)
-    {
+    for (const auto &target : scanTargets) {
         auto action = new QAction(target.c_str(), this);
-        connect(action, &QAction::triggered, this, [target, this]()
-        {
+        connect(action, &QAction::triggered, this, [target, this]() {
             startScan(target);
         });
         menu.addAction(action);
     }
     auto browseAction = new QAction("Browse...", this);
-    connect(browseAction, &QAction::triggered, this, [this]()
-    {
+    connect(browseAction, &QAction::triggered, this, [this]() {
         auto path = UtilsGui::select_folder("Choose a directory to scan");
-        if(!path.empty())
-        {
-            if(path.back() != PlatformUtils::filePathSeparator)
+        if (!path.empty()) {
+            if (path.back() != PlatformUtils::filePathSeparator)
                 path.push_back(PlatformUtils::filePathSeparator);
             startScan(path);
         }
     });
     menu.addAction(browseAction);
 
-    menu.exec(QCursor::pos()+QPoint(10,10));
+    menu.exec(QCursor::pos() + QPoint(10, 10));
 }
 
-void MainWindow::startScan(const std::string& path)
-{
+void MainWindow::startScan(const std::string &path) {
     auto scanner = Utils::make_unique<SpaceScanner>();
 
     auto parts = scanner->get_available_roots();
     isRootScanned = false;
-    for(const auto& part : parts)
-    {
-        if(part == path)
-        {
+    for (const auto &part : parts) {
+        if (part == path) {
             isRootScanned = true;
             break;
         }
     }
 
-    std::cout << "Scan: "<<path<<"\n";
+    std::cout << "Scan: " << path << "\n";
     spaceWidget->clearHistory();
     setEnabledActions(ActionMask::NEW_SCAN);
-    if(isRootScanned)
+    if (isRootScanned)
         enableActions(ActionMask::TOGGLE_FREE | ActionMask::TOGGLE_UNKNOWN);
     else
         disableActions(ActionMask::TOGGLE_FREE | ActionMask::TOGGLE_UNKNOWN);
@@ -225,86 +207,81 @@ void MainWindow::startScan(const std::string& path)
     toggleFreeAct->setChecked(false);
     spaceWidget->setShowUnknownSpace(isRootScanned);
     spaceWidget->setShowFreeSpace(false);
-    if(scanner->scan_dir(path) == ScannerError::NONE)
-    {
+    if (scanner->scan_dir(path) == ScannerError::NONE) {
         scanner->setLogger(logger);
         spaceWidget->setScanner(std::move(scanner));
         watchLimitReported = false;
         onScanUpdate();
-    } else
-    {
+    } else {
         spaceWidget->setScanner(nullptr);
         onScanUpdate();
         UtilsGui::message_box("Can't open path for scanning:", path);
     }
 }
 
-void MainWindow::goBack()
-{
+void MainWindow::goBack() {
     spaceWidget->navigateBack();
     onScanUpdate();
 }
-void MainWindow::goForward()
-{
+
+void MainWindow::goForward() {
     spaceWidget->navigateForward();
     onScanUpdate();
 }
-void MainWindow::goUp()
-{
+
+void MainWindow::goUp() {
     spaceWidget->navigateUp();
     onScanUpdate();
 }
-void MainWindow::goHome()
-{
+
+void MainWindow::goHome() {
     spaceWidget->navigateHome();
     onScanUpdate();
 }
-void MainWindow::togglePause()
-{
+
+void MainWindow::togglePause() {
     spaceWidget->setPause(pauseAct->isChecked());
     onScanUpdate();
 }
-void MainWindow::refreshView()
-{
+
+void MainWindow::refreshView() {
     disableActions(ActionMask::REFRESH);
     spaceWidget->rescanCurrentView();
     onScanUpdate();
 }
-void MainWindow::lessDetail()
-{
+
+void MainWindow::lessDetail() {
     spaceWidget->decreaseDetail();
     updateAvailableActions();
 }
-void MainWindow::moreDetail()
-{
+
+void MainWindow::moreDetail() {
     spaceWidget->increaseDetail();
     updateAvailableActions();
 }
-void MainWindow::toggleFree()
-{
+
+void MainWindow::toggleFree() {
     spaceWidget->setShowFreeSpace(toggleFreeAct->isChecked());
     updateStatusView();
 }
-void MainWindow::toggleUnknown()
-{
+
+void MainWindow::toggleUnknown() {
     spaceWidget->setShowUnknownSpace(toggleUnknownAct->isChecked());
     updateStatusView();
 }
-void MainWindow::switchTheme()
-{
+
+void MainWindow::switchTheme() {
     setTheme(!customPalette.isDark(), true);
     QSettings settings;
     settings.setValue(SETTINGS_THEME, customPalette.isDark());
 }
 
-void MainWindow::showLog()
-{
+void MainWindow::showLog() {
     logWindow->show();
     updateLogIcon(false);
 }
 
-void MainWindow::setTheme(bool isDark, bool updateIcons_)
-{
+void MainWindow::setTheme(bool isDark, bool updateIcons_) {
     customPalette.setTheme(isDark ? CustomPalette::Theme::DARK : CustomPalette::Theme::LIGHT);
 
     QApplication::setPalette(customPalette.getPalette());
@@ -312,121 +289,111 @@ void MainWindow::setTheme(bool isDark, bool updateIcons_)
     spaceWidget->setCustomPalette(customPalette);
     statusView->setCustomPalette(customPalette);
 
-    if(updateIcons_)
+    if (updateIcons_)
         updateIcons();
 }
 
-void MainWindow::updateIcons()
-{
+void MainWindow::updateIcons() {
     using namespace ResourceBuilder;
-    std::vector<std::pair<ResId, QAction*>> iconPairs={
-            std::make_pair(ResId::__ICONS_SVG_NEW_SCAN_SVG,newAct.get()),
-            std::make_pair(ResId::__ICONS_SVG_PAUSE_SVG,pauseAct.get()),
-            std::make_pair(ResId::__ICONS_SVG_REFRESH_SVG,rescanAct.get()),
-            std::make_pair(ResId::__ICONS_SVG_ARROW_BACK_SVG,backAct.get()),
-            std::make_pair(ResId::__ICONS_SVG_ARROW_FORWARD_SVG,forwardAct.get()),
-            std::make_pair(ResId::__ICONS_SVG_FOLDER_NAVIGATE_UP_SVG,upAct.get()),
-            std::make_pair(ResId::__ICONS_SVG_HOME_SVG,homeAct.get()),
-            std::make_pair(ResId::__ICONS_SVG_ZOOM_OUT_SVG,lessDetailAct.get()),
-            std::make_pair(ResId::__ICONS_SVG_ZOOM_IN_SVG,moreDetailAct.get()),
-            std::make_pair(ResId::__ICONS_SVG_SPACE_FREE_SVG,toggleFreeAct.get()),
-            std::make_pair(ResId::__ICONS_SVG_SPACE_UNKNOWN_SVG,toggleUnknownAct.get()),
-            std::make_pair(ResId::__ICONS_SVG_SMOOTH_MODE_SVG,themeAct.get()),
+    std::vector<std::pair<ResId, QAction *>> iconPairs = {
+            std::make_pair(ResId::__ICONS_SVG_NEW_SCAN_SVG, newAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_PAUSE_SVG, pauseAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_REFRESH_SVG, rescanAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_ARROW_BACK_SVG, backAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_ARROW_FORWARD_SVG, forwardAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_FOLDER_NAVIGATE_UP_SVG, upAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_HOME_SVG, homeAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_ZOOM_OUT_SVG, lessDetailAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_ZOOM_IN_SVG, moreDetailAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_SPACE_FREE_SVG, toggleFreeAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_SPACE_UNKNOWN_SVG, toggleUnknownAct.get()),
+            std::make_pair(ResId::__ICONS_SVG_SMOOTH_MODE_SVG, themeAct.get()),
     };
-    for(auto& pair : iconPairs)
-    {
-        if(pair.second)
-        {
+    for (auto &pair : iconPairs) {
+        if (pair.second) {
             auto icon = customPalette.createIcon(pair.first);
             //FIXME calling QAction::setIcon() seems to not releasing previous icon which leads to memory leak
             pair.second->setIcon(icon);
         }
     }
-    if(logAct->property(LOG_ICON_STATE).toBool())
+    if (logAct->property(LOG_ICON_STATE).toBool())
         logAct->setIcon(customPalette.createIcon(ResId::__ICONS_SVG_NOTIFY_NEW_SVG));
     else
         logAct->setIcon(customPalette.createIcon(ResId::__ICONS_SVG_NOTIFY_SVG));
 }
 
-void MainWindow::updateLogIcon(bool hasNew)
-{
-    if(!logAct)
+void MainWindow::updateLogIcon(bool hasNew) {
+    if (!logAct)
         return;
     using namespace ResourceBuilder;
     auto v = logAct->property(LOG_ICON_STATE);
-    if(v.toBool() == hasNew)
+    if (v.toBool() == hasNew)
         return;
 
-    if(hasNew)
+    if (hasNew)
         logAct->setIcon(customPalette.createIcon(ResId::__ICONS_SVG_NOTIFY_NEW_SVG));
     else
         logAct->setIcon(customPalette.createIcon(ResId::__ICONS_SVG_NOTIFY_SVG));
     logAct->setProperty(LOG_ICON_STATE, hasNew);
 }
 
-void MainWindow::about()
-{
+void MainWindow::about() {
     QMessageBox::about(this, tr("About Space Display"),
                        tr("<b>Space Display</b> will help you to scan "
                           "your storage and determine what files use space"));
 }
 
 
-void MainWindow::updateAvailableActions()
-{
-    if(spaceWidget->canNavigateBack())
+void MainWindow::updateAvailableActions() {
+    if (spaceWidget->canNavigateBack())
         enableActions(ActionMask::BACK);
     else
         disableActions(ActionMask::BACK);
 
-    if(spaceWidget->canNavigateForward())
+    if (spaceWidget->canNavigateForward())
         enableActions(ActionMask::FORWARD);
     else
         disableActions(ActionMask::FORWARD);
 
 
-    if(spaceWidget->canIncreaseDetail())
+    if (spaceWidget->canIncreaseDetail())
         enableActions(ActionMask::MORE_DETAIL);
     else
         disableActions(ActionMask::MORE_DETAIL);
 
-    if(spaceWidget->canDecreaseDetail())
+    if (spaceWidget->canDecreaseDetail())
         enableActions(ActionMask::LESS_DETAIL);
     else
         disableActions(ActionMask::LESS_DETAIL);
 
-    if(spaceWidget->canTogglePause())
+    if (spaceWidget->canTogglePause())
         enableActions(ActionMask::PAUSE);
     else
         disableActions(ActionMask::PAUSE);
 
     pauseAct->setChecked(spaceWidget->isPaused());
 
-    if(spaceWidget->canRefresh())
+    if (spaceWidget->canRefresh())
         enableActions(ActionMask::REFRESH);
     else
         disableActions(ActionMask::REFRESH);
 
-    if(spaceWidget->isAtRoot())
-    {
+    if (spaceWidget->isAtRoot()) {
         disableActions(ActionMask::HOME | ActionMask::NAVIGATE_UP);
-        if(isRootScanned)
+        if (isRootScanned)
             enableActions(ActionMask::TOGGLE_FREE | ActionMask::TOGGLE_UNKNOWN);
         else
             disableActions(ActionMask::TOGGLE_FREE | ActionMask::TOGGLE_UNKNOWN);
 
-    }
-    else
-    {
+    } else {
         enableActions(ActionMask::HOME | ActionMask::NAVIGATE_UP);
 
         disableActions(ActionMask::TOGGLE_FREE | ActionMask::TOGGLE_UNKNOWN);
     }
 }
 
-void MainWindow::setEnabledActions(ActionMask actions)
-{
-    enabledActions=actions;
+void MainWindow::setEnabledActions(ActionMask actions) {
+    enabledActions = actions;
     newAct->setEnabled(!!(enabledActions & ActionMask::NEW_SCAN));
     backAct->setEnabled(!!(enabledActions & ActionMask::BACK));
     forwardAct->setEnabled(!!(enabledActions & ActionMask::FORWARD));
@@ -440,18 +407,15 @@ void MainWindow::setEnabledActions(ActionMask actions)
     toggleUnknownAct->setEnabled(!!(enabledActions & ActionMask::TOGGLE_UNKNOWN));
 }
 
-void MainWindow::enableActions(ActionMask actions)
-{
+void MainWindow::enableActions(ActionMask actions) {
     setEnabledActions(enabledActions | actions);
 }
 
-void MainWindow::disableActions(ActionMask actions)
-{
+void MainWindow::disableActions(ActionMask actions) {
     setEnabledActions(enabledActions & (~actions));
 }
 
-void MainWindow::createActions()
-{
+void MainWindow::createActions() {
     //create all actions first
 
     auto exitAct = new QAction("E&xit", this);
@@ -580,24 +544,18 @@ void MainWindow::createActions()
 //    connect(textEdit, &QPlainTextEdit::copyAvailable, cutAct, &QAction::setEnabled);
 }
 
-void MainWindow::createStatusBar()
-{
+void MainWindow::createStatusBar() {
     statusBar()->showMessage("");
 }
 
-void MainWindow::wheelEvent(QWheelEvent *event)
-{
+void MainWindow::wheelEvent(QWheelEvent *event) {
     bool isWidgetHovered = spaceWidget->rect().contains(spaceWidget->mapFromGlobal(event->globalPos()));
-    if(isWidgetHovered)
-    {
-        if(event->delta()>0 && spaceWidget->canIncreaseDetail())
-        {
+    if (isWidgetHovered) {
+        if (event->delta() > 0 && spaceWidget->canIncreaseDetail()) {
             moreDetail();
             event->accept();
             return;
-        }
-        else if(event->delta()<0 && spaceWidget->canDecreaseDetail())
-        {
+        } else if (event->delta() < 0 && spaceWidget->canDecreaseDetail()) {
             lessDetail();
             event->accept();
             return;
@@ -607,10 +565,8 @@ void MainWindow::wheelEvent(QWheelEvent *event)
     QWidget::wheelEvent(event);
 }
 
-void MainWindow::mouseReleaseEvent(QMouseEvent *event)
-{
-    switch (event->button())
-    {
+void MainWindow::mouseReleaseEvent(QMouseEvent *event) {
+    switch (event->button()) {
         case Qt::BackButton:
             goBack();
             break;
@@ -620,8 +576,7 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
         default:
             break;
     }
-    if(event->button() == Qt::RightButton)
-    {
+    if (event->button() == Qt::RightButton) {
 //        bool isWidgetHovered = spaceWidget->rect().contains(spaceWidget->mapFromGlobal(event->globalPos()));
 //        if(isWidgetHovered)
 //        {
@@ -636,12 +591,10 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
     QWidget::mouseReleaseEvent(event);
 }
 
-void MainWindow::readSettings()
-{
+void MainWindow::readSettings() {
     QSettings settings;
     const QByteArray geometry = settings.value(SETTINGS_GEOMETRY, QByteArray()).toByteArray();
-    if (geometry.isEmpty())
-    {
+    if (geometry.isEmpty()) {
         const QRect availableGeometry = QApplication::desktop()->availableGeometry(this);
         resize(availableGeometry.width() / 3, availableGeometry.height() / 2);
         move((availableGeometry.width() - width()) / 2,
@@ -652,14 +605,12 @@ void MainWindow::readSettings()
     setTheme(settings.value(SETTINGS_THEME, false).toBool(), true);
 }
 
-void MainWindow::writeSettings()
-{
+void MainWindow::writeSettings() {
     QSettings settings;
     settings.setValue(SETTINGS_GEOMETRY, saveGeometry());
     settings.setValue(SETTINGS_THEME, customPalette.isDark());
 }
 
-void MainWindow::mouseMoveEvent(QMouseEvent *event)
-{
+void MainWindow::mouseMoveEvent(QMouseEvent *event) {
     QWidget::mouseMoveEvent(event);
 }
