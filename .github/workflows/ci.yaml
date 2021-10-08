@@ -35,7 +35,7 @@ jobs:
         run: cmake --build . --config Release
 
       - name: Copy necessary dlls
-        working-directory: ${{github.workspace}}/build
+        working-directory: ${{github.workspace}}/build/app-gui/Release
         run: |
           cp ${{env.Qt5_Dir}}/bin/Qt5Core.dll Qt5Core.dll
           cp ${{env.Qt5_Dir}}/bin/Qt5Gui.dll Qt5Gui.dll
