@@ -1,5 +1,6 @@
 
 #include "spacescanner.h"
+#include "FileIterator.h"
 #include "fileentry.h"
 #include "filepath.h"
 #include "filedb.h"
@@ -147,15 +148,15 @@ void SpaceScanner::scanChildrenAt(const FilePath &path,
     auto pathStr = path.getPath();
 
     //TODO add check if iterator was constructed and we were able to open path
-    for (FileIterator it(pathStr); it.is_valid(); ++it) {
-        bool doScan = it.isDir;
+    for (auto it = FileIterator::create(pathStr); it->isValid(); ++(*it)) {
+        bool doScan = it->isDir();
         std::unique_ptr<FilePath> entryPath;
         // this section is important for linux since not any path should be scanned (e.g. /proc or /sys)
-        if (it.isDir && scannerStatus != ScannerStatus::STOPPING) {
+        if (doScan && scannerStatus != ScannerStatus::STOPPING) {
             std::string newPath = pathStr;
             if (newPath.back() != PlatformUtils::filePathSeparator)
                 newPath.push_back(PlatformUtils::filePathSeparator);
-            newPath.append(it.name);
+            newPath.append(it->getName());
             if (newPath.back() != PlatformUtils::filePathSeparator)
                 newPath.push_back(PlatformUtils::filePathSeparator);
             if (Utils::in_array(newPath, availableRoots) || Utils::in_array(newPath, excludedMounts)) {
@@ -166,10 +167,10 @@ void SpaceScanner::scanChildrenAt(const FilePath &path,
                 }
             }
         }
-        auto fe = Utils::make_unique<FileEntry>(it.name, it.isDir, it.size);
+        auto fe = Utils::make_unique<FileEntry>(it->getName(), it->isDir(), it->getSize());
         if (doScan && newPaths) {
             entryPath = Utils::make_unique<FilePath>(path);
-            entryPath->addDir(it.name, fe->getNameCrc());
+            entryPath->addDir(it->getName(), fe->getNameCrc());
             //TODO it would be faster to save all adding for later and then just check if
             // parent path exist in entry (or any of its child paths)
             // if it is not (and most of the times this will be true), we can just push all
