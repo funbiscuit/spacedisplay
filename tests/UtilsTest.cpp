@@ -1,8 +1,6 @@
-
-#include <catch.hpp>
-
 #include "utils.h"
 
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("Utility tests", "[utils]")
 {

@@ -1,11 +1,11 @@
-#include <catch.hpp>
-
 #include "filedb.h"
 #include "filepath.h"
 #include "fileentry.h"
 #include "utils.h"
 
 #include <cstring>
+
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("FileDB construction", "[filedb]")
 {
@@ -201,7 +201,9 @@ TEST_CASE("FileDB modification", "[filedb]")
             path.addFile("file1");
             oldEntry = db.findEntry(path);
             REQUIRE(oldEntry == nullptr);
-        }SECTION("Update dirs")
+        }
+
+        SECTION("Update dirs")
         {
             path.goUp();//dir1
             path.goUp();//root

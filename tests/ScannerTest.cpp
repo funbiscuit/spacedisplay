@@ -1,6 +1,3 @@
-
-#include <catch.hpp>
-
 #include "spacescanner.h"
 #include "filepath.h"
 #include "filedb.h"
@@ -8,6 +5,8 @@
 #include "DirHelper.h"
 
 #include <iostream>
+
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("Scanner tests", "[scanner]")
 {

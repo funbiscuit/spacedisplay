@@ -1,9 +1,7 @@
-
-#include <catch.hpp>
-
 #include "filepath.h"
 #include "platformutils.h"
 
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("Filepath construction", "[filepath]")
 {
@@ -15,14 +13,18 @@ TEST_CASE("Filepath construction", "[filepath]")
         SECTION("Arguments check")
         {
             REQUIRE_THROWS_AS(FilePath(""), std::invalid_argument);
-        }SECTION("Root with slash")
+        }
+
+        SECTION("Root with slash")
         {
             FilePath path(root);
             REQUIRE(path.getRoot() == root);
             REQUIRE(path.getPath() == root);
             REQUIRE(path.isDir());
             REQUIRE(!path.canGoUp());
-        }SECTION("Root without slash")
+        }
+
+        SECTION("Root without slash")
         {
             auto root2 = root;
             root2.pop_back();
@@ -32,7 +34,9 @@ TEST_CASE("Filepath construction", "[filepath]")
             REQUIRE(path.isDir());
             REQUIRE(!path.canGoUp());
         }
-    }SECTION("Creating from path and root")
+    }
+
+    SECTION("Creating from path and root")
     {
         SECTION("Arguments check")
         {
@@ -95,7 +99,9 @@ TEST_CASE("Filepath operations", "[filepath]")
             SECTION("Empty dir")
             {
                 REQUIRE_THROWS_AS(path.addDir(""), std::invalid_argument);
-            }SECTION("Non-empty dir")
+            }
+
+            SECTION("Non-empty dir")
             {
                 newPath.append("some dir");
                 REQUIRE_NOTHROW(path.addDir("some dir"));
@@ -107,10 +113,14 @@ TEST_CASE("Filepath operations", "[filepath]")
                 REQUIRE(path.getPath(true) == newPath);
                 REQUIRE(path.goUp());
                 REQUIRE(!path.canGoUp());
-            }SECTION("Empty file")
+            }
+
+            SECTION("Empty file")
             {
                 REQUIRE_THROWS_AS(path.addFile(""), std::invalid_argument);
-            }SECTION("Non-empty file")
+            }
+
+            SECTION("Non-empty file")
             {
                 newPath.append("some file");
                 REQUIRE_NOTHROW(path.addFile("some file"));
@@ -133,7 +143,9 @@ TEST_CASE("Filepath operations", "[filepath]")
             SECTION("Dir")
             {
                 REQUIRE_THROWS_AS(path.addDir("test"), std::invalid_argument);
-            }SECTION("File")
+            }
+
+            SECTION("File")
             {
                 REQUIRE_THROWS_AS(path.addFile("test"), std::invalid_argument);
             }
@@ -157,7 +169,9 @@ TEST_CASE("Filepath operations", "[filepath]")
         path.addFile("test");
         // path to dir/file with the same name has the same crc
         REQUIRE(path.getPathCrc() == newPath.getPathCrc());
-    }SECTION("Path comparison") {
+    }
+
+    SECTION("Path comparison") {
         FilePath newPath = path;
 
         SECTION("Equal paths")
@@ -172,18 +186,24 @@ TEST_CASE("Filepath operations", "[filepath]")
             path.addFile("test_file");
             REQUIRE(path.compareTo(newPath) == FilePath::CompareResult::EQUAL);
             REQUIRE(newPath.compareTo(path) == FilePath::CompareResult::EQUAL);
-        }SECTION("Parent with child")
+        }
+
+        SECTION("Parent with child")
         {
             newPath.addDir("test");
             REQUIRE(path.compareTo(newPath) == FilePath::CompareResult::PARENT);
             REQUIRE(newPath.compareTo(path) == FilePath::CompareResult::CHILD);
-        }SECTION("Dir and file with equal names")
+        }
+
+        SECTION("Dir and file with equal names")
         {
             newPath.addDir("test");
             path.addFile("test");
             REQUIRE(path.compareTo(newPath) == FilePath::CompareResult::DIFFERENT);
             REQUIRE(newPath.compareTo(path) == FilePath::CompareResult::DIFFERENT);
-        }SECTION("Different paths")
+        }
+
+        SECTION("Different paths")
         {
             newPath.addDir("test");
             newPath.addFile("test");
@@ -195,7 +215,9 @@ TEST_CASE("Filepath operations", "[filepath]")
             REQUIRE(path.compareTo(newPath) == FilePath::CompareResult::DIFFERENT);
             REQUIRE(newPath.compareTo(path) == FilePath::CompareResult::DIFFERENT);
         }
-    }SECTION("Make relative path") {
+    }
+
+    SECTION("Make relative path") {
         FilePath rootPath("D:\\");
         SECTION("Using correct root")
         {
@@ -212,7 +234,9 @@ TEST_CASE("Filepath operations", "[filepath]")
             REQUIRE(newPath.getPath() == relPathStr);
             REQUIRE(newPath.goUp());
             REQUIRE(newPath.getPath(false) == "Windows");
-        }SECTION("Using different root") {
+        }
+
+        SECTION("Using different root") {
             FilePath newPath("C:\\");
             newPath.addDir("Windows");
             newPath.addDir("System32");

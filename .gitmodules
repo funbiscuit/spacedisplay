@@ -7,3 +7,6 @@
 [submodule "deps/crc"]
 	path = deps/crc
 	url = https://github.com/panzi/CRC-and-checksum-functions.git
+[submodule "deps/catch2"]
+	path = deps/catch2
+	url = https://github.com/catchorg/Catch2.git

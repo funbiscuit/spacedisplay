@@ -1,8 +1,6 @@
-
-#include <catch.hpp>
-
 #include "logger.h"
 
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("Logger tests", "[logger]")
 {
@@ -24,7 +22,9 @@ TEST_CASE("Logger tests", "[logger]")
 
         history[0] = "[LOG] test entry";
         history[1] = "[LOG] new entry";
-    }SECTION("Add logs with custom tag")
+    }
+
+    SECTION("Add logs with custom tag")
     {
         logger.log("test entry", "SCAN");
         logger.log("new entry", "WATCH");

@@ -1,16 +1,18 @@
-#include <catch.hpp>
-#include <iostream>
-
 #include "fileentry.h"
 #include "utils.h"
 
+#include <random>
+
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("FileEntry construction", "[fileentry]")
 {
     SECTION("From empty name")
     {
         REQUIRE_THROWS(FileEntry("", false, 150));
-    }SECTION("From non-empty name")
+    }
+
+    SECTION("From non-empty name")
     {
         std::string entryName = "TestEntry";
         int entrySize = 150;
@@ -104,7 +106,9 @@ TEST_CASE("FileEntry simple tree construction", "[fileentry]")
             root.removePendingDelete(deleted);
             REQUIRE(deleted.size() == files);
             REQUIRE(root.getSize() == 0);
-        }SECTION("Remove half of children")
+        }
+
+        SECTION("Remove half of children")
         {
             int files, dirs;
             root.markChildrenPendingDelete(files, dirs);
@@ -126,7 +130,9 @@ TEST_CASE("FileEntry simple tree construction", "[fileentry]")
             root.removePendingDelete(deleted);
             REQUIRE(deleted.size() == 150);
             REQUIRE(root.getSize() == newSize);
-        }SECTION("Remove one third of children")
+        }
+
+        SECTION("Remove one third of children")
         {
             int files, dirs;
             root.markChildrenPendingDelete(files, dirs);
