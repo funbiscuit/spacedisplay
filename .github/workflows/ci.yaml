@@ -122,6 +122,30 @@ jobs:
         working-directory: artifacts
         run: ls -R
 
+      - name: Pack windows x64
+        working-directory: artifacts/spacedisplay-msvc19-x64
+        run: zip -r SpaceDisplay-msvc19-x64.zip *
+
+      - name: Pack windows x86
+        working-directory: artifacts/spacedisplay-msvc19-Win32
+        run: zip -r SpaceDisplay-msvc19-Win32.zip *
+
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: artifacts/spacedisplay-msvc19-Win32/SpaceDisplay-msvc19-Win32.zip
+          tag: latest
+          asset_name: SpaceDisplay-msvc19-Win32.zip
+          overwrite: true
+
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: artifacts/spacedisplay-msvc19-x64/SpaceDisplay-msvc19-x64.zip
+          tag: latest
+          asset_name: SpaceDisplay-msvc19-x64.zip
+          overwrite: true
+
       - uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
