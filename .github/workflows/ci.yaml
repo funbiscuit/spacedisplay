@@ -82,11 +82,11 @@ jobs:
       - name: Install tools
         run: ./ci/linux-install.sh
 
-      - name: Build
-        run: ./ci/linux-build.sh
-
       - name: Run coverage
         run: ./ci/linux-coverage.sh
+
+      - name: Build
+        run: ./ci/linux-build.sh
 
       - name: Run tests
         working-directory: ${{github.workspace}}/build/tests
@@ -106,5 +106,5 @@ jobs:
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v2
         with:
-          name: coverage.xml
+          name: coverage
           path: ${{ github.workspace }}/build_cov/coverage_html
