@@ -4,6 +4,8 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  release:
+    types: [ created ]
 
 jobs:
   build-win:
@@ -109,15 +111,15 @@ jobs:
           name: coverage
           path: ${{ github.workspace }}/build_cov/coverage_html
 
-  add-latest-release:
+  add-release-assets:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: github.event_name == 'release'
     needs: [ build-win, build-linux ]
-    name: Adding latest release
     steps:
       - uses: actions/download-artifact@v2
         with:
           path: artifacts
+
       - name: Display structure of downloaded files
         working-directory: artifacts
         run: ls -R
@@ -134,7 +136,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: artifacts/spacedisplay-msvc19-Win32/SpaceDisplay-msvc19-Win32.zip
-          tag: latest
+          tag: ${{ github.ref }}
           asset_name: SpaceDisplay-msvc19-Win32.zip
           overwrite: true
 
@@ -142,7 +144,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: artifacts/spacedisplay-msvc19-x64/SpaceDisplay-msvc19-x64.zip
-          tag: latest
+          tag: ${{ github.ref }}
           asset_name: SpaceDisplay-msvc19-x64.zip
           overwrite: true
 
@@ -150,6 +152,6 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: artifacts/SpaceDisplay-x86_64.AppImage/SpaceDisplay-x86_64.AppImage
-          tag: latest
+          tag: ${{ github.ref }}
           asset_name: SpaceDisplay-x86_64.AppImage
           overwrite: true
