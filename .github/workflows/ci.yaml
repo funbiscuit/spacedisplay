@@ -80,10 +80,13 @@ jobs:
           submodules: 'true'
 
       - name: Install tools
-        run: ./ci/appveyor-install.sh
+        run: ./ci/linux-install.sh
 
       - name: Build
-        run: ./ci/appveyor-build.sh
+        run: ./ci/linux-build.sh
+
+      - name: Run coverage
+        run: ./ci/linux-coverage.sh
 
       - name: Run tests
         working-directory: ${{github.workspace}}/build/tests
@@ -98,10 +101,10 @@ jobs:
       - name: Upload coverage to codecov
         uses: codecov/codecov-action@v2
         with:
-          files: ${{github.workspace}}/build/coverage_xml.xml
+          files: ${{ github.workspace }}/build_cov/coverage_xml.xml
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v2
         with:
           name: coverage.xml
-          path: ${{github.workspace}}/build/coverage_xml.xml
+          path: ${{ github.workspace }}/build_cov/coverage_html
