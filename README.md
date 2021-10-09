@@ -1,7 +1,6 @@
 Space Display
 -------------
-[![Build status](https://ci.appveyor.com/api/projects/status/3lr8534gpwa3u46n/branch/master?svg=true)](https://ci.appveyor.com/project/funbiscuit/spacedisplay/branch/master)
-[![Build Status](https://travis-ci.org/funbiscuit/spacedisplay.svg?branch=master)](https://travis-ci.org/funbiscuit/spacedisplay)
+[![build](https://github.com/funbiscuit/spacedisplay/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/funbiscuit/spacedisplay/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/funbiscuit/spacedisplay/branch/master/graph/badge.svg)](https://codecov.io/gh/funbiscuit/spacedisplay)
 
 Almost cross-platform (no macOS support yet) way to analyze used disk space.
