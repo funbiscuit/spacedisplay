@@ -6,6 +6,7 @@ target_include_directories(spacedisplay_test PRIVATE
         )
 
 target_sources(spacedisplay_test PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/FileIteratorTest.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/FileEntryTest.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/FileDBTest.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/FilePathTest.cpp

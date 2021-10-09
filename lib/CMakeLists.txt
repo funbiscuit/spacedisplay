@@ -25,9 +25,11 @@ target_link_libraries(spacedisplay_lib PRIVATE
         Threads::Threads CRC::CRC)
 
 if (WIN32)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/WinFileIterator.cpp)
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/platformutils-win.cpp)
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/spacewatcher-win.cpp)
 else ()
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/LinuxFileIterator.cpp)
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/platformutils-nix.cpp)
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/spacewatcher-linux.cpp)
 endif ()
