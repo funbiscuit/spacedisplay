@@ -1,4 +1,4 @@
-name: Build
+name: Release
 on:
   push:
     tags:
@@ -14,10 +14,9 @@ jobs:
         id: version
 
       - name: Release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         with:
           token: ${{ secrets.RELEASE_ACCESS_TOKEN }}
+          name: SpaceDisplay ${{ steps.version.outputs.version }}
           draft: false
           prerelease: true
-          release_name: SpaceDisplay ${{ steps.version.outputs.version }}
-          tag_name: ${{ github.ref }}
