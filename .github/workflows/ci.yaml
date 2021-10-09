@@ -108,3 +108,24 @@ jobs:
         with:
           name: coverage
           path: ${{ github.workspace }}/build_cov/coverage_html
+
+  add-latest-release:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    needs: [ build-win, build-linux ]
+    name: Adding latest release
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+      - name: Display structure of downloaded files
+        working-directory: artifacts
+        run: ls -R
+
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: artifacts/SpaceDisplay-x86_64.AppImage/SpaceDisplay-x86_64.AppImage
+          tag: latest
+          asset_name: SpaceDisplay-x86_64.AppImage
+          overwrite: true
