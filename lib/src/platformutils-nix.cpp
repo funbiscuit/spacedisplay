@@ -1,6 +1,7 @@
 #include "platformutils.h"
 #include "utils.h"
 #include "filepath.h"
+#include "FileIterator.h"
 
 #include <fstream>
 #include <regex>
@@ -32,95 +33,6 @@ namespace PlatformUtils {
 
     FileManager get_default_manager();
 }
-
-
-class FileIteratorPlatform {
-public:
-    // can't copy
-    FileIteratorPlatform(const FileIterator &) = delete;
-
-    FileIteratorPlatform &operator=(const FileIterator &) = delete;
-
-    ~FileIteratorPlatform() {
-        if (dirp != nullptr)
-            closedir(dirp);
-    }
-
-    explicit FileIteratorPlatform(const std::string &path_) :
-            path(path_), isValid(false), name(""), isDir(false), size(0), dirp(nullptr) {
-        dirp = opendir(path.c_str());
-        get_next_file_data();
-    }
-
-    bool isValid;
-    std::string name;
-    bool isDir;
-    int64_t size;
-
-    FileIteratorPlatform &operator++() {
-        get_next_file_data();
-        return *this;
-    }
-
-private:
-
-    DIR *dirp;
-    const std::string &path;
-
-    /**
-     * Gets file data for the next file returned by handle
-     * If handle is new (just returned by opendir) that filedata for the first file will be read
-     */
-    void get_next_file_data() {
-        isValid = false;
-        if (dirp == nullptr)
-            return;
-
-        struct stat file_stat{};
-        struct dirent *dp;
-
-        while ((dp = readdir(dirp)) != nullptr) {
-            name = dp->d_name;
-            if (name.empty() || name == "." || name == "..")
-                continue;
-            break;
-        }
-
-        if (dp != nullptr) {
-            // to get file info we need full path
-            std::string child = path;
-            child.push_back('/');
-            child.append(name);
-
-            if (lstat(child.c_str(), &file_stat) == 0) {
-                isValid = true;
-                isDir = S_ISDIR(file_stat.st_mode);
-                size = file_stat.st_size;
-            }
-        }
-    }
-};
-
-FileIterator::FileIterator(const std::string &path) {
-    pFileIterator = Utils::make_unique<FileIteratorPlatform>(path);
-    update();
-}
-
-FileIterator::~FileIterator() = default;
-
-FileIterator &FileIterator::operator++() {
-    ++(*pFileIterator);
-    update();
-    return *this;
-}
-
-void FileIterator::update() {
-    isValid = pFileIterator->isValid;
-    name = pFileIterator->name;
-    isDir = pFileIterator->isDir;
-    size = pFileIterator->size;
-}
-
 
 bool PlatformUtils::can_scan_dir(const std::string &path) {
     struct stat file_stat{};
@@ -264,9 +176,9 @@ PlatformUtils::FileManager PlatformUtils::get_default_manager() {
 
 
     for (auto &loc : desktopLocations) {
-        for (FileIterator it(loc); it.is_valid(); ++it) {
-            if (it.name == fileManager) {
-                auto path = Utils::strFormat("%s/%s", loc.c_str(), it.name.c_str());
+        for (auto it = FileIterator::create(loc); it->isValid(); ++(*it)) {
+            if (it->getName() == fileManager) {
+                auto path = Utils::strFormat("%s/%s", loc.c_str(), it->getName().c_str());
                 return parse_fm_desktop_file(path);
             }
         }
@@ -310,12 +222,12 @@ bool PlatformUtils::deleteDir(const std::string &path) {
     try {
         FilePath fpath(path);
 
-        for (FileIterator it(path); it.is_valid(); ++it) {
-            if (it.isDir) {
-                fpath.addDir(it.name);
+        for (auto it = FileIterator::create(path); it->isValid(); ++(*it)) {
+            if (it->isDir()) {
+                fpath.addDir(it->getName());
                 deleted &= deleteDir(fpath.getPath());
             } else {
-                fpath.addFile(it.name);
+                fpath.addFile(it->getName());
                 deleted &= unlink(fpath.getPath().c_str()) == 0;
             }
             fpath.goUp();
