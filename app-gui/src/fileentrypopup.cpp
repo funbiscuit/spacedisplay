@@ -8,6 +8,7 @@
 #include "filepath.h"
 #include "utils.h"
 #include "platformutils.h"
+#include "FileManager.h"
 
 FileEntryPopup::FileEntryPopup(QWidget *_parent) : parent(_parent) {
     rescanAct = Utils::make_unique<QAction>("Rescan folder", parent);
@@ -60,11 +61,11 @@ void FileEntryPopup::onProperties() {
 }
 
 void FileEntryPopup::onShow() {
-    PlatformUtils::show_file_in_file_manager(currentEntryPath->getPath().c_str());
+    FileManager::showFile(currentEntryPath->getPath());
 }
 
 void FileEntryPopup::onOpen() {
-    PlatformUtils::open_folder_in_file_manager(currentEntryPath->getPath().c_str());
+    FileManager::openFolder(currentEntryPath->getPath());
 }
 
 void FileEntryPopup::popup(std::unique_ptr<FilePath> path) {
