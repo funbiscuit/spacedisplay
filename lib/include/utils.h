@@ -17,12 +17,6 @@ namespace Utils {
 
     std::string formatSize(int64_t size);
 
-    /**
-     * Returns available mount points (that can be scanned)
-     * @param availableMounts vector containing paths of safe mount points
-     */
-    void getMountPoints(std::vector<std::string> &availableMounts);
-
     //todo we don't need anything from C++14, just make_unique, so use this simple version with C++11
     template<typename T, typename... Args>
     std::unique_ptr<T> make_unique(Args &&... args) {

@@ -153,7 +153,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 
 void MainWindow::newScan() {
     std::vector<std::string> scanTargets;
-    Utils::getMountPoints(scanTargets);
+    scanTargets = PlatformUtils::getAvailableMounts();
     if (scanTargets.empty())
         return;
 

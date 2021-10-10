@@ -10,13 +10,6 @@ extern "C" {
 #include <crc.h>
 }
 
-void Utils::getMountPoints(std::vector<std::string> &availableMounts) {
-    // not a very elegant solution, but it doesn't make sense to write
-    // another function that retrieves only mount points without excluded ones
-    std::vector<std::string> temp;
-    PlatformUtils::get_mount_points(availableMounts, temp);
-}
-
 uint16_t Utils::strCrc16(const std::string &str) {
     return crc16((char *) str.c_str(), (uint16_t) str.length());
 }

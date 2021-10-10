@@ -18,12 +18,20 @@ namespace PlatformUtils {
 
     /**
      * Scan filesystem for available mount points (that can be scanned)
-     * and excluded mount points, that should not be scanned (important for *nix since
-     * we can't scan such mounts as /proc or /sys
-     * @param availableMounts vector containing paths of safe mount points
-     * @param excludedMounts  vector containing paths of mount points that should not be scanned
+     * For example, on windows it will usually include "C:\"
+     * On linux it will usually include "/"
+     * @return vector containing paths of mount points that can be scanned
      */
-    void get_mount_points(std::vector<std::string> &availableMounts, std::vector<std::string> &excludedMounts);
+    std::vector<std::string> getAvailableMounts();
+
+    /**
+     * Scan filesystem for available excluded paths,
+     * that should not be scanned (important for *nix since
+     * we can't scan such paths as /proc or /sys)
+     * On Windows it is empty
+     * @return vector containing paths of excluded paths
+     */
+    std::vector<std::string> getExcludedPaths();
 
     /**
      * Gets total and available space of filesystem mounted at specified path

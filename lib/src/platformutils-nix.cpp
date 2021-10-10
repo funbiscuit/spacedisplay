@@ -25,6 +25,8 @@ namespace PlatformUtils {
         NEMO = 3
     };
 
+    void processMountPoints(const std::function<void(const std::string &path, bool isExcluded)> &consumer);
+
     void system_async(std::string cmd);
 
     std::string exec(const char *cmd);
@@ -34,18 +36,7 @@ namespace PlatformUtils {
     FileManager get_default_manager();
 }
 
-bool PlatformUtils::can_scan_dir(const std::string &path) {
-    struct stat file_stat{};
-    if (lstat(path.c_str(), &file_stat) == 0)
-        return S_ISDIR(file_stat.st_mode);
-    else
-        return false;
-}
-
-void
-PlatformUtils::get_mount_points(std::vector<std::string> &availableMounts, std::vector<std::string> &excludedMounts) {
-    availableMounts.clear();
-    excludedMounts.clear();
+void PlatformUtils::processMountPoints(const std::function<void(const std::string &path, bool isExcluded)> &consumer) {
 
     //TODO add more partitions if supported
     const std::vector<std::string> partitions = {"ext2", "ext3", "ext4", "vfat", "ntfs", "fuseblk"};
@@ -80,15 +71,44 @@ PlatformUtils::get_mount_points(std::vector<std::string> &availableMounts, std::
             mount = regex_replace(mount, std::regex("\\\\040"), " ");
 
             //include closing slash if it isn't there
-            if (mount.back() != PlatformUtils::filePathSeparator)
+            if (mount.back() != PlatformUtils::filePathSeparator) {
                 mount.push_back(PlatformUtils::filePathSeparator);
-            if (Utils::in_array(part, partitions)) {
-                availableMounts.push_back(mount);
-            } else {
-                excludedMounts.push_back(mount);
             }
+            consumer(mount, !Utils::in_array(part, partitions));
         }
     }
+}
+
+bool PlatformUtils::can_scan_dir(const std::string &path) {
+    struct stat file_stat{};
+    if (lstat(path.c_str(), &file_stat) == 0)
+        return S_ISDIR(file_stat.st_mode);
+    else
+        return false;
+}
+
+std::vector<std::string> PlatformUtils::getAvailableMounts() {
+    std::vector<std::string> availableMounts;
+
+    processMountPoints([&availableMounts](const std::string &mount, bool isExcluded) {
+        if (!isExcluded) {
+            availableMounts.push_back(mount);
+        }
+    });
+
+    return availableMounts;
+}
+
+std::vector<std::string> PlatformUtils::getExcludedPaths() {
+    std::vector<std::string> excludedPaths;
+
+    processMountPoints([&excludedPaths](const std::string &mount, bool isExcluded) {
+        if (isExcluded) {
+            excludedPaths.push_back(mount);
+        }
+    });
+
+    return excludedPaths;
 }
 
 bool PlatformUtils::get_mount_space(const std::string &path, uint64_t &totalSpace, uint64_t &availableSpace) {
@@ -175,7 +195,7 @@ PlatformUtils::FileManager PlatformUtils::get_default_manager() {
     std::cout << "Default file manager: " << fileManager << "\n";
 
 
-    for (auto &loc : desktopLocations) {
+    for (auto &loc: desktopLocations) {
         for (auto it = FileIterator::create(loc); it->isValid(); ++(*it)) {
             if (it->getName() == fileManager) {
                 auto path = Utils::strFormat("%s/%s", loc.c_str(), it->getName().c_str());

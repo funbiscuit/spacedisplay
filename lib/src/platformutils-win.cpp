@@ -30,10 +30,8 @@ bool PlatformUtils::can_scan_dir(const std::string &path) {
     return result;
 }
 
-void
-PlatformUtils::get_mount_points(std::vector<std::string> &availableMounts, std::vector<std::string> &excludedMounts) {
-    availableMounts.clear();
-    excludedMounts.clear();  //on windows it is safe to scan any fixed or removable drive
+std::vector<std::string> PlatformUtils::getAvailableMounts() {
+    std::vector<std::string> availableMounts;
 
     auto drivesMask = GetLogicalDrives();
 
@@ -49,6 +47,12 @@ PlatformUtils::get_mount_points(std::vector<std::string> &availableMounts, std::
         }
         drivesMask >>= 1u;
     }
+
+    return availableMounts;
+}
+
+std::vector<std::string> PlatformUtils::getExcludedPaths() {
+    return {};
 }
 
 bool PlatformUtils::get_mount_space(const std::string &path, uint64_t &totalSpace, uint64_t &availableSpace) {

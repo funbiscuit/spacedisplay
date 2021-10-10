@@ -253,9 +253,7 @@ void SpaceScanner::addToQueue(std::unique_ptr<FilePath> path, bool recursiveScan
 }
 
 std::vector<std::string> SpaceScanner::get_available_roots() {
-    PlatformUtils::get_mount_points(availableRoots, excludedMounts);
-
-    return availableRoots;
+    return PlatformUtils::getAvailableMounts();
 }
 
 std::shared_ptr<FileDB> SpaceScanner::getFileDB() {
@@ -378,7 +376,8 @@ ScannerError SpaceScanner::scan_dir(const std::string &path) {
 
     std::lock_guard<std::mutex> lock_mtx(scanMtx);
     //update info about mount points
-    PlatformUtils::get_mount_points(availableRoots, excludedMounts);
+    availableRoots = PlatformUtils::getAvailableMounts();
+    excludedMounts = PlatformUtils::getExcludedPaths();
     // clears database if it was populated and sets new root
 
     try {
@@ -419,7 +418,8 @@ void SpaceScanner::rescan_dir(const FilePath &path) {
 
     scannerStatus = ScannerStatus::SCANNING;
     //update info about mount points
-    PlatformUtils::get_mount_points(availableRoots, excludedMounts);
+    availableRoots = PlatformUtils::getAvailableMounts();
+    excludedMounts = PlatformUtils::getExcludedPaths();
 
     update_disk_space();//disk space might change since last update, so update it again
 
