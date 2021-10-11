@@ -12,6 +12,11 @@ public:
         DIFFERENT,
         EQUAL
     };
+    enum class SlashHandling {
+        REMOVE, // remove slash if present
+        ADD,    // add slash if not present
+        LEAVE   // do nothing
+    };
 
     /**
      * Constructs a path object given a root string
@@ -119,6 +124,15 @@ public:
      */
     bool makeRelativeTo(const FilePath &parentPath);
 
+    /**
+     * Converts all slashes to platform correct ones.
+     * @param path - path to normalize (will be edited in place)
+     * @param slashHandling - what to do with slashes at the end:
+     *                        REMOVE - all slashes at the end are removed (if any)
+     *                        ADD - adds one slash at the end (if there were more then one - removes duplicates)
+     *                        LEAVE - does nothing
+     */
+    static void normalize(std::string &path, SlashHandling slashHandling = SlashHandling::LEAVE);
 private:
 
     /**
@@ -132,14 +146,6 @@ private:
     std::vector<std::string> parts;
 
     std::vector<uint16_t> pathCrcs;
-
-    /**
-     * Converts all slashes to platform correct ones, removes unnecessary slashes.
-     * @param path - path to normalize (will be edited in place)
-     * @param addTrailingSlash - if true and there is no slash at the end - slash will be added
-     *                           if false and there is a slash at the end - it will be removed
-     */
-    static void normalize(std::string &path, bool addTrailingSlash);
 };
 
 

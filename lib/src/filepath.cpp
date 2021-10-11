@@ -11,7 +11,7 @@ FilePath::FilePath(const std::string &root_, uint16_t crc) {
     std::string root = root_;
 
     // replaces all incorrect slashes if any and adds slash at the end if it wasn't there
-    normalize(root, true);
+    normalize(root, SlashHandling::ADD);
 
     parts.clear();
     pathCrcs.clear();
@@ -27,9 +27,10 @@ FilePath::FilePath(const std::string &path, const std::string &root) {
 
     auto newPath = path;
     auto newRoot = root;
-    normalize(newPath, path.back() == PlatformUtils::filePathSeparator ||
-                       path.back() == PlatformUtils::invertedFilePathSeparator);
-    normalize(newRoot, true);
+    bool isDir = path.back() == PlatformUtils::filePathSeparator ||
+            path.back() == PlatformUtils::invertedFilePathSeparator;
+    normalize(newPath, isDir ? SlashHandling::ADD : SlashHandling::REMOVE);
+    normalize(newRoot, SlashHandling::ADD);
 
     if (newPath.rfind(newRoot, 0) != 0)
         throw std::invalid_argument("Provided path doesn't begin with provided root");
@@ -169,12 +170,22 @@ bool FilePath::makeRelativeTo(const FilePath &parentPath) {
     return true;
 }
 
-void FilePath::normalize(std::string &path, bool keepTrailingSlash) {
+void FilePath::normalize(std::string &path, SlashHandling slashHandling) {
     // make all slashes correct for this platform
     std::replace(path.begin(), path.end(), PlatformUtils::invertedFilePathSeparator, PlatformUtils::filePathSeparator);
 
-    if (!keepTrailingSlash && path.back() == PlatformUtils::filePathSeparator)
-        path.pop_back();
-    else if (keepTrailingSlash && path.back() != PlatformUtils::filePathSeparator)
-        path.push_back(PlatformUtils::filePathSeparator);
+    if (slashHandling == SlashHandling::REMOVE) {
+        while (path.size() > 1 && path.back() == PlatformUtils::filePathSeparator) {
+            path.pop_back();
+        }
+    } else if (slashHandling == SlashHandling::ADD) {
+        while (path.size() > 1 &&
+               path.back() == PlatformUtils::filePathSeparator &&
+               path[path.size() - 2] == PlatformUtils::filePathSeparator) {
+            path.pop_back();
+        }
+        if (path.back() != PlatformUtils::filePathSeparator) {
+            path.push_back(PlatformUtils::filePathSeparator);
+        }
+    }
 }

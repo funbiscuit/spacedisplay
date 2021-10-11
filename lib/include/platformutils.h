@@ -43,27 +43,6 @@ namespace PlatformUtils {
     bool get_mount_space(const std::string &path, uint64_t &totalSpace, uint64_t &availableSpace);
 
     /**
-     * Opens folder in default file manager.
-     * Path should have correct slashes for this platform.
-     * On Windows uses explorer
-     * On Linux uses xdg-open to run default file manager
-     * @param folder_path
-     */
-    void open_folder_in_file_manager(const char *folder_path);
-
-    /**
-     * Selects file in default file manager.
-     * Path should have correct slashes for this platform.
-     * On Windows uses explorer
-     * On Linux tries to detect default file manager first.
-     * Can detect Dolphin, Nautilus and Nemo and uses appropriate command to select file.
-     * Thunar doesn't seem to support selecting files.
-     * If file manager was not detected, uses xdg-open to open parent directory (file itself is not selected)
-     * @param file_path
-     */
-    void show_file_in_file_manager(const char *file_path);
-
-    /**
      * Deletes directory and all files inside
      * Provided path should be global path, otherwise it is not thread-safe to call this.
      * Since working directory could change while function is executing.

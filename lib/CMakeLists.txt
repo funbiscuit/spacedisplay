@@ -26,10 +26,12 @@ target_link_libraries(spacedisplay_lib PRIVATE
 
 if (WIN32)
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/WinFileIterator.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/WinFileManager.cpp)
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/platformutils-win.cpp)
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/spacewatcher-win.cpp)
 else ()
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/LinuxFileIterator.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/LinuxFileManager.cpp)
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/platformutils-nix.cpp)
     target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/spacewatcher-linux.cpp)
 endif ()
