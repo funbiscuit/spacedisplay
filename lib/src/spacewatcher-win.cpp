@@ -5,20 +5,28 @@
 
 #include <iostream>
 
+std::unique_ptr<SpaceWatcher> SpaceWatcher::create(const std::string &path) {
+    auto *ptr = new SpaceWatcherWin();
+    if (!ptr->beginWatch(path)) {
+        delete ptr;
+        throw std::runtime_error("Can't start watching " + path);
+    }
+    return std::unique_ptr<SpaceWatcher>(ptr);
+}
+
 SpaceWatcherWin::SpaceWatcherWin() : watchedDir(INVALID_HANDLE_VALUE) {
     watchBuffer = std::unique_ptr<DWORD[]>(new DWORD[watchBufferSize]);
-    startThread();
 }
 
 SpaceWatcherWin::~SpaceWatcherWin() {
-    // endWatch() is virtual so we can't call it in destructor
-    _endWatch();
-    stopThread();
+    if (watchedDir != INVALID_HANDLE_VALUE) {
+        CloseHandle(watchedDir);
+        watchedPath.clear();
+        watchedDir = INVALID_HANDLE_VALUE;
+    }
 }
 
 bool SpaceWatcherWin::beginWatch(const std::string &path) {
-    endWatch();
-
     auto wname = PlatformUtils::str2wstr(path);
     watchedDir = CreateFileW(
             wname.c_str(),
@@ -39,24 +47,8 @@ bool SpaceWatcherWin::beginWatch(const std::string &path) {
     return false;
 }
 
-void SpaceWatcherWin::endWatch() {
-    _endWatch();
-}
-
-void SpaceWatcherWin::_endWatch() {
-    if (watchedDir != INVALID_HANDLE_VALUE) {
-        CloseHandle(watchedDir);
-        watchedPath.clear();
-        watchedDir = INVALID_HANDLE_VALUE;
-    }
-}
-
-bool SpaceWatcherWin::isWatching() const {
-    return watchedDir != INVALID_HANDLE_VALUE;
-}
-
 void SpaceWatcherWin::readEvents() {
-    if (!isWatching())
+    if (watchedDir == INVALID_HANDLE_VALUE)
         return;
 
     DWORD bytesReturned = 0;
@@ -121,7 +113,6 @@ void SpaceWatcherWin::readEvents() {
 
             // returned filename might (or might not) be a short path. we should restore long path
 
-            bool pathConverted = false;
             if (fileEvent->action != FileAction::MODIFIED && fileEvent->action != FileAction::REMOVED) {
                 PlatformUtils::toLongPath(fileEvent->filepath);
             }

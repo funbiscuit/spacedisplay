@@ -32,17 +32,17 @@ public:
         std::string parentpath;
     };
 
-    static std::unique_ptr<SpaceWatcher> getWatcher();
-
-    SpaceWatcher();
+    /**
+     * Create SpaceWatcher instance and start watching specific path
+     * If platform doesn't support recursive watching, only this
+     * directory will be watched. Add more with calls to addDir
+     * @param path
+     * @throws std::runtime_error if failed to start watching provided path
+     * @return
+     */
+    static std::unique_ptr<SpaceWatcher> create(const std::string &path);
 
     virtual ~SpaceWatcher();
-
-    virtual bool beginWatch(const std::string &path) = 0;
-
-    virtual void endWatch() = 0;
-
-    virtual bool isWatching() const = 0;
 
     /**
      * Get a limit for a number of watched directories.
@@ -55,7 +55,7 @@ public:
     /**
      * Get number of directories that are added to watch using addDir();
      * If this watcher doesn't have a limit on watched dirs, this will always
-     * return 1 if watching and 0 if not watching
+     * return 1
      * @return
      */
     int64_t getWatchedDirCount() const;
@@ -81,13 +81,10 @@ public:
     virtual void rmDir(const std::string &path);
 
 protected:
+    SpaceWatcher();
 
     virtual void readEvents() = 0;
 
-    // start and stop thread are called from child classes
-    void startThread();
-
-    void stopThread();
 
     void addEvent(std::unique_ptr<FileEvent> event);
 

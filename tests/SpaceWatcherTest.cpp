@@ -10,12 +10,10 @@
 
 TEST_CASE("SpaceWatcher basic events", "[watcher]")
 {
-    auto watcher = SpaceWatcher::getWatcher();
+    std::unique_ptr<SpaceWatcher> watcher;
 
-    if (!watcher) {
-        std::cout << "SpaceWatcher tests are skipped\n";
-        std::cout << "Platform doesn't support watching for file system changes.\n";
-        return;
+    SECTION("Can't watch not existing path") {
+        REQUIRE_THROWS_AS(SpaceWatcher::create("not existing dir"), std::runtime_error);
     }
 
     //wait for watcher thread to initialize
@@ -26,8 +24,7 @@ TEST_CASE("SpaceWatcher basic events", "[watcher]")
 
     SECTION("Create directory or file")
     {
-        REQUIRE(watcher->beginWatch(root.getPath()));
-        REQUIRE(watcher->isWatching());
+        REQUIRE_NOTHROW(watcher = SpaceWatcher::create(root.getPath()));
         std::this_thread::sleep_for(std::chrono::milliseconds(40));
 
         root.addDir("test");
@@ -68,8 +65,7 @@ TEST_CASE("SpaceWatcher basic events", "[watcher]")
         dh.createDir("test");
         dh.createFile("test/test.txt");
 
-        REQUIRE(watcher->beginWatch(root.getPath()));
-        REQUIRE(watcher->isWatching());
+        REQUIRE_NOTHROW(watcher = SpaceWatcher::create(root.getPath()));
         root.addDir("test");
         watcher->addDir(root.getPath());
         std::this_thread::sleep_for(std::chrono::milliseconds(40));
