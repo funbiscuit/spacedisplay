@@ -1,4 +1,4 @@
-#include "spacewatcher-linux.h"
+#include "LinuxSpaceWatcher.h"
 #include "utils.h"
 
 #include <sys/inotify.h>
@@ -8,7 +8,7 @@
 #include <fstream>
 
 std::unique_ptr<SpaceWatcher> SpaceWatcher::create(const std::string &path) {
-    auto *ptr = new SpaceWatcherLinux();
+    auto *ptr = new LinuxSpaceWatcher();
     if (!ptr->beginWatch(path)) {
         delete ptr;
         throw std::runtime_error("Can't start watching " + path);
@@ -16,11 +16,11 @@ std::unique_ptr<SpaceWatcher> SpaceWatcher::create(const std::string &path) {
     return std::unique_ptr<SpaceWatcher>(ptr);
 }
 
-SpaceWatcherLinux::SpaceWatcherLinux() : inotifyFd(-1), watchBuffer(watchBufferSize, 0) {
+LinuxSpaceWatcher::LinuxSpaceWatcher() : inotifyFd(-1), watchBuffer(watchBufferSize, 0) {
 
 }
 
-SpaceWatcherLinux::~SpaceWatcherLinux() {
+LinuxSpaceWatcher::~LinuxSpaceWatcher() {
     if (inotifyFd != -1) {
         close(inotifyFd);
         std::lock_guard<std::mutex> lock(inotifyWdsMtx);
@@ -28,14 +28,14 @@ SpaceWatcherLinux::~SpaceWatcherLinux() {
     }
 }
 
-bool SpaceWatcherLinux::beginWatch(const std::string &path) {
+bool LinuxSpaceWatcher::beginWatch(const std::string &path) {
     inotifyFd = inotify_init1(IN_NONBLOCK);
     if (inotifyFd != -1)
         return addDir(path) == SpaceWatcher::AddDirStatus::ADDED;
     return false;
 }
 
-int64_t SpaceWatcherLinux::getDirCountLimit() const {
+int64_t LinuxSpaceWatcher::getDirCountLimit() const {
     int64_t limit = 0;
 
     std::ifstream file("/proc/sys/fs/inotify/max_user_watches");
@@ -44,7 +44,7 @@ int64_t SpaceWatcherLinux::getDirCountLimit() const {
     return limit;
 }
 
-SpaceWatcher::AddDirStatus SpaceWatcherLinux::addDir(const std::string &path) {
+SpaceWatcher::AddDirStatus LinuxSpaceWatcher::addDir(const std::string &path) {
     int wd;
 
     //not using IN_DELETE_SELF and IN_MOVE_SELF since these events should be detected by parent directory
@@ -71,12 +71,12 @@ SpaceWatcher::AddDirStatus SpaceWatcherLinux::addDir(const std::string &path) {
     return AddDirStatus::ADDED;
 }
 
-void SpaceWatcherLinux::rmDir(const std::string &path) {
+void LinuxSpaceWatcher::rmDir(const std::string &path) {
     //TODO
     SpaceWatcher::rmDir(path);
 }
 
-void SpaceWatcherLinux::processInotifyEvent(struct inotify_event *inotifyEvent) {
+void LinuxSpaceWatcher::processInotifyEvent(struct inotify_event *inotifyEvent) {
     if (inotifyEvent->mask & IN_IGNORED) {
         //watch was removed so remove it from our map
         std::lock_guard<std::mutex> lock(inotifyWdsMtx);
@@ -128,7 +128,7 @@ void SpaceWatcherLinux::processInotifyEvent(struct inotify_event *inotifyEvent) 
     addEvent(std::move(fileEvent));
 }
 
-void SpaceWatcherLinux::readEvents() {
+void LinuxSpaceWatcher::readEvents() {
     while (true) {
         auto numRead = read(inotifyFd, watchBuffer.data(), watchBufferSize);
         if (numRead <= 0)
