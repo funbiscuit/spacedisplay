@@ -1,5 +1,5 @@
-#ifndef SPACEDISPLAY_SPACEWATCHER_WIN_H
-#define SPACEDISPLAY_SPACEWATCHER_WIN_H
+#ifndef SPACEDISPLAY_WINSPACEWATCHER_H
+#define SPACEDISPLAY_WINSPACEWATCHER_H
 
 #include "spacewatcher.h"
 
@@ -10,9 +10,9 @@
 
 #include <Windows.h>
 
-class SpaceWatcherWin : public SpaceWatcher {
+class WinSpaceWatcher : public SpaceWatcher {
 public:
-    ~SpaceWatcherWin() override;
+    ~WinSpaceWatcher() override;
 
     int64_t getDirCountLimit() const override { return -1; }
 
@@ -21,7 +21,7 @@ protected:
     void readEvents() override;
 
 private:
-    SpaceWatcherWin();
+    WinSpaceWatcher();
 
     const int watchBufferSize = 1024 * 48;
 
@@ -34,4 +34,4 @@ private:
     bool beginWatch(const std::string &path);
 };
 
-#endif //SPACEDISPLAY_SPACEWATCHER_WIN_H
+#endif //SPACEDISPLAY_WINSPACEWATCHER_H

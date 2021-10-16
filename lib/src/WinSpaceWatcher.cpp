@@ -1,4 +1,4 @@
-#include "spacewatcher-win.h"
+#include "WinSpaceWatcher.h"
 
 #include "platformutils.h"
 #include "utils.h"
@@ -6,7 +6,7 @@
 #include <iostream>
 
 std::unique_ptr<SpaceWatcher> SpaceWatcher::create(const std::string &path) {
-    auto *ptr = new SpaceWatcherWin();
+    auto *ptr = new WinSpaceWatcher();
     if (!ptr->beginWatch(path)) {
         delete ptr;
         throw std::runtime_error("Can't start watching " + path);
@@ -14,11 +14,11 @@ std::unique_ptr<SpaceWatcher> SpaceWatcher::create(const std::string &path) {
     return std::unique_ptr<SpaceWatcher>(ptr);
 }
 
-SpaceWatcherWin::SpaceWatcherWin() : watchedDir(INVALID_HANDLE_VALUE) {
+WinSpaceWatcher::WinSpaceWatcher() : watchedDir(INVALID_HANDLE_VALUE) {
     watchBuffer = std::unique_ptr<DWORD[]>(new DWORD[watchBufferSize]);
 }
 
-SpaceWatcherWin::~SpaceWatcherWin() {
+WinSpaceWatcher::~WinSpaceWatcher() {
     if (watchedDir != INVALID_HANDLE_VALUE) {
         CloseHandle(watchedDir);
         watchedPath.clear();
@@ -26,7 +26,7 @@ SpaceWatcherWin::~SpaceWatcherWin() {
     }
 }
 
-bool SpaceWatcherWin::beginWatch(const std::string &path) {
+bool WinSpaceWatcher::beginWatch(const std::string &path) {
     auto wname = PlatformUtils::str2wstr(path);
     watchedDir = CreateFileW(
             wname.c_str(),
@@ -47,7 +47,7 @@ bool SpaceWatcherWin::beginWatch(const std::string &path) {
     return false;
 }
 
-void SpaceWatcherWin::readEvents() {
+void WinSpaceWatcher::readEvents() {
     if (watchedDir == INVALID_HANDLE_VALUE)
         return;
 
