@@ -23,7 +23,6 @@ public:
         ADDED,
         DIR_LIMIT_REACHED, //used when unable to add inotify watch in linux
         ACCESS_DENIED,
-        NOT_INITIALIZED,
     };
 
     struct FileEvent {

@@ -7,40 +7,32 @@
 #include <iostream>
 #include <fstream>
 
+std::unique_ptr<SpaceWatcher> SpaceWatcher::create(const std::string &path) {
+    auto *ptr = new SpaceWatcherLinux();
+    if (!ptr->beginWatch(path)) {
+        delete ptr;
+        throw std::runtime_error("Can't start watching " + path);
+    }
+    return std::unique_ptr<SpaceWatcher>(ptr);
+}
+
 SpaceWatcherLinux::SpaceWatcherLinux() : inotifyFd(-1), watchBuffer(watchBufferSize, 0) {
-    startThread();
+
 }
 
 SpaceWatcherLinux::~SpaceWatcherLinux() {
-    // endWatch() is virtual so we can't call it in destructor
-    _endWatch();
-    stopThread();
-}
-
-bool SpaceWatcherLinux::beginWatch(const std::string &path) {
-    endWatch();
-
-    inotifyFd = inotify_init1(IN_NONBLOCK);
-    if (inotifyFd != -1)
-        return addDir(path) == SpaceWatcher::AddDirStatus::ADDED;
-    return false;
-}
-
-void SpaceWatcherLinux::endWatch() {
-    _endWatch();
-}
-
-void SpaceWatcherLinux::_endWatch() {
     if (inotifyFd != -1) {
         close(inotifyFd);
-        inotifyFd = -1;
         std::lock_guard<std::mutex> lock(inotifyWdsMtx);
         inotifyWds.clear();
     }
 }
 
-bool SpaceWatcherLinux::isWatching() const {
-    return inotifyFd != -1;
+bool SpaceWatcherLinux::beginWatch(const std::string &path) {
+    inotifyFd = inotify_init1(IN_NONBLOCK);
+    if (inotifyFd != -1)
+        return addDir(path) == SpaceWatcher::AddDirStatus::ADDED;
+    return false;
 }
 
 int64_t SpaceWatcherLinux::getDirCountLimit() const {
@@ -53,13 +45,10 @@ int64_t SpaceWatcherLinux::getDirCountLimit() const {
 }
 
 SpaceWatcher::AddDirStatus SpaceWatcherLinux::addDir(const std::string &path) {
-    if (inotifyFd == -1)
-        return AddDirStatus::NOT_INITIALIZED;
-
     int wd;
 
-    //not using IN_DELETE_SELF and IN_MOVE_SELF since this events should be detected by parent directory
-    const auto EVENTS = IN_MODIFY | IN_MOVE | IN_CREATE | IN_DELETE | IN_MODIFY;
+    //not using IN_DELETE_SELF and IN_MOVE_SELF since these events should be detected by parent directory
+    const auto EVENTS = IN_MODIFY | IN_MOVE | IN_CREATE | IN_DELETE;
 
     wd = inotify_add_watch(inotifyFd, path.c_str(), EVENTS);
     //TODO we should detect when process runs out of available inotify watches
@@ -68,16 +57,14 @@ SpaceWatcher::AddDirStatus SpaceWatcherLinux::addDir(const std::string &path) {
         switch (errno) {
             case ENOSPC:
                 return AddDirStatus::DIR_LIMIT_REACHED;
-            case EBADF:
-                return AddDirStatus::NOT_INITIALIZED;
         }
         return AddDirStatus::ACCESS_DENIED; //this is a default, although not very accurate
     }
     std::lock_guard<std::mutex> lock(inotifyWdsMtx);
     auto it = inotifyWds.find(wd);
-    if (it != inotifyWds.end())
+    if (it != inotifyWds.end()) {
         it->second = path;
-    else {
+    } else {
         inotifyWds[wd] = path;
         SpaceWatcher::addDir(path);
     }
@@ -89,7 +76,7 @@ void SpaceWatcherLinux::rmDir(const std::string &path) {
     SpaceWatcher::rmDir(path);
 }
 
-void SpaceWatcherLinux::_addEvent(struct inotify_event *inotifyEvent) {
+void SpaceWatcherLinux::processInotifyEvent(struct inotify_event *inotifyEvent) {
     if (inotifyEvent->mask & IN_IGNORED) {
         //watch was removed so remove it from our map
         std::lock_guard<std::mutex> lock(inotifyWdsMtx);
@@ -142,9 +129,6 @@ void SpaceWatcherLinux::_addEvent(struct inotify_event *inotifyEvent) {
 }
 
 void SpaceWatcherLinux::readEvents() {
-    if (!isWatching())
-        return;
-
     while (true) {
         auto numRead = read(inotifyFd, watchBuffer.data(), watchBufferSize);
         if (numRead <= 0)
@@ -152,7 +136,7 @@ void SpaceWatcherLinux::readEvents() {
 
         for (size_t i = 0; i < numRead;) {
             auto event = reinterpret_cast<inotify_event *>(&watchBuffer[i]);
-            _addEvent(event);
+            processInotifyEvent(event);
 
             i += sizeof(inotify_event) + event->len;
         }
