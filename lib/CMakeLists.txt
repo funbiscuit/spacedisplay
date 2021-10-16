@@ -19,19 +19,20 @@ set_target_properties(spacedisplay_lib PROPERTIES
 
 target_include_directories(spacedisplay_lib
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private
         )
 
 target_link_libraries(spacedisplay_lib PRIVATE
         Threads::Threads CRC::CRC)
 
 if (WIN32)
-    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/WinFileIterator.cpp)
-    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/WinFileManager.cpp)
-    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/platformutils-win.cpp)
-    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/WinSpaceWatcher.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private/WinFileIterator.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private/WinFileManager.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private/WinPlatformUtils.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private/WinSpaceWatcher.cpp)
 else ()
-    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/LinuxFileIterator.cpp)
-    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/LinuxFileManager.cpp)
-    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/platformutils-nix.cpp)
-    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/LinuxSpaceWatcher.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private/LinuxFileIterator.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private/LinuxFileManager.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private/LinuxPlatformUtils.cpp)
+    target_sources(spacedisplay_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private/LinuxSpaceWatcher.cpp)
 endif ()
