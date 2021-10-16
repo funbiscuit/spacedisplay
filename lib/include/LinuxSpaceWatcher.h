@@ -1,5 +1,5 @@
-#ifndef SPACEDISPLAY_SPACEWATCHER_LINUX_H
-#define SPACEDISPLAY_SPACEWATCHER_LINUX_H
+#ifndef SPACEDISPLAY_LINUXSPACEWATCHER_H
+#define SPACEDISPLAY_LINUXSPACEWATCHER_H
 
 #include "spacewatcher.h"
 
@@ -11,18 +11,9 @@
 
 struct inotify_event;
 
-class SpaceWatcherLinux : public SpaceWatcher {
+class LinuxSpaceWatcher : public SpaceWatcher {
 public:
-
-    SpaceWatcherLinux();
-
-    ~SpaceWatcherLinux() override;
-
-    bool beginWatch(const std::string &path) override;
-
-    void endWatch() override;
-
-    bool isWatching() const override;
+    ~LinuxSpaceWatcher() override;
 
     int64_t getDirCountLimit() const override;
 
@@ -30,6 +21,7 @@ public:
 
     void rmDir(const std::string &path) override;
 
+    friend std::unique_ptr<SpaceWatcher> SpaceWatcher::create(const std::string &path);
 protected:
     void readEvents() override;
 
@@ -43,9 +35,11 @@ private:
     std::unordered_map<int, std::string> inotifyWds;
     std::mutex inotifyWdsMtx;
 
-    void _endWatch();
+    LinuxSpaceWatcher();
 
-    void _addEvent(struct inotify_event *inotifyEvent);
+    bool beginWatch(const std::string &path);
+
+    void processInotifyEvent(struct inotify_event *inotifyEvent);
 };
 
-#endif //SPACEDISPLAY_SPACEWATCHER_LINUX_H
+#endif //SPACEDISPLAY_LINUXSPACEWATCHER_H

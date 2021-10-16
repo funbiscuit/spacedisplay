@@ -16,16 +16,11 @@ SpaceScanner::SpaceScanner() :
         scannerStatus(ScannerStatus::IDLE), runWorker(true), isMountScanned(false),
         watcherLimitExceeded(false) {
     db = std::make_shared<FileDB>();
-    watcher = SpaceWatcher::getWatcher();
     //Start thread after everything is initialized
     workerThread = std::thread(&SpaceScanner::worker_run, this);
 }
 
 SpaceScanner::~SpaceScanner() {
-    //if watcher is not stopped, it will hang in waiting for changes
-    if (watcher)
-        watcher->endWatch();
-
     runWorker = false;
     scannerStatus = ScannerStatus::STOPPING;
     workerThread.join();
@@ -388,8 +383,11 @@ ScannerError SpaceScanner::scan_dir(const std::string &path) {
     }
 
     watcherLimitExceeded = false;
-    if (watcher)
-        watcher->beginWatch(path);
+    try {
+        watcher = SpaceWatcher::create(path);
+    } catch (std::runtime_error &) {
+        logger->log("Failed to begin watching path for changes", "SCAN");
+    }
 
     scannerStatus = ScannerStatus::SCANNING;
 
