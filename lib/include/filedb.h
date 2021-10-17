@@ -18,7 +18,7 @@ class FilePath;
  */
 class FileDB {
 public:
-    FileDB();
+    explicit FileDB(const std::string &path);
 
     /**
      * Sets space of mount point where files in this db are stored
@@ -41,23 +41,10 @@ public:
                             std::vector<std::unique_ptr<FilePath>> *newPaths = nullptr);
 
     /**
-     * Clears database and sets new root, making db initialized
-     * @param path
-     * @throws std::invalid_argument if construction from given path failed
-     */
-    void setNewRootPath(const std::string &path);
-
-    /**
      * Returns path to current root or null if db is not initialized
      * @return
      */
-    const FilePath *getRootPath() const;
-
-    /**
-     * Clears database leaving it in uninitialized state
-     * @param path
-     */
-    void clearDb();
+    const FilePath &getRootPath() const;
 
     /**
      * Tries to find file/dir entry by given FilePath
@@ -77,12 +64,6 @@ public:
      */
     bool processEntry(const FilePath &path, const std::function<void(const FileEntry &)> &func) const;
 
-    /**
-     * Checks if database is valid (i.e. has a valid root) and can be accessed
-     * @return
-     */
-    bool isReady() const;
-
     bool hasChanges() const;
 
     void getSpace(uint64_t &used, uint64_t &available, uint64_t &total) const;
@@ -98,7 +79,6 @@ private:
 
     mutable std::mutex dbMtx;
 
-    std::atomic<bool> rootValid;
     std::atomic<uint64_t> usedSpace;
     std::atomic<uint64_t> fileCount;
     std::atomic<uint64_t> dirCount;
@@ -111,8 +91,6 @@ private:
 
     //map key is crc of entry path, map value is vector of all children with the same crc of their name
     std::unordered_map<uint16_t, std::vector<FileEntry *>> entriesMap;
-
-    void _clearDb();
 
     FileEntry *_findEntry(const FilePath &path) const;
 

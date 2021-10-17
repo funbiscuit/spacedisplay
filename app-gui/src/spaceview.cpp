@@ -44,7 +44,7 @@ void SpaceView::timerEvent(QTimerEvent *event) {
     if (!scanner)
         return;
 
-    if (scanner->has_changes()) {
+    if (scanner->hasChanges()) {
         onScanUpdate();
         if (onActionCallback)
             onActionCallback();
@@ -56,7 +56,7 @@ void SpaceView::paintEvent(QPaintEvent *event) {
     int width = size().width();
     int height = size().height();
 
-    if (viewDB && viewDB->isReady()) {
+    if (viewDB) {
         textHeight = painter.fontMetrics().height();
         viewDB->processEntry([this, &painter](const FileEntryView &root) {
             drawView(painter, root, currentDepth, true);
@@ -143,7 +143,7 @@ bool SpaceView::drawViewBg(QPainter &painter, QColor &bg_out, const FileEntryVie
 
 void SpaceView::mouseReleaseEvent(QMouseEvent *event) {
     if (event->button() == Qt::RightButton) {
-        if (scanner && viewDB->isReady()) {
+        if (scanner) {
             if (hoveredPath) {
                 auto path = Utils::make_unique<FilePath>(*hoveredPath);
                 entryPopup->updateActions(*scanner);
@@ -226,18 +226,13 @@ void SpaceView::setOnNewScanRequestCallback(std::function<void(void)> callback) 
 }
 
 void SpaceView::setScanner(std::unique_ptr<SpaceScanner> _scanner) {
-    if (scanner)
-        scanner->stop_scan();
-
     scanner = std::move(_scanner);
     clearHistory();
     if (scanner) {
-        currentPath = Utils::make_unique<FilePath>(*(scanner->getRootPath()));
-        viewDB->setFileDB(scanner->getFileDB());
+        currentPath = Utils::make_unique<FilePath>(scanner->getRootPath());
         historyPush();
     } else {
         currentPath.reset();
-        viewDB->setFileDB(nullptr);
     }
     onScanUpdate();
 }
@@ -262,13 +257,11 @@ bool SpaceView::isAtRoot() {
 }
 
 bool SpaceView::canRefresh() {
-    if (!scanner)
-        return false;
-    return scanner->can_refresh();
+    return scanner != nullptr;
 }
 
 void SpaceView::rescanDir(const FilePath &dir_path) {
-    scanner->rescan_dir(dir_path);
+    scanner->rescanPath(dir_path);
 }
 
 void SpaceView::rescanCurrentView() {
@@ -285,12 +278,12 @@ void SpaceView::rescanCurrentView() {
 }
 
 bool SpaceView::isScanOpen() {
-    return viewDB->isReady() && scanner;
+    return scanner != nullptr;
 }
 
 int SpaceView::getScanProgress() {
     if (scanner)
-        return scanner->get_scan_progress();
+        return scanner->getScanProgress();
     return 100;
 }
 
@@ -370,7 +363,7 @@ void SpaceView::resizeEvent(QResizeEvent *event) {
 
 void SpaceView::onScanUpdate() {
     if (scanner) {
-        scanner->getCurrentScanPath(currentScannedPath);
+        currentScannedPath = scanner->getCurrentScanPath();
         allocateEntries();
         entryPopup->updateActions(*scanner);
 
@@ -382,11 +375,11 @@ void SpaceView::onScanUpdate() {
 }
 
 void SpaceView::allocateEntries() {
-    if (viewDB->isReady() && currentPath) {
+    if (viewDB && currentPath && scanner) {
         viewDB->setViewDepth(currentDepth);
         viewDB->setViewPath(*currentPath);
         viewDB->setTextHeight(textHeight);
-        viewDB->update(showUnknown, showAvailable);
+        viewDB->update(scanner->getFileDB(), showUnknown, showAvailable);
 
         updateHoveredView();
         updateScannedView();
@@ -515,11 +508,11 @@ bool SpaceView::canNavigateForward() {
 }
 
 bool SpaceView::canIncreaseDetail() {
-    return viewDB->isReady() && currentDepth < MAX_DEPTH;
+    return scanner != nullptr && currentDepth < MAX_DEPTH;
 }
 
 bool SpaceView::canDecreaseDetail() {
-    return viewDB->isReady() && currentDepth > MIN_DEPTH;
+    return scanner != nullptr && currentDepth > MIN_DEPTH;
 }
 
 bool SpaceView::canTogglePause() {

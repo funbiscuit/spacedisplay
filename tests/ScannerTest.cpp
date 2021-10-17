@@ -2,6 +2,7 @@
 #include "filepath.h"
 #include "filedb.h"
 #include "utils.h"
+#include "platformutils.h"
 #include "DirHelper.h"
 
 #include <iostream>
@@ -10,16 +11,6 @@
 
 TEST_CASE("Scanner tests", "[scanner]")
 {
-    auto scanner = Utils::make_unique<SpaceScanner>();
-
-    REQUIRE_FALSE(scanner->is_loaded());
-
-    std::unique_ptr<FilePath> curScanPath;
-
-    scanner->getCurrentScanPath(curScanPath);
-
-    REQUIRE(curScanPath == nullptr);
-
     SECTION("Scan custom path")
     {
         DirHelper dh("TestDir");
@@ -36,36 +27,32 @@ TEST_CASE("Scanner tests", "[scanner]")
         dh.createFile("test3/test5/test2.txt");
         dh.createFile("test3/test5/test3.txt");
 
-        REQUIRE(scanner->scan_dir("TestDir2") == ScannerError::CANT_OPEN_DIR);
-        REQUIRE(scanner->scan_dir("TestDir") == ScannerError::NONE);
-        REQUIRE(scanner->scan_dir("TestDir") == ScannerError::SCAN_RUNNING);
+        std::unique_ptr<SpaceScanner> scanner;
+        REQUIRE_THROWS_AS(SpaceScanner("TestDir2"), std::runtime_error);
+        REQUIRE_NOTHROW(scanner = Utils::make_unique<SpaceScanner>("TestDir"));
 
-        REQUIRE(scanner->is_loaded());
-        REQUIRE(scanner->getRootPath() != nullptr);
         REQUIRE(scanner->canPause());
         REQUIRE_FALSE(scanner->canResume());
         REQUIRE_FALSE(scanner->isProgressKnown());
-        REQUIRE(scanner->has_changes());
-        REQUIRE(scanner->can_refresh());
+        REQUIRE(scanner->hasChanges());
 
         //wait for scanner to complete
-        while (scanner->get_scan_progress() < 100)
+        while (scanner->getScanProgress() < 100)
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
         REQUIRE_FALSE(scanner->canPause());
         REQUIRE_FALSE(scanner->canResume());
-        REQUIRE(scanner->has_changes());
-        REQUIRE(scanner->can_refresh());
+        REQUIRE(scanner->hasChanges());
 
         REQUIRE(scanner->getDirCount() == 4);
         REQUIRE(scanner->getFileCount() == 9);
-        scanner->rescan_dir(FilePath("TestDir"));
+        scanner->rescanPath(FilePath("TestDir"));
         REQUIRE(scanner->canPause());
         REQUIRE_FALSE(scanner->canResume());
 
 
         //wait for scanner to complete
-        while (scanner->get_scan_progress() < 100)
+        while (scanner->getScanProgress() < 100)
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
         REQUIRE(scanner->getDirCount() == 4);
@@ -97,7 +84,7 @@ TEST_CASE("Scanner tests", "[scanner]")
         std::this_thread::sleep_for(std::chrono::milliseconds(60));
         REQUIRE_FALSE(scanner->canPause());
         REQUIRE_FALSE(scanner->canResume());
-        REQUIRE(scanner->get_scan_progress() == 100);
+        REQUIRE(scanner->getScanProgress() == 100);
 
         REQUIRE(scanner->getDirCount() == 8);
         REQUIRE(scanner->getFileCount() == 18);
@@ -121,27 +108,26 @@ TEST_CASE("Scanner tests", "[scanner]")
 
     SECTION("Scan root")
     {
-        auto roots = scanner->get_available_roots();
+        auto roots = PlatformUtils::getAvailableMounts();
         REQUIRE_FALSE(roots.empty());
-        ScannerError err;
+        std::unique_ptr<SpaceScanner> scanner;
         for (auto &root : roots) {
-            err = scanner->scan_dir(root);
-            if (err != ScannerError::CANT_OPEN_DIR)
+            try {
+                scanner = Utils::make_unique<SpaceScanner>(root);
                 break;
+            } catch (std::runtime_error &e) {
+                std::cout << "Can't scan path '" + root + "'!\n";
+            }
         }
-        if (err == ScannerError::CANT_OPEN_DIR) {
+        if (!scanner) {
             std::cout << "Root dir is not available, can't test root scanning!\n";
             return;
         }
 
-        REQUIRE(err == ScannerError::NONE);
-        REQUIRE(scanner->is_loaded());
-        REQUIRE(scanner->getRootPath() != nullptr);
         REQUIRE(scanner->canPause());
         REQUIRE_FALSE(scanner->canResume());
         REQUIRE(scanner->isProgressKnown());
-        REQUIRE(scanner->has_changes());
-        REQUIRE(scanner->can_refresh());
+        REQUIRE(scanner->hasChanges());
 
         //wait for scanner to start scanning
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -158,19 +144,17 @@ TEST_CASE("Scanner tests", "[scanner]")
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             REQUIRE_FALSE(scanner->canPause());
             REQUIRE(scanner->canResume());
-            scanner->getCurrentScanPath(curScanPath);
+            auto curScanPath = scanner->getCurrentScanPath();
             REQUIRE(curScanPath != nullptr);
-            scanner->getCurrentScanPath(curScanPath);
+            curScanPath = scanner->getCurrentScanPath();
             REQUIRE(curScanPath != nullptr);
 
-            REQUIRE(scanner->has_changes());
-            auto db = scanner->getFileDB();
-            REQUIRE(db != nullptr);
+            REQUIRE(scanner->hasChanges());
+            auto &db = scanner->getFileDB();
             auto root = scanner->getRootPath();
-            REQUIRE(root != nullptr);
-            auto processed = db->processEntry(*root, [](const FileEntry &entry) {});
+            auto processed = db.processEntry(root, [](const FileEntry &entry) {});
             REQUIRE(processed);
-            REQUIRE_FALSE(scanner->has_changes());
+            REQUIRE_FALSE(scanner->hasChanges());
 
             REQUIRE(scanner->getDirCount() > 0);
             REQUIRE(scanner->getFileCount() > 0);
@@ -180,10 +164,10 @@ TEST_CASE("Scanner tests", "[scanner]")
 
             REQUIRE(scanner->canPause());
             REQUIRE_FALSE(scanner->canResume());
-            scanner->stop_scan();
+            scanner->stopScan();
             REQUIRE_FALSE(scanner->canPause());
             REQUIRE_FALSE(scanner->canResume());
-            REQUIRE(scanner->get_scan_progress() == 100);
+            REQUIRE(scanner->getScanProgress() == 100);
 
             uint64_t used, available, total;
             scanner->getSpace(used, available, total);

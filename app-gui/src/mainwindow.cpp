@@ -184,9 +184,7 @@ void MainWindow::newScan() {
 }
 
 void MainWindow::startScan(const std::string &path) {
-    auto scanner = Utils::make_unique<SpaceScanner>();
-
-    auto parts = scanner->get_available_roots();
+    auto parts = PlatformUtils::getAvailableMounts();
     isRootScanned = false;
     for (const auto &part : parts) {
         if (part == path) {
@@ -207,12 +205,14 @@ void MainWindow::startScan(const std::string &path) {
     toggleFreeAct->setChecked(false);
     spaceWidget->setShowUnknownSpace(isRootScanned);
     spaceWidget->setShowFreeSpace(false);
-    if (scanner->scan_dir(path) == ScannerError::NONE) {
+
+    try {
+        auto scanner = Utils::make_unique<SpaceScanner>(path);
         scanner->setLogger(logger);
         spaceWidget->setScanner(std::move(scanner));
         watchLimitReported = false;
         onScanUpdate();
-    } else {
+    } catch (std::runtime_error &) {
         spaceWidget->setScanner(nullptr);
         onScanUpdate();
         UtilsGui::message_box("Can't open path for scanning:", path);

@@ -12,10 +12,40 @@
 #include <iostream>
 #include <chrono>
 
-SpaceScanner::SpaceScanner() :
+SpaceScanner::SpaceScanner(const std::string &path) :
         scannerStatus(ScannerStatus::IDLE), runWorker(true), isMountScanned(false),
         watcherLimitExceeded(false) {
-    db = std::make_shared<FileDB>();
+
+    auto cantScanMsg = Utils::strFormat("Can't open %s", path.c_str());
+    if (!PlatformUtils::can_scan_dir(path)) {
+        throw std::runtime_error(cantScanMsg);
+    }
+
+    //update info about mount points
+    availableRoots = PlatformUtils::getAvailableMounts();
+    excludedMounts = PlatformUtils::getExcludedPaths();
+
+    try {
+        db = Utils::make_unique<FileDB>(path);
+    } catch (std::exception &) {
+        std::cout << "Can't set as root: " << path << "\n";
+        throw std::runtime_error(cantScanMsg);
+    }
+
+    watcherLimitExceeded = false;
+    try {
+        watcher = SpaceWatcher::create(path);
+    } catch (std::runtime_error &) { }
+
+    scannerStatus = ScannerStatus::SCANNING;
+
+    isMountScanned = Utils::in_array(path, availableRoots);
+
+    //this will load known info about disk space (available and total) to database
+    updateDiskSpace();
+
+    addToQueue(Utils::make_unique<FilePath>(db->getRootPath()), true);
+
     //Start thread after everything is initialized
     workerThread = std::thread(&SpaceScanner::worker_run, this);
 }
@@ -24,7 +54,6 @@ SpaceScanner::~SpaceScanner() {
     runWorker = false;
     scannerStatus = ScannerStatus::STOPPING;
     workerThread.join();
-    db->clearDb();
 }
 
 void SpaceScanner::checkForEvents() {
@@ -39,7 +68,7 @@ void SpaceScanner::checkForEvents() {
         //try constructing FilePath and add it to queue
         try {
             auto path = Utils::make_unique<FilePath>(event->parentpath,
-                                                     db->getRootPath()->getRoot());
+                                                     db->getRootPath().getRoot());
             addToQueue(std::move(path), false);
             scannerStatus = ScannerStatus::SCANNING;
         } catch (std::exception &) {
@@ -69,7 +98,7 @@ void SpaceScanner::worker_run() {
         std::vector<std::unique_ptr<FileEntry>> scannedEntries;
         std::vector<std::unique_ptr<FilePath>> newPaths;
 
-        update_disk_space();
+        updateDiskSpace();
         bool scannedRecursively = false;
         while (!scanQueue.empty() && scannerStatus != ScannerStatus::IDLE) {
             auto scanRequest = std::move(scanQueue.front());
@@ -119,7 +148,7 @@ void SpaceScanner::worker_run() {
             }
             checkForEvents();
         }
-        update_disk_space();
+        updateDiskSpace();
         scanQueue.clear();
         currentScannedPath = nullptr;
         scanLock.unlock();
@@ -247,26 +276,17 @@ void SpaceScanner::addToQueue(std::unique_ptr<FilePath> path, bool recursiveScan
         scanQueue.push_front(std::move(request));
 }
 
-std::vector<std::string> SpaceScanner::get_available_roots() {
-    return PlatformUtils::getAvailableMounts();
+const FileDB& SpaceScanner::getFileDB() const {
+    return *db;
 }
 
-std::shared_ptr<FileDB> SpaceScanner::getFileDB() {
-    return db;
-}
-
-bool SpaceScanner::getCurrentScanPath(std::unique_ptr<FilePath> &path) {
+std::unique_ptr<FilePath> SpaceScanner::getCurrentScanPath() {
     std::lock_guard<std::mutex> lock_mtx(scanMtx);
 
     if (currentScannedPath) {
-        if (!path)
-            path = Utils::make_unique<FilePath>(*currentScannedPath);
-        else
-            *path = *currentScannedPath;
-        return true;
+        return Utils::make_unique<FilePath>(*currentScannedPath);
     }
-    path = nullptr;
-    return false;
+    return nullptr;
 }
 
 bool SpaceScanner::getWatcherLimits(int64_t &watchedNow, int64_t &watchLimit) {
@@ -280,15 +300,7 @@ bool SpaceScanner::getWatcherLimits(int64_t &watchedNow, int64_t &watchLimit) {
     return true;
 }
 
-bool SpaceScanner::can_refresh() const {
-    return db->isReady();
-}
-
-bool SpaceScanner::is_loaded() const {
-    return db->isReady();
-}
-
-bool SpaceScanner::has_changes() const {
+bool SpaceScanner::hasChanges() const {
     return db->hasChanges();
 }
 
@@ -296,7 +308,7 @@ bool SpaceScanner::isProgressKnown() const {
     return isMountScanned;
 }
 
-int SpaceScanner::get_scan_progress() const {
+int SpaceScanner::getScanProgress() const {
     uint64_t totalSpace, usedSpace, freeSpace;
     db->getSpace(usedSpace, freeSpace, totalSpace);
     if ((scannerStatus == ScannerStatus::SCANNING || scannerStatus == ScannerStatus::SCAN_PAUSED)
@@ -333,7 +345,7 @@ bool SpaceScanner::canResume() {
     return scannerStatus == ScannerStatus::SCAN_PAUSED;
 }
 
-void SpaceScanner::stop_scan() {
+void SpaceScanner::stopScan() {
     {
         std::lock_guard<std::mutex> lock_mtx(scanMtx);
         if (scannerStatus != ScannerStatus::STOPPING && scannerStatus != ScannerStatus::IDLE)
@@ -344,72 +356,18 @@ void SpaceScanner::stop_scan() {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
-void SpaceScanner::update_disk_space() {
+void SpaceScanner::updateDiskSpace() {
     auto p = db->getRootPath();
-    if (!p)
-        return;
 
     uint64_t total, available;
 
-    PlatformUtils::get_mount_space(p->getName(), total, available);
+    PlatformUtils::get_mount_space(p.getName(), total, available);
     db->setSpace(total, available);
 }
 
-ScannerError SpaceScanner::scan_dir(const std::string &path) {
-    //do nothing if scan is already in progress
-    if (scannerStatus != ScannerStatus::IDLE)
-        return ScannerError::SCAN_RUNNING;
-
-    if (!PlatformUtils::can_scan_dir(path)) {
-        scannerStatus = ScannerStatus::IDLE;
-        if (logger) {
-            auto msg = Utils::strFormat("Can't open %s", path.c_str());
-            logger->log(msg, "SCAN");
-        }
-        return ScannerError::CANT_OPEN_DIR;
-    }
-
+void SpaceScanner::rescanPath(const FilePath &folder_path) {
     std::lock_guard<std::mutex> lock_mtx(scanMtx);
-    //update info about mount points
-    availableRoots = PlatformUtils::getAvailableMounts();
-    excludedMounts = PlatformUtils::getExcludedPaths();
-    // clears database if it was populated and sets new root
-
-    try {
-        db->setNewRootPath(path);
-    } catch (std::exception &) {
-        std::cout << "Can't set as root: " << path << "\n";
-        return ScannerError::CANT_OPEN_DIR;
-    }
-
-    watcherLimitExceeded = false;
-    try {
-        watcher = SpaceWatcher::create(path);
-    } catch (std::runtime_error &) {
-        logger->log("Failed to begin watching path for changes", "SCAN");
-    }
-
-    scannerStatus = ScannerStatus::SCANNING;
-
-    isMountScanned = false;
-    for (const auto &root : availableRoots) {
-        if (root == path) {
-            isMountScanned = true;
-            break;
-        }
-    }
-
-    //this will load known info about disk space (available and total) to database
-    update_disk_space();
-
-    addToQueue(Utils::make_unique<FilePath>(*(db->getRootPath())), true);
-
-    return ScannerError::NONE;
-}
-
-void SpaceScanner::rescan_dir(const FilePath &path) {
-    std::lock_guard<std::mutex> lock_mtx(scanMtx);
-    auto entry = db->findEntry(path);
+    auto entry = db->findEntry(folder_path);
 
     if (!entry)
         return;
@@ -419,10 +377,10 @@ void SpaceScanner::rescan_dir(const FilePath &path) {
     availableRoots = PlatformUtils::getAvailableMounts();
     excludedMounts = PlatformUtils::getExcludedPaths();
 
-    update_disk_space();//disk space might change since last update, so update it again
+    updateDiskSpace();//disk space might change since last update, so update it again
 
     // pushing to front so we start rescanning as soon as possible
-    addToQueue(Utils::make_unique<FilePath>(path), true, false);
+    addToQueue(Utils::make_unique<FilePath>(folder_path), true, false);
 }
 
 void SpaceScanner::getSpace(uint64_t &used, uint64_t &available, uint64_t &total) const {
@@ -437,7 +395,7 @@ int64_t SpaceScanner::getDirCount() const {
     return db->getDirCount();
 }
 
-const FilePath *SpaceScanner::getRootPath() const {
+const FilePath &SpaceScanner::getRootPath() const {
     return db->getRootPath();
 }
 

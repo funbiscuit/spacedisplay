@@ -19,21 +19,16 @@ class FileViewDB {
 
 public:
     /**
-     * Sets main database from which entries will be fetched with update() function
-     * @param db
-     */
-    void setFileDB(std::shared_ptr<FileDB> db_);
-
-    /**
      * Updates file views with files from db. Returns true if anything changed
      * If any pointers were saved to db entries before update, they should be cleared
      * It is not safe to access any pre-update pointers after update!
      * Pointers are valid only until the next update
+     * @param db - FileDB to use to access data
      * @param includeUnknown - whether to include file which represents unknown/unscanned space
      * @param includeAvailable - whether to include file which represents available/free space
      * @return
      */
-    bool update(bool includeUnknown, bool includeAvailable);
+    bool update(const FileDB &db, bool includeUnknown, bool includeAvailable);
 
     void onThemeChanged();
 
@@ -63,15 +58,8 @@ public:
 
     FileEntryView *getClosestView(const FilePath &filepath, int maxDepth);
 
-    /**
-     * Checks if database is valid (i.e. has a valid root) and can be accessed
-     * @return
-     */
-    bool isReady() const;
-
 private:
 
-    std::shared_ptr<FileDB> db;
     std::shared_ptr<FileEntryView> rootFile;
 
     std::unique_ptr<FilePath> viewPath;

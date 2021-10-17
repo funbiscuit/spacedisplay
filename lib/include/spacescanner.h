@@ -30,13 +30,6 @@ class SpaceWatcher;
 
 class Logger;
 
-enum class ScannerError {
-    NONE = 0,
-    SCAN_RUNNING,
-    CANT_OPEN_DIR
-};
-
-
 class SpaceScanner {
     struct ScanRequest {
         std::unique_ptr<FilePath> path;
@@ -44,13 +37,17 @@ class SpaceScanner {
     };
 public:
 
-    SpaceScanner();
+    /**
+     * Starts scan of selected path
+     * If path can't be scanned, throws an exception
+     * @param path
+     * @throws std::runtime_error if path can't be scanned
+     */
+    explicit SpaceScanner(const std::string &path);
 
     ~SpaceScanner();
 
-    ScannerError scan_dir(const std::string &path);
-
-    void stop_scan();
+    void stopScan();
 
     /**
      * Pauses current scan and returns true if it was paused
@@ -65,18 +62,11 @@ public:
 
     bool canResume();
 
-    void rescan_dir(const FilePath &folder_path);
+    void rescanPath(const FilePath &folder_path);
 
-    /**
-     * For windows this is a list of available drives (C:\\, D:\\ etc)
-     * For linux this is a list of mount points where partitions are mounted (including /)
-     * So while scanning specific root, all other mount points will be skipped
-     */
-    std::vector<std::string> get_available_roots();
+    const FileDB& getFileDB() const;
 
-    std::shared_ptr<FileDB> getFileDB();
-
-    bool getCurrentScanPath(std::unique_ptr<FilePath> &path);
+    std::unique_ptr<FilePath> getCurrentScanPath();
 
     /**
      * Get current watcher limits
@@ -93,15 +83,11 @@ public:
      */
     bool isProgressKnown() const;
 
-    int get_scan_progress() const;
+    int getScanProgress() const;
 
-    bool is_loaded() const;
+    bool hasChanges() const;
 
-    bool can_refresh() const;
-
-    bool has_changes() const;
-
-    const FilePath *getRootPath() const;
+    const FilePath &getRootPath() const;
 
     void getSpace(uint64_t &used, uint64_t &available, uint64_t &total) const;
 
@@ -133,10 +119,10 @@ private:
      * If valid rootFile is available then this will update info about total and available space on this drive
      * Can be called multiple times, just need rootFile to be valid
      */
-    void update_disk_space();
+    void updateDiskSpace();
 
     std::atomic<ScannerStatus> scannerStatus;
-    std::shared_ptr<FileDB> db;
+    std::unique_ptr<FileDB> db;
 
     std::unique_ptr<SpaceWatcher> watcher;
     std::atomic<bool> watcherLimitExceeded;

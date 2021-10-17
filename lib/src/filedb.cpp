@@ -11,9 +11,10 @@ extern "C" {
 #include <crc.h>
 }
 
-FileDB::FileDB() : bHasChanges(false), rootValid(false), usedSpace(0),
-                   fileCount(0), dirCount(0) {
-
+FileDB::FileDB(const std::string &path) : bHasChanges(true), usedSpace(0),
+                   fileCount(0), dirCount(1) {
+    rootPath = Utils::make_unique<FilePath>(path);
+    rootFile = Utils::make_unique<FileEntry>(rootPath->getPath(), true);
 }
 
 void FileDB::setSpace(uint64_t totalSpace_, uint64_t availableSpace_) {
@@ -24,7 +25,7 @@ void FileDB::setSpace(uint64_t totalSpace_, uint64_t availableSpace_) {
 bool FileDB::setChildrenForPath(const FilePath &path,
                                 std::vector<std::unique_ptr<FileEntry>> entries,
                                 std::vector<std::unique_ptr<FilePath>> *newPaths) {
-    if (entries.empty() || !path.isDir())
+    if (!path.isDir())
         return false;
     // Presorting entries by size so we can insert them much quicker
     std::sort(entries.begin(), entries.end(),
@@ -32,8 +33,6 @@ bool FileDB::setChildrenForPath(const FilePath &path,
                   return e1->getSize() > e2->getSize();
               });
     std::lock_guard<std::mutex> lock(dbMtx);
-    if (!isReady())
-        return false;
 
     auto parentEntry = _findEntry(path);
     if (!parentEntry)
@@ -112,41 +111,8 @@ bool FileDB::setChildrenForPath(const FilePath &path,
     return true;
 }
 
-void FileDB::setNewRootPath(const std::string &path) {
-    std::lock_guard<std::mutex> lock(dbMtx);
-
-    // clearing db resets rootPath so store to temp var (constructor of FilePath can throw exception if path is empty)
-    auto newRootPath = Utils::make_unique<FilePath>(path);
-    _clearDb();
-    rootPath = std::move(newRootPath);
-    rootFile = Utils::make_unique<FileEntry>(rootPath->getPath(), true);
-    dirCount = 1;
-    fileCount = 0;
-    rootValid = true;
-    bHasChanges = true;
-}
-
-const FilePath *FileDB::getRootPath() const {
-    std::lock_guard<std::mutex> lock(dbMtx);
-    return rootPath.get();
-}
-
-void FileDB::clearDb() {
-    std::lock_guard<std::mutex> lock(dbMtx);
-    _clearDb();
-}
-
-void FileDB::_clearDb() {
-    if (!rootValid)
-        return;
-    rootValid = false;
-    usedSpace = 0;
-    fileCount = 0;
-    dirCount = 0;
-    rootPath.reset();
-    entriesMap.clear();
-    rootFile.reset();
-    bHasChanges = true;
+const FilePath &FileDB::getRootPath() const {
+    return *rootPath;
 }
 
 void FileDB::_cleanupEntryCrc(const FileEntry &entry) {
@@ -240,15 +206,11 @@ FileEntry *FileDB::_findEntry(const FilePath &path) const {
 
 const FileEntry *FileDB::findEntry(const FilePath &path) const {
     std::lock_guard<std::mutex> lock_mtx(dbMtx);
-    if (!isReady())
-        return nullptr;
     return _findEntry(path);
 }
 
 bool FileDB::processEntry(const FilePath &path, const std::function<void(const FileEntry &)> &func) const {
     std::lock_guard<std::mutex> lock_mtx(dbMtx);
-    if (!isReady())
-        return false;
     auto e = _findEntry(path);
     if (!e)
         return false;
@@ -262,10 +224,6 @@ bool FileDB::processEntry(const FilePath &path, const std::function<void(const F
 
 bool FileDB::hasChanges() const {
     return bHasChanges;
-}
-
-bool FileDB::isReady() const {
-    return rootValid;
 }
 
 void FileDB::getSpace(uint64_t &used, uint64_t &available, uint64_t &total) const {

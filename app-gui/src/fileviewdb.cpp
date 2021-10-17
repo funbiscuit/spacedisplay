@@ -6,20 +6,15 @@
 #include "fileentryview.h"
 
 
-void FileViewDB::setFileDB(std::shared_ptr<FileDB> db_) {
-    db = std::move(db_);
-    rootFile.reset();
-}
-
-bool FileViewDB::update(bool includeUnknown, bool includeAvailable) {
-    if (!viewPath || !db || !db->isReady())
+bool FileViewDB::update(const FileDB &db, bool includeUnknown, bool includeAvailable) {
+    if (!viewPath)
         return false;
     FileEntryView::ViewOptions options;
     options.nestLevel = viewDepth;
 
     uint64_t totalSpace, usedSpace, freeSpace, unknownSpace;
 
-    db->getSpace(usedSpace, freeSpace, totalSpace);
+    db.getSpace(usedSpace, freeSpace, totalSpace);
     unknownSpace = totalSpace - freeSpace - usedSpace; //db guarantees this to be >=0
     totalSpace = 0; //we will calculate it manually depending on what is included
 
@@ -34,7 +29,7 @@ bool FileViewDB::update(bool includeUnknown, bool includeAvailable) {
 
     bool hasChanges = false;
 
-    db->processEntry(*viewPath, [this, &totalSpace, &options, &hasChanges](const FileEntry &entry) {
+    db.processEntry(*viewPath, [this, &totalSpace, &options, &hasChanges](const FileEntry &entry) {
         if (!entry.isRoot()) {
             totalSpace = 0;
             //we don't show unknown and free space if child is viewed
@@ -84,13 +79,13 @@ void FileViewDB::setTextHeight(int height) {
 }
 
 uint64_t FileViewDB::getFilesSize() const {
-    if (isReady() && rootFile)
+    if (rootFile)
         return rootFile->get_size();
     return 0;
 }
 
 bool FileViewDB::processEntry(const std::function<void(FileEntryView &)> &func) {
-    if (!isReady() || !rootFile)
+    if (!rootFile)
         return false;
 
     func(*rootFile);
@@ -99,14 +94,14 @@ bool FileViewDB::processEntry(const std::function<void(FileEntryView &)> &func) 
 }
 
 FileEntryView *FileViewDB::getHoveredView(int mouseX, int mouseY) {
-    if (!isReady() || !rootFile)
+    if (!rootFile)
         return nullptr;
 
     return rootFile->getHoveredView(mouseX, mouseY);
 }
 
 FileEntryView *FileViewDB::getClosestView(const FilePath &filepath, int maxDepth) {
-    if (!isReady() || !rootFile)
+    if (!rootFile)
         return nullptr;
 
     auto state = viewPath->compareTo(filepath);
@@ -121,8 +116,4 @@ FileEntryView *FileViewDB::getClosestView(const FilePath &filepath, int maxDepth
         return nullptr; //should not happen
 
     return rootFile->getClosestView(relPath, maxDepth);
-}
-
-bool FileViewDB::isReady() const {
-    return db != nullptr;
 }

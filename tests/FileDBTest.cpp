@@ -9,69 +9,134 @@
 
 TEST_CASE("FileDB construction", "[filedb]")
 {
-    FileDB db;
+    REQUIRE_NOTHROW(FileDB("/home/"));
+    FileDB db("/home/");
 
-    REQUIRE_FALSE(db.isReady());
-    REQUIRE(db.getRootPath() == nullptr);
-    REQUIRE(db.getDirCount() == 0);
-    REQUIRE(db.getFileCount() == 0);
-
-
-    db.setNewRootPath("/home/");
-    REQUIRE(db.isReady());
-    REQUIRE(db.getRootPath() != nullptr);
     FilePath rootPath("/home");
-    REQUIRE(db.getRootPath()->getPath() == rootPath.getPath());
+    REQUIRE(db.getRootPath().getPath() == rootPath.getPath());
     REQUIRE(db.getDirCount() == 1);
     REQUIRE(db.getFileCount() == 0);
     REQUIRE(db.hasChanges());
 
-    db.clearDb();
-    REQUIRE_FALSE(db.isReady());
-    REQUIRE(db.getRootPath() == nullptr);
-    REQUIRE(db.getDirCount() == 0);
-    REQUIRE(db.getFileCount() == 0);
+    std::vector<std::unique_ptr<FilePath>> newPaths;
+    std::vector<std::unique_ptr<FileEntry>> entries;
+
+    SECTION("Can add to root")
+    {
+        entries.push_back(Utils::make_unique<FileEntry>("dir1", true));
+        entries.push_back(Utils::make_unique<FileEntry>("dir2", true));
+        entries.push_back(Utils::make_unique<FileEntry>("dir3", true));
+
+        REQUIRE(db.setChildrenForPath(rootPath, std::move(entries), &newPaths));
+        REQUIRE(newPaths.size() == 3);
+        REQUIRE(newPaths[0]->getName() == "dir1");
+    }
+
+    SECTION("Can add to existing path")
+    {
+        entries.push_back(Utils::make_unique<FileEntry>("dir1", true));
+        db.setChildrenForPath(rootPath, std::move(entries));
+
+        entries.push_back(Utils::make_unique<FileEntry>("dir2", true));
+        entries.push_back(Utils::make_unique<FileEntry>("dir3", true));
+
+        rootPath.addDir("dir1");
+        REQUIRE(db.setChildrenForPath(rootPath, std::move(entries), &newPaths));
+        REQUIRE(newPaths.size() == 2);
+        REQUIRE(newPaths[0]->getName() == "dir2");
+        REQUIRE(newPaths[1]->getName() == "dir3");
+    }
+
+    SECTION("Can't add to non existing path")
+    {
+        rootPath.addDir("dir1");
+        REQUIRE_FALSE(db.setChildrenForPath(rootPath, std::move(entries), &newPaths));
+        REQUIRE(newPaths.empty());
+    }
+
+    SECTION("Can't add to file path")
+    {
+        entries.push_back(Utils::make_unique<FileEntry>("dir1", true));
+        db.setChildrenForPath(rootPath, std::move(entries));
+
+        entries.push_back(Utils::make_unique<FileEntry>("file1", false, 10));
+        rootPath.addFile("dir1");
+        REQUIRE_FALSE(db.setChildrenForPath(rootPath, std::move(entries), &newPaths));
+        REQUIRE(newPaths.empty());
+    }
+
+
+    SECTION("Setting empty array clears children")
+    {
+        entries.push_back(Utils::make_unique<FileEntry>("dir1", true));
+        db.setChildrenForPath(rootPath, std::move(entries));
+        REQUIRE(db.getDirCount() == 2);
+
+        //rootPath.addDir("dir1");
+        REQUIRE(db.setChildrenForPath(rootPath, std::move(entries)));
+        REQUIRE(db.getDirCount() == 1);
+    }
+
+    SECTION("Stats count all children")
+    {
+        entries.push_back(Utils::make_unique<FileEntry>("dir1", true));
+        entries.push_back(Utils::make_unique<FileEntry>("dir2", true));
+        entries.push_back(Utils::make_unique<FileEntry>("dir3", true));
+
+        REQUIRE(db.setChildrenForPath(rootPath, std::move(entries)));
+
+        entries.push_back(Utils::make_unique<FileEntry>("file1", false, 10));
+        entries.push_back(Utils::make_unique<FileEntry>("file2", false, 30));
+        entries.push_back(Utils::make_unique<FileEntry>("file3", false, 20));
+
+        rootPath.addDir("dir1");
+        REQUIRE(db.setChildrenForPath(rootPath, std::move(entries)));
+
+        rootPath.goUp();
+        rootPath.addDir("dir2");
+        entries.push_back(Utils::make_unique<FileEntry>("file4", false, 15));
+        entries.push_back(Utils::make_unique<FileEntry>("file5", false, 35));
+        entries.push_back(Utils::make_unique<FileEntry>("file6", false, 25));
+
+        REQUIRE(db.setChildrenForPath(rootPath, std::move(entries)));
+
+        rootPath.goUp();
+        rootPath.addDir("dir3");
+        entries.push_back(Utils::make_unique<FileEntry>("file7", false, 15));
+        entries.push_back(Utils::make_unique<FileEntry>("file8", false, 35));
+        entries.push_back(Utils::make_unique<FileEntry>("file9", false, 25));
+
+        REQUIRE(db.setChildrenForPath(rootPath, std::move(entries)));
+
+        db.setSpace(500, 100);
+        uint64_t used, available, total;
+        db.getSpace(used, available, total);
+        REQUIRE(total == 500);
+        REQUIRE(available == 100);
+        REQUIRE(used == 210);
+
+        REQUIRE(db.getFileCount() == 9);
+        REQUIRE(db.getDirCount() == 4);
+    }
 }
 
-
 void createSampleDb(FileDB &db) {
-    FilePath path("/home");
+    FilePath path = db.getRootPath();
     std::vector<std::unique_ptr<FileEntry>> entries;
-    db.clearDb();
-
-    entries.push_back(Utils::make_unique<FileEntry>("dir1", true));
-    REQUIRE_FALSE(db.setChildrenForPath(path, std::move(entries))); //add to not initialized db
-
-    db.setNewRootPath("/home");
 
     entries.push_back(Utils::make_unique<FileEntry>("dir1", true));
     entries.push_back(Utils::make_unique<FileEntry>("dir2", true));
     entries.push_back(Utils::make_unique<FileEntry>("dir3", true));
 
-    std::vector<std::unique_ptr<FilePath>> newPaths;
-    REQUIRE(db.setChildrenForPath(path, std::move(entries), &newPaths));
-    REQUIRE(newPaths.size() == 3);
-    REQUIRE(newPaths[0]->getName() == "dir1");
-
-    path.addDir("dir12");
-    entries.push_back(Utils::make_unique<FileEntry>("file1", false, 10));
-    REQUIRE_FALSE(db.setChildrenForPath(path, std::move(entries))); //add to non existent path
-
-    path.goUp();
-    path.addFile("dir1");
-    entries.push_back(Utils::make_unique<FileEntry>("file1", false, 10));
-    REQUIRE_FALSE(db.setChildrenForPath(path, std::move(entries))); //add to file path
-
-    path.goUp();
-    path.addDir("dir1");
-    REQUIRE_FALSE(db.setChildrenForPath(path, std::move(entries))); //add empty array
-
+    db.setChildrenForPath(path, std::move(entries));
 
     entries.push_back(Utils::make_unique<FileEntry>("file1", false, 10));
     entries.push_back(Utils::make_unique<FileEntry>("file2", false, 30));
     entries.push_back(Utils::make_unique<FileEntry>("file3", false, 20));
 
-    REQUIRE(db.setChildrenForPath(path, std::move(entries)));
+    path.goUp();
+    path.addDir("dir1");
+    db.setChildrenForPath(path, std::move(entries));
 
     path.goUp();
     path.addDir("dir2");
@@ -79,7 +144,7 @@ void createSampleDb(FileDB &db) {
     entries.push_back(Utils::make_unique<FileEntry>("file5", false, 35));
     entries.push_back(Utils::make_unique<FileEntry>("file6", false, 25));
 
-    REQUIRE(db.setChildrenForPath(path, std::move(entries)));
+    db.setChildrenForPath(path, std::move(entries));
 
     path.goUp();
     path.addDir("dir3");
@@ -87,85 +152,78 @@ void createSampleDb(FileDB &db) {
     entries.push_back(Utils::make_unique<FileEntry>("file8", false, 35));
     entries.push_back(Utils::make_unique<FileEntry>("file9", false, 25));
 
-    REQUIRE(db.setChildrenForPath(path, std::move(entries)));
+    db.setChildrenForPath(path, std::move(entries));
 
     db.setSpace(500, 100);
     uint64_t used, available, total;
     db.getSpace(used, available, total);
-    REQUIRE(total == 500);
-    REQUIRE(available == 100);
-    REQUIRE(used == 210);
-
-    REQUIRE(db.getFileCount() == 9);
-    REQUIRE(db.getDirCount() == 4);
 }
 
 TEST_CASE("FileDB searching", "[filedb]")
 {
-    FileDB db;
     FilePath path("/home/");
+    SECTION("Find entries")
+    {
+        FileDB db(path.getRoot());
 
-    auto entry = db.findEntry(path);
-    REQUIRE(entry == nullptr);
-    createSampleDb(db);
+        createSampleDb(db);
 
-    entry = db.findEntry(path);
-    REQUIRE(entry != nullptr);
-    REQUIRE(path.getPath() == entry->getName());
+        auto entry = db.findEntry(path);
+        REQUIRE(entry != nullptr);
+        REQUIRE(path.getPath() == entry->getName());
 
-    entry = db.findEntry(FilePath("/home2"));
-    REQUIRE(entry == nullptr);
+        entry = db.findEntry(FilePath("/home2"));
+        REQUIRE(entry == nullptr);
 
-    path.addDir("dir1");
-    path.addFile("file1");
-    entry = db.findEntry(path);
-    REQUIRE(entry != nullptr);
+        path.addDir("dir1");
+        path.addFile("file1");
+        entry = db.findEntry(path);
+        REQUIRE(entry != nullptr);
 
-    path.goUp();
-    path.goUp();
-    path.addDir("dir2");
-    path.addFile("file4");
-    entry = db.findEntry(path);
-    REQUIRE(entry != nullptr);
+        path.goUp();
+        path.goUp();
+        path.addDir("dir2");
+        path.addFile("file4");
+        entry = db.findEntry(path);
+        REQUIRE(entry != nullptr);
 
-    path.goUp();
-    path.goUp();
-    path.addDir("dir3");
-    path.addFile("file7");
-    entry = db.findEntry(path);
-    REQUIRE(entry != nullptr);
+        path.goUp();
+        path.goUp();
+        path.addDir("dir3");
+        path.addFile("file7");
+        entry = db.findEntry(path);
+        REQUIRE(entry != nullptr);
+    }
 
-    db.clearDb();
-    auto processed = db.processEntry(path, [](const FileEntry &entry) {
-        REQUIRE(false); // not executed
-    });
-    REQUIRE_FALSE(processed);
+    SECTION("Processing entries")
+    {
+        FileDB db(path.getRoot());
+        createSampleDb(db);
 
-    createSampleDb(db);
+        path.goUp();
+        path.goUp();
+        path.addDir("dir1");
+        path.addFile("file1");
 
-    path.goUp();
-    path.goUp();
-    path.addDir("dir1");
-    path.addFile("file1");
+        bool processed = db.processEntry(path, [](const FileEntry &entry) {
+            REQUIRE(strcmp(entry.getName(), "file1") == 0);
+        });
+        REQUIRE(processed);
+        path.goUp();
+        path.addFile("file4");
+        processed = db.processEntry(path, [](const FileEntry &entry) {
+            REQUIRE(false); // not executed
+        });
+        REQUIRE_FALSE(processed);
 
-    processed = db.processEntry(path, [](const FileEntry &entry) {
-        REQUIRE(strcmp(entry.getName(), "file1") == 0);
-    });
-    REQUIRE(processed);
-    path.goUp();
-    path.addFile("file4");
-    processed = db.processEntry(path, [](const FileEntry &entry) {
-        REQUIRE(false); // not executed
-    });
-    REQUIRE_FALSE(processed);
-
-    path.goUp();
+        path.goUp();
+    }
 }
 
 TEST_CASE("FileDB modification", "[filedb]")
 {
-    FileDB db;
     FilePath path("/home/");
+    FileDB db(path.getRoot());
     createSampleDb(db);
 
     path.addDir("dir1");
