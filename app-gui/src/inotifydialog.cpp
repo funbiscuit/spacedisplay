@@ -6,7 +6,7 @@
 #include "logger.h"
 #include <iostream>
 
-InotifyDialog::InotifyDialog(int oldWatchLimit, int newWatchLimit, Logger *logger) {
+InotifyDialog::InotifyDialog(int64_t oldWatchLimit, int64_t newWatchLimit, Logger *logger) {
     setWindowTitle("Inotify watches limit is reached");
 
     auto inotifyCmd = Utils::strFormat("fs.inotify.max_user_watches=%d", newWatchLimit);

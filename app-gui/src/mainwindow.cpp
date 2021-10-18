@@ -114,7 +114,7 @@ void MainWindow::updateStatusView() {
         return;
     }
 
-    uint64_t scannedVisible, scannedHidden, available, total;
+    int64_t scannedVisible, scannedHidden, available, total;
 
     if (!spaceWidget->getSpace(scannedVisible, scannedHidden, available, total))
         return; //should not happen

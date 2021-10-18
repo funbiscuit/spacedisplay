@@ -13,7 +13,7 @@ class InotifyDialog : public QDialog {
 Q_OBJECT
 
 public:
-    InotifyDialog(int oldWatchLimit, int newWatchLimit, Logger *logger);
+    InotifyDialog(int64_t oldWatchLimit, int64_t newWatchLimit, Logger *logger);
 
 
 private:

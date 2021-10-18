@@ -293,11 +293,11 @@ bool SpaceView::isProgressKnown() {
     return false;
 }
 
-bool SpaceView::getSpace(uint64_t &scannedVisible, uint64_t &scannedHidden, uint64_t &available, uint64_t &total) {
+bool SpaceView::getSpace(int64_t &scannedVisible, int64_t &scannedHidden, int64_t &available, int64_t &total) {
     if (!scanner)
         return false;
 
-    uint64_t scanned;
+    int64_t scanned;
     scanner->getSpace(scanned, available, total);
 
     scannedHidden = 0;

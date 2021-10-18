@@ -56,7 +56,7 @@ public:
      */
     bool isProgressKnown();
 
-    bool getSpace(uint64_t &scannedVisible, uint64_t &scannedHidden, uint64_t &available, uint64_t &total);
+    bool getSpace(int64_t &scannedVisible, int64_t &scannedHidden, int64_t &available, int64_t &total);
 
     int64_t getScannedFiles();
 
