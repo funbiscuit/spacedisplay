@@ -25,7 +25,7 @@ public:
      * @param totalSpace
      * @param availableSpace
      */
-    void setSpace(uint64_t totalSpace, uint64_t availableSpace);
+    void setSpace(int64_t totalSpace, int64_t availableSpace);
 
     /**
      * Tries to find entry by specified path and updates its children to be the same as in
@@ -66,22 +66,22 @@ public:
 
     bool hasChanges() const;
 
-    void getSpace(uint64_t &used, uint64_t &available, uint64_t &total) const;
+    void getSpace(int64_t &used, int64_t &available, int64_t &total) const;
 
-    uint64_t getFileCount() const;
+    int64_t getFileCount() const;
 
-    uint64_t getDirCount() const;
+    int64_t getDirCount() const;
 
 private:
 
-    uint64_t totalSpace = 0;
-    uint64_t availableSpace = 0;
+    int64_t totalSpace = 0;
+    int64_t availableSpace = 0;
 
     mutable std::mutex dbMtx;
 
-    std::atomic<uint64_t> usedSpace;
-    std::atomic<uint64_t> fileCount;
-    std::atomic<uint64_t> dirCount;
+    std::atomic<int64_t> usedSpace;
+    std::atomic<int64_t> fileCount;
+    std::atomic<int64_t> dirCount;
 
     //TODO make it possible to access "has changes" info by some caller id
     mutable std::atomic<bool> bHasChanges;

@@ -55,7 +55,7 @@ std::vector<std::string> PlatformUtils::getExcludedPaths() {
     return {};
 }
 
-bool PlatformUtils::get_mount_space(const std::string &path, uint64_t &totalSpace, uint64_t &availableSpace) {
+bool PlatformUtils::get_mount_space(const std::string &path, int64_t &totalSpace, int64_t &availableSpace) {
     auto wpath = PlatformUtils::str2wstr(path);
 
     ULARGE_INTEGER totalBytes;
@@ -65,8 +65,8 @@ bool PlatformUtils::get_mount_space(const std::string &path, uint64_t &totalSpac
     availableSpace = 0;
 
     if (GetDiskFreeSpaceExW(wpath.c_str(), &freeBytesForCaller, &totalBytes, nullptr) != 0) {
-        totalSpace = totalBytes.QuadPart;
-        availableSpace = freeBytesForCaller.QuadPart;
+        totalSpace = static_cast<int64_t>(totalBytes.QuadPart);
+        availableSpace = static_cast<int64_t>(freeBytesForCaller.QuadPart);
 
         return true;
     } else

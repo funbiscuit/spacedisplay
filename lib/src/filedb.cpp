@@ -17,7 +17,7 @@ FileDB::FileDB(const std::string &path) : bHasChanges(true), usedSpace(0),
     rootFile = Utils::make_unique<FileEntry>(rootPath->getPath(), true);
 }
 
-void FileDB::setSpace(uint64_t totalSpace_, uint64_t availableSpace_) {
+void FileDB::setSpace(int64_t totalSpace_, int64_t availableSpace_) {
     totalSpace = totalSpace_;
     availableSpace = availableSpace_;
 }
@@ -226,7 +226,7 @@ bool FileDB::hasChanges() const {
     return bHasChanges;
 }
 
-void FileDB::getSpace(uint64_t &used, uint64_t &available, uint64_t &total) const {
+void FileDB::getSpace(int64_t &used, int64_t &available, int64_t &total) const {
     total = totalSpace;
     available = availableSpace;
     used = usedSpace;
@@ -234,10 +234,10 @@ void FileDB::getSpace(uint64_t &used, uint64_t &available, uint64_t &total) cons
         used = total - available;
 }
 
-uint64_t FileDB::getFileCount() const {
+int64_t FileDB::getFileCount() const {
     return fileCount;
 }
 
-uint64_t FileDB::getDirCount() const {
+int64_t FileDB::getDirCount() const {
     return dirCount;
 }

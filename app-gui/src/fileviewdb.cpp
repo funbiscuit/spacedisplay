@@ -12,7 +12,7 @@ bool FileViewDB::update(const FileDB &db, bool includeUnknown, bool includeAvail
     FileEntryView::ViewOptions options;
     options.nestLevel = viewDepth;
 
-    uint64_t totalSpace, usedSpace, freeSpace, unknownSpace;
+    int64_t totalSpace, usedSpace, freeSpace, unknownSpace;
 
     db.getSpace(usedSpace, freeSpace, totalSpace);
     unknownSpace = totalSpace - freeSpace - usedSpace; //db guarantees this to be >=0

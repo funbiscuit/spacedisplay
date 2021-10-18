@@ -91,12 +91,12 @@ private:
     void updatePathCrc(uint16_t parentPathCrc);
 
     struct EntryBin {
-        uint64_t size;
+        int64_t size;
         // entries are in chain (all entries in chain have the same size)
         // to access next one use firstEntry->next
         std::unique_ptr<FileEntry> firstEntry;
 
-        explicit EntryBin(uint64_t size, std::unique_ptr<FileEntry> p = nullptr) :
+        explicit EntryBin(int64_t size, std::unique_ptr<FileEntry> p = nullptr) :
                 size(size), firstEntry(std::move(p)) {}
 
         bool operator<(const EntryBin &right) const {

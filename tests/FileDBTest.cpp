@@ -109,7 +109,7 @@ TEST_CASE("FileDB construction", "[filedb]")
         REQUIRE(db.setChildrenForPath(rootPath, std::move(entries)));
 
         db.setSpace(500, 100);
-        uint64_t used, available, total;
+        int64_t used, available, total;
         db.getSpace(used, available, total);
         REQUIRE(total == 500);
         REQUIRE(available == 100);
@@ -155,7 +155,7 @@ void createSampleDb(FileDB &db) {
     db.setChildrenForPath(path, std::move(entries));
 
     db.setSpace(500, 100);
-    uint64_t used, available, total;
+    int64_t used, available, total;
     db.getSpace(used, available, total);
 }
 

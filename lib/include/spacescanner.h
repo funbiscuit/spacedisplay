@@ -89,7 +89,7 @@ public:
 
     const FilePath &getRootPath() const;
 
-    void getSpace(uint64_t &used, uint64_t &available, uint64_t &total) const;
+    void getSpace(int64_t &used, int64_t &available, int64_t &total) const;
 
     int64_t getFileCount() const;
 

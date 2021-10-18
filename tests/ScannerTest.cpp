@@ -169,7 +169,7 @@ TEST_CASE("Scanner tests", "[scanner]")
             REQUIRE_FALSE(scanner->canResume());
             REQUIRE(scanner->getScanProgress() == 100);
 
-            uint64_t used, available, total;
+            int64_t used, available, total;
             scanner->getSpace(used, available, total);
             REQUIRE(used > 0);
             REQUIRE(available > 0);

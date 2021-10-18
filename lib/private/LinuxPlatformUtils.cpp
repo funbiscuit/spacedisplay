@@ -44,13 +44,13 @@ std::vector<std::string> PlatformUtils::getExcludedPaths() {
     return excludedPaths;
 }
 
-bool PlatformUtils::get_mount_space(const std::string &path, uint64_t &totalSpace, uint64_t &availableSpace) {
+bool PlatformUtils::get_mount_space(const std::string &path, int64_t &totalSpace, int64_t &availableSpace) {
     struct statvfs disk_stat{};
     totalSpace = 0;
     availableSpace = 0;
     if (statvfs(path.c_str(), &disk_stat) == 0) {
-        totalSpace = uint64_t(disk_stat.f_frsize) * uint64_t(disk_stat.f_blocks);
-        availableSpace = uint64_t(disk_stat.f_frsize) * uint64_t(disk_stat.f_bavail);
+        totalSpace = int64_t(disk_stat.f_frsize) * int64_t(disk_stat.f_blocks);
+        availableSpace = int64_t(disk_stat.f_frsize) * int64_t(disk_stat.f_bavail);
         return true;
     } else
         return false;

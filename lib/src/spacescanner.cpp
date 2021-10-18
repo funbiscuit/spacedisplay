@@ -309,7 +309,7 @@ bool SpaceScanner::isProgressKnown() const {
 }
 
 int SpaceScanner::getScanProgress() const {
-    uint64_t totalSpace, usedSpace, freeSpace;
+    int64_t totalSpace, usedSpace, freeSpace;
     db->getSpace(usedSpace, freeSpace, totalSpace);
     if ((scannerStatus == ScannerStatus::SCANNING || scannerStatus == ScannerStatus::SCAN_PAUSED)
         && totalSpace > 0) {
@@ -359,7 +359,7 @@ void SpaceScanner::stopScan() {
 void SpaceScanner::updateDiskSpace() {
     auto p = db->getRootPath();
 
-    uint64_t total, available;
+    int64_t total, available;
 
     PlatformUtils::get_mount_space(p.getName(), total, available);
     db->setSpace(total, available);
@@ -383,7 +383,7 @@ void SpaceScanner::rescanPath(const FilePath &folder_path) {
     addToQueue(Utils::make_unique<FilePath>(folder_path), true, false);
 }
 
-void SpaceScanner::getSpace(uint64_t &used, uint64_t &available, uint64_t &total) const {
+void SpaceScanner::getSpace(int64_t &used, int64_t &available, int64_t &total) const {
     db->getSpace(used, available, total);
 }
 

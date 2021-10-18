@@ -40,7 +40,7 @@ namespace PlatformUtils {
      * @param availableSpace - available (free) space in bytes that this filesystem has
      * @return true if spaces are read successfully, false otherwise
      */
-    bool get_mount_space(const std::string &path, uint64_t &totalSpace, uint64_t &availableSpace);
+    bool get_mount_space(const std::string &path, int64_t &totalSpace, int64_t &availableSpace);
 
     /**
      * Deletes directory and all files inside
