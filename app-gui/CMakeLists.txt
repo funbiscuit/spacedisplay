@@ -13,7 +13,7 @@ add_executable(spacedisplay_gui
         )
 
 # sources for gui
-target_sources(spacedisplay_gui PRIVATE
+add_library(spacedisplay_gui_lib STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/mainapp.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/customtheme.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/customstyle.cpp
@@ -31,7 +31,7 @@ target_sources(spacedisplay_gui PRIVATE
         )
 
 # headers for moc generation
-target_sources(spacedisplay_gui PRIVATE
+target_sources(spacedisplay_gui_lib PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include/fileentrypopup.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/mainwindow.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/spaceview.h
@@ -41,19 +41,21 @@ target_sources(spacedisplay_gui PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include/logdialog.h
         )
 
-target_compile_features(spacedisplay_gui PUBLIC cxx_std_11)
-set_target_properties(spacedisplay_gui PROPERTIES
+target_compile_features(spacedisplay_gui_lib PUBLIC cxx_std_11)
+set_target_properties(spacedisplay_gui_lib PROPERTIES
         CXX_EXTENSIONS OFF
         AUTOMOC ON)
 
-target_include_directories(spacedisplay_gui
+target_include_directories(spacedisplay_gui_lib
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
         )
 
-target_link_libraries(spacedisplay_gui PRIVATE
+target_link_libraries(spacedisplay_gui_lib PUBLIC
         Qt5::Widgets Qt5::Svg portable_file_dialogs
         SpacedisplayRes::SpacedisplayRes spacedisplay_lib
         )
+
+target_link_libraries(spacedisplay_gui PRIVATE spacedisplay_gui_lib)
 
 if (WIN32)
     option(WIN32_CONSOLE "Enable default windows console" ON)
