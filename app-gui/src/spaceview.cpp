@@ -18,8 +18,8 @@ SpaceView::SpaceView() :
         sizePixmapCache([this](const PixmapTextKey &key) -> QPixmap {
             return createTextPixmap(key.text, key.color);
         }) {
-    textPixmapCache.setMaxSize(1200);
-    sizePixmapCache.setMaxSize(400);
+    textPixmapCache.setMaxSize(1000);
+    sizePixmapCache.setMaxSize(500);
 
     viewDB = Utils::make_unique<FileViewDB>();
 
@@ -412,29 +412,40 @@ void SpaceView::drawViewTitle(QPainter &painter, const QColor &bg, const FileEnt
         return;
 
     auto col = CustomPalette::getTextColorFor(bg);
-    auto title = file.getTitle(file.get_parent() ? nullptr : currentPath->getPath().c_str());
-    auto titlePix = textPixmapCache.get(PixmapTextKey(title, col.rgb()));
+
+    std::string name = file.get_parent() ? file.getName() : currentPath->getPath();
+    auto namePix = textPixmapCache.get(PixmapTextKey(name, col.rgb()));
+    auto sizePix = sizePixmapCache.get(PixmapTextKey(file.getFormattedSize(), col.rgb()));
+
+    auto dashPix = textPixmapCache.get(PixmapTextKey(" - ", col.rgb()));
 
     QRect rt{textHeight / 2 + rect.x, rect.y,
              rect.w - textHeight, (textHeight * 3) / 2};
-    int dy = (rt.height() - titlePix.height()) / 2;
+    int dy = (rt.height() - namePix.height()) / 2;
 
     painter.setClipRect(rt);
 
-    if (!file.get_parent() && titlePix.width() > rt.width()) {
-        // if title is too big, clip it
-        auto beginWidth = fontMetrics().size(0, title.substr(0, 15).c_str()).width();
+    auto fullWidth = namePix.width() + sizePix.width() + dashPix.width();
+
+    int dashX = rt.x() + namePix.width();
+    if (!file.get_parent() && fullWidth > rt.width()) {
+        // if name is too big, clip it
+        auto beginWidth = fontMetrics().size(0, name.substr(0, 15).c_str()).width();
 
         auto dotsPix = textPixmapCache.get(PixmapTextKey("...", col.rgb()));
 
-        painter.drawPixmap(rt.x(), rect.y + dy, titlePix, 0, 0, beginWidth, titlePix.height());
+        painter.drawPixmap(rt.x(), rect.y + dy, namePix, 0, 0, beginWidth, namePix.height());
         painter.drawPixmap(rt.x() + beginWidth, rect.y + dy, dotsPix);
-        painter.drawPixmap(rt.x() + beginWidth + dotsPix.width(), rt.y() + dy, titlePix,
-                           titlePix.width() - (rt.width() - beginWidth - dotsPix.width()), 0,
-                           rt.width() - beginWidth - dotsPix.width(), titlePix.height());
+        auto widthLeft = rt.width() - beginWidth - dotsPix.width() - dashPix.width() - sizePix.width();
+        painter.drawPixmap(rt.x() + beginWidth + dotsPix.width(), rt.y() + dy, namePix,
+                           namePix.width() - widthLeft, 0,
+                           widthLeft, namePix.height());
+        dashX = rt.x() + rt.width() - dashPix.width() - sizePix.width();
     } else {
-        painter.drawPixmap(rt.x(), rect.y + dy, titlePix);
+        painter.drawPixmap(rt.x(), rect.y + dy, namePix);
     }
+    painter.drawPixmap(dashX, rect.y + dy, dashPix);
+    painter.drawPixmap(dashX + dashPix.width(), rect.y + dy, sizePix);
 
     painter.setClipping(false);
 }

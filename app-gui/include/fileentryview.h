@@ -90,8 +90,6 @@ public:
 
     std::string get_tooltip() const;
 
-    std::string getTitle(const char *path = nullptr) const;
-
     const std::vector<FileEntryViewPtr> &get_children() const;
 
     uint64_t getId() const;

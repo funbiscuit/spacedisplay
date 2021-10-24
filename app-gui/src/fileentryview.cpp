@@ -137,16 +137,6 @@ std::string FileEntryView::get_tooltip() const {
     return str;
 }
 
-std::string FileEntryView::getTitle(const char *path) const {
-    std::string sizeStr = getFormattedSize();
-
-    if (path) {
-        return Utils::strFormat("%s - %s", path, sizeStr.c_str());
-    } else {
-        return Utils::strFormat("%s - %s", name.c_str(), sizeStr.c_str());
-    }
-}
-
 FileEntryView *FileEntryView::getHoveredView(int mouseX, int mouseY) {
     if (drawArea.x <= mouseX && drawArea.y <= mouseY &&
         drawArea.w >= mouseX - drawArea.x && drawArea.h >= mouseY - drawArea.y) {
