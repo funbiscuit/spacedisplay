@@ -126,7 +126,7 @@ void FileEntryView::reconstruct_from(const FileEntry *entry, const ViewOptions &
 }
 
 std::string FileEntryView::get_tooltip() const {
-    std::string sizeStr = format_size();
+    std::string sizeStr = getFormattedSize();
     std::string str;
 
     if (is_dir())
@@ -135,6 +135,16 @@ std::string FileEntryView::get_tooltip() const {
         str = Utils::strFormat("<center>%s<br />%s</center>", name.c_str(), sizeStr.c_str());
 
     return str;
+}
+
+std::string FileEntryView::getTitle(const char *path) const {
+    std::string sizeStr = getFormattedSize();
+
+    if (path) {
+        return Utils::strFormat("%s - %s", path, sizeStr.c_str());
+    } else {
+        return Utils::strFormat("%s - %s", name.c_str(), sizeStr.c_str());
+    }
 }
 
 FileEntryView *FileEntryView::getHoveredView(int mouseX, int mouseY) {
@@ -182,7 +192,7 @@ FileEntryView *FileEntryView::getClosestView(const FilePath &filepath, int maxDe
     return closest;
 }
 
-std::string FileEntryView::format_size() const {
+std::string FileEntryView::getFormattedSize() const {
     return Utils::formatSize(size);
 }
 
@@ -320,96 +330,6 @@ void FileEntryView::allocate_children(size_t start, size_t end, Utils::RectI &re
             allocate_children(bin1last + 1, end, rect2);
         else
             set_child_rect(children[end], rect2);
-    }
-}
-
-QPixmap FileEntryView::getNamePixmap(QPainter &painter, const QColor &color) const {
-    createNamePixmap(painter, color);
-    return cachedNamePix;
-}
-
-QPixmap FileEntryView::getSizePixmap(QPainter &painter, const QColor &color) const {
-    createSizePixmap(painter, color);
-    return cachedSizePix;
-}
-
-QPixmap FileEntryView::getTitlePixmap(QPainter &painter, const QColor &color, const char *path) const {
-    createTitlePixmap(painter, color, path);
-    return cachedTitlePix;
-}
-
-void FileEntryView::createNamePixmap(QPainter &painter, const QColor &color) const {
-    std::string textName = getName();
-
-    if (cachedName != textName || cachedNameColor != color) {
-        QSize sz = painter.fontMetrics().size(0, textName.c_str());
-        if (cachedNamePix.size() != sz)
-            cachedNamePix = QPixmap(sz);
-        cachedNamePix.fill(Qt::transparent);
-        QPainter painter_pix(&cachedNamePix);
-        painter_pix.setPen(color);
-        painter_pix.drawText(QRect(QPoint(0, 0), sz), 0, textName.c_str());
-        cachedName = textName;
-        cachedNameColor = color;
-    }
-}
-
-void FileEntryView::createSizePixmap(QPainter &painter, const QColor &color) const {
-    std::string textSize = format_size();
-
-    if (cachedSize != textSize || cachedSizeColor != color) {
-        QSize sz = painter.fontMetrics().size(0, textSize.c_str());
-        if (cachedSizePix.size() != sz)
-            cachedSizePix = QPixmap(sz);
-        cachedSizePix.fill(Qt::transparent);
-        QPainter painter_pix(&cachedSizePix);
-        painter_pix.setPen(color);
-        painter_pix.drawText(QRect(QPoint(0, 0), sz), 0, textSize.c_str());
-        cachedSize = textSize;
-        cachedSizeColor = color;
-    }
-}
-
-void FileEntryView::createTitlePixmap(QPainter &painter, const QColor &color, const char *path) const {
-    if (name.empty())
-        return;
-    std::string sizeStr = format_size();
-
-    std::string title;
-    QSize sz = painter.fontMetrics().size(0, title.c_str());
-
-    if (path) {
-        title = Utils::strFormat("%s - %s", path, sizeStr.c_str());
-
-        //check if available width is enough to show full title
-        sz = painter.fontMetrics().size(0, title.c_str());
-        //TODO spaceview uses left and right margin as height/2. Need to store this in one place (either space view or entry view)
-        auto margins = painter.fontMetrics().height();
-        if (sz.width() + margins > drawArea.w) {
-            //TODO this doesn't give very accurate results (usually we can delete less chars)
-            int charsToRemove = (margins + sz.width() - drawArea.w) / painter.fontMetrics().averageCharWidth() + 4;
-            std::cout << charsToRemove << "\n";
-            //TODO we should remove chars between two slashes
-            title.erase(15, charsToRemove);
-            title.insert(15, "...");
-        }
-    } else
-        title = Utils::strFormat("%s - %s", name.c_str(), sizeStr.c_str());
-
-
-    if (cachedTitle != title) {
-        // if we show only name, size was not calculated yet
-        if (!path)
-            sz = painter.fontMetrics().size(0, title.c_str());
-        if (cachedTitlePix.size() != sz)
-            cachedTitlePix = QPixmap(sz);
-        cachedTitlePix.fill(Qt::transparent);
-        if (sz.width() == 0)
-            return;
-        QPainter painter_pix(&cachedTitlePix);
-        painter_pix.setPen(color);
-        painter_pix.drawText(QRect(QPoint(0, 0), sz), 0, title.c_str());
-        cachedTitle = title;
     }
 }
 

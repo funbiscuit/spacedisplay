@@ -11,7 +11,16 @@
 #include "resources.h"
 
 SpaceView::SpaceView() :
-        QWidget(), onActionCallback(nullptr) {
+        QWidget(), onActionCallback(nullptr),
+        textPixmapCache([this](const PixmapTextKey &key) -> QPixmap {
+            return createTextPixmap(key.text, key.color);
+        }),
+        sizePixmapCache([this](const PixmapTextKey &key) -> QPixmap {
+            return createTextPixmap(key.text, key.color);
+        }) {
+    textPixmapCache.setMaxSize(1200);
+    sizePixmapCache.setMaxSize(400);
+
     viewDB = Utils::make_unique<FileViewDB>();
 
     setMouseTracking(true);
@@ -139,6 +148,17 @@ bool SpaceView::drawViewBg(QPainter &painter, QColor &bg_out, const FileEntryVie
     painter.drawRect(qr);
 
     return true;
+}
+
+QPixmap SpaceView::createTextPixmap(const std::string &text, QRgb color) {
+    QSize sz = fontMetrics().size(0, text.c_str());
+
+    QPixmap pixmap(sz);
+    pixmap.fill(Qt::transparent);
+    QPainter painter(&pixmap);
+    painter.setPen(QColor(color));
+    painter.drawText(QRect(QPoint(0, 0), sz), 0, text.c_str());
+    return pixmap;
 }
 
 void SpaceView::mouseReleaseEvent(QMouseEvent *event) {
@@ -392,15 +412,30 @@ void SpaceView::drawViewTitle(QPainter &painter, const QColor &bg, const FileEnt
         return;
 
     auto col = CustomPalette::getTextColorFor(bg);
-    auto titlePix = file.getTitlePixmap(painter, col,
-                                        file.get_parent() ? nullptr : currentPath->getPath().c_str());
+    auto title = file.getTitle(file.get_parent() ? nullptr : currentPath->getPath().c_str());
+    auto titlePix = textPixmapCache.get(PixmapTextKey(title, col.rgb()));
 
     QRect rt{textHeight / 2 + rect.x, rect.y,
              rect.w - textHeight, (textHeight * 3) / 2};
     int dy = (rt.height() - titlePix.height()) / 2;
 
     painter.setClipRect(rt);
-    painter.drawPixmap(rt.x(), rect.y + dy, titlePix);
+
+    if (!file.get_parent() && titlePix.width() > rt.width()) {
+        // if title is too big, clip it
+        auto beginWidth = fontMetrics().size(0, title.substr(0, 15).c_str()).width();
+
+        auto dotsPix = textPixmapCache.get(PixmapTextKey("...", col.rgb()));
+
+        painter.drawPixmap(rt.x(), rect.y + dy, titlePix, 0, 0, beginWidth, titlePix.height());
+        painter.drawPixmap(rt.x() + beginWidth, rect.y + dy, dotsPix);
+        painter.drawPixmap(rt.x() + beginWidth + dotsPix.width(), rt.y() + dy, titlePix,
+                           titlePix.width() - (rt.width() - beginWidth - dotsPix.width()), 0,
+                           rt.width() - beginWidth - dotsPix.width(), titlePix.height());
+    } else {
+        painter.drawPixmap(rt.x(), rect.y + dy, titlePix);
+    }
+
     painter.setClipping(false);
 }
 
@@ -416,8 +451,8 @@ void SpaceView::drawViewText(QPainter &painter, const QColor &bg, const FileEntr
 
     auto col = CustomPalette::getTextColorFor(bg);
 
-    auto namePix = file.getNamePixmap(painter, col);
-    auto sizePix = file.getSizePixmap(painter, col);
+    auto namePix = textPixmapCache.get(PixmapTextKey(file.getName(), col.rgb()));
+    auto sizePix = sizePixmapCache.get(PixmapTextKey(file.getFormattedSize(), col.rgb()));
 
     int lineHeight = painter.fontMetrics().height();
     bool showSize = true;
