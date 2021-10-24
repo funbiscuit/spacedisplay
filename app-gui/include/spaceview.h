@@ -8,6 +8,7 @@
 #include <functional>
 
 #include "customtheme.h"
+#include "PriorityCache.h"
 
 class SpaceScanner;
 
@@ -21,6 +22,29 @@ class FileEntryView;
 
 class FileTooltip;
 
+class PixmapTextKey {
+public:
+    std::string text;
+    QRgb color;
+
+    PixmapTextKey(std::string text, QRgb color) : text(std::move(text)), color(color) {}
+
+    friend bool operator==(const PixmapTextKey &a, const PixmapTextKey &b) {
+        return a.text == b.text && a.color == b.color;
+    }
+};
+
+namespace std {
+    template<>
+    struct hash<PixmapTextKey> {
+        size_t operator()(const PixmapTextKey &k) const {
+            size_t h = 17;
+            h = h * 31 + hash<QRgb>()(k.color);
+            h = h * 31 + hash<string>()(k.text);
+            return h;
+        }
+    };
+}
 
 class SpaceView : public QWidget {
 Q_OBJECT
@@ -181,6 +205,9 @@ protected:
     uint64_t currentScannedId = 0;
     std::unique_ptr<SpaceScanner> scanner;
 
+    PriorityCache<PixmapTextKey, QPixmap> textPixmapCache;
+    PriorityCache<PixmapTextKey, QPixmap> sizePixmapCache;
+
     /**
      * Id of timer that is used to check whether new information is available
      * in scanner
@@ -225,6 +252,7 @@ protected:
 
     bool drawViewBg(QPainter &painter, QColor &bg_out, const FileEntryView &file, bool fillDir);
 
+    QPixmap createTextPixmap(const std::string &text, QRgb color);
 };
 
 #endif //SPACEDISPLAY_SPACEVIEW_H

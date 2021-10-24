@@ -86,10 +86,11 @@ public:
      */
     FileEntryView *getClosestView(const FilePath &filepath, int maxDepth);
 
-    std::string format_size() const;
+    std::string getFormattedSize() const;
 
     std::string get_tooltip() const;
 
+    std::string getTitle(const char *path = nullptr) const;
 
     const std::vector<FileEntryViewPtr> &get_children() const;
 
@@ -102,19 +103,6 @@ public:
     bool is_file() const {
         return entryType == EntryType::FILE;
     }
-
-    QPixmap getNamePixmap(QPainter &painter, const QColor &color) const;
-
-    QPixmap getSizePixmap(QPainter &painter, const QColor &color) const;
-
-    /**
-     * If path is not nullptr then it will be used instead of entry name
-     * @param painter
-     * @param color
-     * @param path
-     * @return
-     */
-    QPixmap getTitlePixmap(QPainter &painter, const QColor &color, const char *path = nullptr) const;
 
     /**
      * Allocates this view and all its children inside specified rectangle.
@@ -150,21 +138,6 @@ private:
     void allocate_children(size_t start, size_t end, Utils::RectI &rect);
 
     void set_child_rect(const FileEntryViewPtr &child, Utils::RectI &rect);
-
-    void createNamePixmap(QPainter &painter, const QColor &color) const;
-
-    void createSizePixmap(QPainter &painter, const QColor &color) const;
-
-    void createTitlePixmap(QPainter &painter, const QColor &color, const char *path = nullptr) const;
-
-    mutable QPixmap cachedNamePix;
-    mutable std::string cachedName;
-    mutable QColor cachedNameColor;
-    mutable QPixmap cachedSizePix;
-    mutable std::string cachedSize;
-    mutable QColor cachedSizeColor;
-    mutable QPixmap cachedTitlePix;
-    mutable std::string cachedTitle;
 
     Utils::RectI drawArea;
 
